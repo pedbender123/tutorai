@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  tutorai:
+    build: .
+    ports:
+      - "3000:3001"
+    volumes:
+      - ./server/tutorai.db:/app/server/tutorai.db
+    env_file:
+      - .env
+    restart: always
