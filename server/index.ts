@@ -8,7 +8,9 @@ import { fileURLToPath } from 'url';
 import db from './db.js';
 import * as auth from './auth.js';
 import * as ai from './ai.js';
-import { generateLabResponse } from './labAI.js';
+import { runSimAgent } from './labAI.js';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { compressProjectContext } from './labContextCompressor.js';
 import { getUserCreditLimit } from './ai.js';
 
 dotenv.config({ path: join(dirname(fileURLToPath(import.meta.url)), '../.env') });
@@ -353,20 +355,26 @@ app.get('/api/lab/projects', auth.authenticate, (req: any, res) => {
   let projects: any[];
   if (instIds.length === 0) {
     // Sem instituição: só projetos próprios
-    projects = db.prepare(
-      `SELECT lp.*, u.name as authorName FROM lab_projects lp
-       JOIN users u ON u.id = lp.userId
-       WHERE lp.userId = ?
-       ORDER BY lp.updatedAt DESC`
-    ).all(userId) as any[];
+    projects = db.prepare(`
+      SELECT p.*, u.name as authorName,
+             (SELECT AVG(stars) FROM lab_project_ratings WHERE projectId = p.id) as avgStars,
+             p.feedback_creator as feedbackCreator
+      FROM lab_projects p
+      JOIN users u ON p.userId = u.id
+      WHERE p.userId = ?
+      ORDER BY p.updatedAt DESC
+    `).all(userId) as any[];
   } else {
     const placeholders = instIds.map(() => '?').join(',');
-    projects = db.prepare(
-      `SELECT lp.*, u.name as authorName FROM lab_projects lp
-       JOIN users u ON u.id = lp.userId
-       WHERE lp.userId = ? OR (lp.isPublic = 1 AND lp.institutionId IN (${placeholders}))
-       ORDER BY lp.updatedAt DESC`
-    ).all(userId, ...instIds) as any[];
+    projects = db.prepare(`
+      SELECT p.*, u.name as authorName,
+             (SELECT AVG(stars) FROM lab_project_ratings WHERE projectId = p.id) as avgStars,
+             p.feedback_creator as feedbackCreator
+      FROM lab_projects p
+      JOIN users u ON u.id = p.userId
+      WHERE p.userId = ? OR (p.isPublic = 1 AND p.institutionId IN (${placeholders}))
+      ORDER BY p.updatedAt DESC
+    `).all(userId, ...instIds) as any[];
   }
 
   res.json(projects);
@@ -404,9 +412,14 @@ app.get('/api/lab/projects/:id', auth.authenticate, (req: any, res) => {
   const userId = req.user.id;
   const { id } = req.params;
 
-  const project = db.prepare(
-    `SELECT lp.*, u.name as authorName FROM lab_projects lp JOIN users u ON u.id = lp.userId WHERE lp.id = ?`
-  ).get(id) as any;
+  const project = db.prepare(`
+    SELECT p.*, u.name as authorName,
+           (SELECT AVG(stars) FROM lab_project_ratings WHERE projectId = p.id) as avgStars,
+           p.feedback_creator as feedbackCreator
+    FROM lab_projects p 
+    JOIN users u ON u.id = p.userId 
+    WHERE p.id = ?
+  `).get(id) as any;
   if (!project) return res.status(404).json({ error: 'Projeto não encontrado.' });
 
   // Verifica acesso: dono ou mesma instituição (público)
@@ -453,16 +466,34 @@ app.delete('/api/lab/projects/:id', auth.authenticate, (req: any, res) => {
   res.json({ ok: true });
 });
 
-// POST /api/lab/projects/:id/messages — Enviar mensagem ao Lab Agent
 app.post('/api/lab/projects/:id/messages', auth.authenticate, limiter, async (req: any, res) => {
   const userId = req.user.id;
   const { id: projectId } = req.params;
-  const { content } = req.body;
+  const { content, modelToUse } = req.body;
   if (!content?.trim()) return res.status(400).json({ error: 'content é obrigatório.' });
 
-  const project = db.prepare(`SELECT * FROM lab_projects WHERE id = ?`).get(projectId) as any;
-  if (!project) return res.status(404).json({ error: 'Projeto não encontrado.' });
-  if (project.userId !== userId) return res.status(403).json({ error: 'Apenas o dono pode editar o projeto.' });
+  const rawProject = db.prepare(`
+    SELECT id, userId, institutionId, title, description, htmlContent, isPublic,
+           code_index as codeIndex, project_context as projectContext, turn_count as turnCount,
+           createdAt, updatedAt
+    FROM lab_projects WHERE id = ?
+  `).get(projectId) as any;
+
+  if (!rawProject) return res.status(404).json({ error: 'Projeto não encontrado.' });
+  if (rawProject.userId !== userId) return res.status(403).json({ error: 'Apenas o dono pode editar o projeto.' });
+
+  const project = {
+    ...rawProject,
+    codeIndex: JSON.parse(rawProject.codeIndex || '{}'),
+    projectContext: rawProject.projectContext || '',
+    turnCount: rawProject.turnCount || 0,
+  };
+
+  const recentMessages = (db.prepare(`
+    SELECT role, content FROM lab_messages
+    WHERE projectId = ?
+    ORDER BY createdAt DESC LIMIT 8
+  `).all(projectId) as any[]).reverse();
 
   // Salva mensagem do usuário
   const userMsgId = crypto.randomUUID();
@@ -471,33 +502,101 @@ app.post('/api/lab/projects/:id/messages', auth.authenticate, limiter, async (re
   ).run(userMsgId, projectId, userId, content.trim());
 
   try {
-    const response = await generateLabResponse(projectId, userId, content.trim());
-
-    // Atualiza HTML do projeto se foi gerado
-    if (response.htmlContent !== null) {
-      db.prepare(
-        `UPDATE lab_projects SET htmlContent = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`
-      ).run(response.htmlContent, projectId);
-    }
+    const agentResult = await runSimAgent({
+      project,
+      userMessage: content.trim(),
+      recentMessages,
+      modelToUse,
+    });
 
     // Salva resposta do assistente
     const assistantMsgId = crypto.randomUUID();
-    db.prepare(
-      `INSERT INTO lab_messages (id, projectId, userId, role, content, tokensUsed, creditsUsed) VALUES (?, ?, ?, 'assistant', ?, ?, ?)`
-    ).run(assistantMsgId, projectId, userId, response.text, response.tokensUsed, response.creditsUsed);
+    db.prepare(`
+      INSERT INTO lab_messages (id, projectId, userId, role, content, tokensUsed, creditsUsed, edit_plan, edit_scope, patched_functions)
+      VALUES (?, ?, ?, 'assistant', ?, ?, ?, ?, ?, ?)
+    `).run(
+      assistantMsgId,
+      projectId,
+      userId,
+      agentResult.explanation,
+      agentResult.tokensUsed,
+      agentResult.creditsUsed,
+      agentResult.editPlan ? JSON.stringify(agentResult.editPlan) : null,
+      agentResult.editScope,
+      JSON.stringify(agentResult.patchedFunctions),
+    );
+
+    // Atualiza projeto com novo HTML, codeIndex e incrementa turnCount
+    db.prepare(`
+      UPDATE lab_projects
+      SET htmlContent = ?,
+          code_index = ?,
+          turn_count = turn_count + 1,
+          updatedAt = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(
+      agentResult.htmlContent,
+      JSON.stringify(agentResult.codeIndex),
+      projectId,
+    );
 
     res.json({
       userMessage: db.prepare(`SELECT * FROM lab_messages WHERE id = ?`).get(userMsgId),
       assistantMessage: db.prepare(`SELECT * FROM lab_messages WHERE id = ?`).get(assistantMsgId),
-      htmlContent: response.htmlContent !== null ? response.htmlContent : project.htmlContent
+      htmlContent: agentResult.htmlContent,
+      editScope: agentResult.editScope,
+      patchedFunctions: agentResult.patchedFunctions,
     });
+
+    // Comprimir contexto de forma assíncrona, sem bloquear resposta
+    const genAIForCompressor = new GoogleGenerativeAI((process.env.GEMINI_API_KEY || '').trim());
+    compressProjectContext({ genAI: genAIForCompressor, projectId, db }).catch(console.error);
+
   } catch (err: any) {
     console.error(err);
-    // Remove mensagem do usuário em caso de erro
     db.prepare(`DELETE FROM lab_messages WHERE id = ?`).run(userMsgId);
-    const errorMessage = err.message.includes('Limite') ? err.message : 'Falha ao gerar resposta do Lab Agent.';
+    const errorMessage = err.message?.includes('Limite') ? err.message : 'Falha ao gerar resposta do Lab Agent.';
     res.status(500).json({ error: errorMessage });
   }
+});
+
+// POST /api/lab/projects/:id/rate — Avaliar com estrelas (1-5)
+app.post('/api/lab/projects/:id/rate', auth.authenticate, (req: any, res) => {
+  const { id: projectId } = req.params;
+  const { stars } = req.body;
+  const userId = req.user.id;
+
+  if (typeof stars !== 'number' || stars < 1 || stars > 5) {
+    return res.status(400).json({ error: 'Estrelas devem ser entre 1 e 5.' });
+  }
+
+  const project = db.prepare('SELECT userId FROM lab_projects WHERE id = ?').get(projectId) as any;
+  if (!project) return res.status(404).json({ error: 'Projeto não encontrado.' });
+  if (project.userId === userId) return res.status(400).json({ error: 'Você não pode avaliar seu próprio projeto.' });
+
+  db.prepare(`
+    INSERT INTO lab_project_ratings (projectId, userId, stars)
+    VALUES (?, ?, ?)
+    ON CONFLICT(projectId, userId) DO UPDATE SET stars = excluded.stars
+  `).run(projectId, userId, stars);
+
+  res.json({ ok: true });
+});
+
+// POST /api/lab/projects/:id/feedback — Feedback do criador (like/dislike)
+app.post('/api/lab/projects/:id/feedback', auth.authenticate, (req: any, res) => {
+  const { id: projectId } = req.params;
+  const { type } = req.body; // 'like' | 'dislike'
+  const userId = req.user.id;
+
+  const project = db.prepare('SELECT userId FROM lab_projects WHERE id = ?').get(projectId) as any;
+  if (!project) return res.status(404).json({ error: 'Projeto não encontrado.' });
+  if (project.userId !== userId) return res.status(403).json({ error: 'Apenas o dono pode dar feedback de objetivo.' });
+
+  const value = type === 'like' ? 1 : -1;
+  db.prepare('UPDATE lab_projects SET feedback_creator = ? WHERE id = ?').run(value, projectId);
+
+  res.json({ ok: true });
 });
 
 // Serve static files in production

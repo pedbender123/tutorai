@@ -5,7 +5,6 @@ COPY client/package*.json ./
 RUN npm install
 COPY client/ ./
 # Inject API URL for build time if needed, or use relative paths if proxied
-ENV VITE_API_URL=/api
 RUN npm run build
 
 # Stage 2: Backend & Runner

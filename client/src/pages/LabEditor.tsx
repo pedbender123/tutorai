@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { api, LabProject, LabMessage } from '../lib/api';
-import { Send, Loader2, User as UserIcon, Bot, FlaskConical, ArrowLeft, Pencil, Check, X, RefreshCw, PanelLeftClose, PanelLeftOpen, Maximize2, Minimize2 } from 'lucide-react';
+import { Send, Loader2, User as UserIcon, Bot, FlaskConical, ArrowLeft, Pencil, Check, X, RefreshCw, PanelLeftClose, PanelLeftOpen, Maximize2, Minimize2, ThumbsUp, ThumbsDown } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { cn } from '../lib/utils';
 
@@ -22,6 +22,8 @@ export default function LabEditor() {
   const [previewKey, setPreviewKey] = useState(0);
   const [chatHidden, setChatHidden] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
+  const [loadingStage, setLoadingStage] = useState<'analyzing' | 'drafting' | 'coding' | 'reviewing' | null>(null);
+  const [modelChoice, setModelChoice] = useState<'gemini-2.5-flash' | 'gemini-2.5-pro'>('gemini-2.5-flash');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -56,6 +58,17 @@ export default function LabEditor() {
     const currentInput = input;
     setInput('');
     setLoading(true);
+    setLoadingStage('analyzing');
+
+    // Simulate mini-robot sequence
+    const stageTimer = setInterval(() => {
+      setLoadingStage(prev => {
+        if (prev === 'analyzing') return 'drafting';
+        if (prev === 'drafting') return 'coding';
+        if (prev === 'coding') return 'reviewing';
+        return prev;
+      });
+    }, 2500);
 
     const tempId = crypto.randomUUID();
     const optimisticMsg: LabMessage = {
@@ -71,7 +84,7 @@ export default function LabEditor() {
     setMessages(prev => [...prev, optimisticMsg]);
 
     try {
-      const { userMessage, assistantMessage, htmlContent: newHtml } = await api.lab.sendMessage(projectId!, currentInput);
+      const { userMessage, assistantMessage, htmlContent: newHtml } = await api.lab.sendMessage(projectId!, currentInput, modelChoice);
       setMessages(prev => [...prev.filter(m => m.id !== tempId), userMessage, assistantMessage]);
       if (newHtml !== htmlContent) {
         setHtmlContent(newHtml);
@@ -83,6 +96,9 @@ export default function LabEditor() {
       setInput(currentInput);
     } finally {
       setLoading(false);
+      setLoadingStage(null);
+      // @ts-ignore
+      clearInterval(stageTimer);
     }
   };
 
@@ -135,7 +151,7 @@ export default function LabEditor() {
       {/* ====== LEFT: Chat ====== */}
       <div className={cn(
         'shrink-0 flex flex-col border-r border-zinc-100 dark:border-zinc-800 transition-all duration-300 overflow-hidden',
-        chatHidden ? 'w-0 border-r-0' : 'w-[420px]'
+        chatHidden ? "w-0 overflow-hidden border-0" : "w-[450px] min-w-[450px]"
       )}>
         {/* Chat Header */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shrink-0">
@@ -183,7 +199,7 @@ export default function LabEditor() {
                 )}
               </div>
             )}
-            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Lab Agent</p>
+            <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] animate-pulse">Antigravity Mode</p>
           </div>
         </div>
 
@@ -210,21 +226,97 @@ export default function LabEditor() {
               <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
                 <Bot size={16} />
               </div>
-              <div className="bg-zinc-100 dark:bg-zinc-800/50 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-2">
-                <div className="flex gap-1">
-                  <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                  <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                  <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" />
+              <div className="bg-zinc-100 dark:bg-zinc-800/50 rounded-2xl rounded-tl-sm px-4 py-3 flex flex-col gap-2 min-w-[200px]">
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1">
+                    <span className={cn("w-1.5 h-1.5 rounded-full animate-bounce", loadingStage === 'analyzing' ? "bg-primary" : "bg-primary/30")} />
+                    <span className={cn("w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.1s]", loadingStage === 'drafting' ? "bg-primary" : "bg-primary/30")} />
+                    <span className={cn("w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.2s]", loadingStage === 'coding' ? "bg-primary" : "bg-primary/30")} />
+                    <span className={cn("w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.3s]", loadingStage === 'reviewing' ? "bg-primary" : "bg-primary/30")} />
+                  </div>
+                  <span className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">
+                    {loadingStage === 'analyzing' && 'Analisando pedido...'}
+                    {loadingStage === 'drafting' && 'Esboçando lógica...'}
+                    {loadingStage === 'coding' && 'Codando simulação...'}
+                    {loadingStage === 'reviewing' && 'Revisando código...'}
+                  </span>
                 </div>
-                <span className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">Gerando simulação...</span>
+                
+                {/* Progress bar visual */}
+                <div className="w-full h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+                  <div className={cn(
+                    "h-full bg-primary transition-all duration-700 ease-in-out",
+                    loadingStage === 'analyzing' && "w-[15%]",
+                    loadingStage === 'drafting' && "w-[40%]",
+                    loadingStage === 'coding' && "w-[75%]",
+                    loadingStage === 'reviewing' && "w-[95%]"
+                  )} />
+                </div>
               </div>
             </div>
           )}
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input */}
-        <div className="px-4 py-4 border-t border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shrink-0">
+      {/* Input Area: Premium Toolbar & Integrated Textarea */}
+      <div className="p-4 bg-zinc-50 dark:bg-zinc-950/50 border-t border-zinc-100 dark:border-zinc-800 shrink-0">
+        <div className="max-w-3xl mx-auto space-y-3">
+          {/* Controls: Model Selection and Status */}
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center bg-zinc-200/50 dark:bg-zinc-800/50 p-1 rounded-xl w-fit">
+              <button
+                onClick={() => setModelChoice('gemini-2.5-flash')}
+                className={cn(
+                  "px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all",
+                  modelChoice === 'gemini-2.5-flash' 
+                    ? "bg-white dark:bg-zinc-700 text-primary shadow-sm" 
+                    : "text-zinc-400 hover:text-zinc-600"
+                )}
+              >
+                Flash 2.5
+              </button>
+              <button
+                onClick={() => setModelChoice('gemini-2.5-pro')}
+                className={cn(
+                  "px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all",
+                  modelChoice === 'gemini-2.5-pro' 
+                    ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-[0_2px_10px_rgba(245,158,11,0.3)]" 
+                    : "text-zinc-400 hover:text-zinc-600"
+                )}
+              >
+                Pro 2.5 ✨
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {isOwner && (
+                <div className="flex items-center bg-zinc-100 dark:bg-zinc-800 rounded-lg p-0.5 border border-zinc-200 dark:border-zinc-700">
+                  <button 
+                    onClick={async () => {
+                      await api.lab.giveFeedback(projectId!, 'like');
+                      alert('Feedback enviado! 👍');
+                    }}
+                    className="p-1.5 rounded-md hover:bg-white dark:hover:bg-zinc-700 text-zinc-400 hover:text-green-600 transition-all"
+                    title="Atingiu o objetivo"
+                  >
+                    <ThumbsUp size={12} />
+                  </button>
+                  <div className="w-[1px] h-3 bg-zinc-200 dark:bg-zinc-700 mx-0.5" />
+                  <button 
+                    onClick={async () => {
+                      await api.lab.giveFeedback(projectId!, 'dislike');
+                      alert('Feedback enviado! 👎');
+                    }}
+                    className="p-1.5 rounded-md hover:bg-white dark:hover:bg-zinc-700 text-zinc-400 hover:text-red-500 transition-all"
+                    title="Não atingiu o objetivo"
+                  >
+                    <ThumbsDown size={12} />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
           <form onSubmit={handleSend} className="relative flex items-end gap-2">
             <div className="relative flex-1 group">
               <textarea
@@ -244,17 +336,23 @@ export default function LabEditor() {
               <button
                 type="submit"
                 disabled={!input.trim() || loading || !isOwner}
-                className="absolute right-2 bottom-2 w-9 h-9 bg-primary text-primary-foreground rounded-[1rem] flex items-center justify-center hover:opacity-90 active:scale-95 transition-all shadow-md shadow-primary/20 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="absolute right-2 bottom-2 w-9 h-9 bg-primary text-primary-foreground rounded-xl flex items-center justify-center hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-primary/20 disabled:opacity-40"
               >
-                <Send size={16} className="ml-0.5" />
+                <Send size={16} />
               </button>
             </div>
           </form>
-          <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-2 px-1">
-            Lab Agent · Gemini 2.5 Flash
-          </p>
+          
+          <div className="flex items-center justify-center gap-2 px-1">
+             <div className="h-[1px] flex-1 bg-zinc-100 dark:bg-zinc-800" />
+             <p className="text-[9px] font-black text-zinc-300 dark:text-zinc-600 uppercase tracking-[0.3em] whitespace-nowrap">
+              Mini Cloud Agent · {modelChoice === 'gemini-2.5-pro' ? 'Raciocínio Pro' : 'Processamento Flash'}
+            </p>
+            <div className="h-[1px] flex-1 bg-zinc-100 dark:bg-zinc-800" />
+          </div>
         </div>
       </div>
+    </div>
 
       {/* ====== RIGHT: Preview ====== */}
       <div className="flex-1 flex flex-col min-w-0 bg-zinc-100 dark:bg-zinc-900">
@@ -332,7 +430,7 @@ function LabMessageBubble({ msg }: { msg: LabMessage }) {
         {isUser ? <UserIcon size={15} /> : <Bot size={16} />}
       </div>
       <div className={cn(
-        'max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm',
+        'max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] dark:shadow-none',
         isUser
           ? 'bg-primary text-primary-foreground rounded-tr-sm'
           : 'bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-tl-sm'

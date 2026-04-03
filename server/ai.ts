@@ -14,8 +14,9 @@ let tokenHistory: { timestamp: number, tokens: number }[] = [];
 const TPM_LIMIT = 250000;
 const TPM_WINDOW_MS = 60000;
 
-// Credit Rates — 1 crédito = 1 token (Gemini 2.5 Flash)
-const GOOGLE_RATE = 1.0;
+// Flash/Pro 2.5: $0.15/$1.25 in / $0.60/$10.00 out → 825/6875 in / 3300/55000 out créditos/M tokens
+const FLASH_RATE = { input: 825, output: 3_300 };
+const PRO_RATE  = { input: 6_875, output: 55_000 };
 // GPT desabilitado temporariamente
 // const GPT_RATE = 1.3;
 
@@ -103,6 +104,8 @@ async function _generateChatResponse(
   try {
     let text = '';
     let tokensUsed = 0;
+    let inputTokFinal = 0;
+    let outputTokFinal = 0;
 
     if (provider === 'google') {
       // Traffic Shaping for Gemini
@@ -130,7 +133,10 @@ async function _generateChatResponse(
       }
       lastRequestTime = Date.now();
 
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash', systemInstruction });
+      const model = genAI.getGenerativeModel(
+        { model: 'gemini-2.5-flash', systemInstruction },
+        { timeout: 60_000 } // 60s for standard chat
+      );
       const contents = history.map(msg => ({
         role: msg.role === 'user' ? 'user' : 'model',
         parts: [{ text: msg.content }]
@@ -140,7 +146,9 @@ async function _generateChatResponse(
       const result = await model.generateContent({ contents });
       const response = await result.response;
       text = response.text();
-      tokensUsed = response.usageMetadata?.totalTokenCount || Math.ceil((newMessage.length + text.length) / 4);
+      inputTokFinal  = response.usageMetadata?.promptTokenCount    ?? Math.ceil((historyText.length + newMessage.length) / 4);
+      outputTokFinal = response.usageMetadata?.candidatesTokenCount ?? Math.ceil(text.length / 4);
+      tokensUsed = inputTokFinal + outputTokFinal;
       tokenHistory.push({ timestamp: Date.now(), tokens: tokensUsed });
 
     } else {
@@ -159,7 +167,15 @@ async function _generateChatResponse(
       tokensUsed = completion.usage?.total_tokens || Math.ceil((newMessage.length + text.length) / 4);
     }
 
-    const creditsUsed = Math.ceil(tokensUsed * (provider === 'google' ? GOOGLE_RATE : GPT_RATE));
+    // Para GPT, estimar split 40/60 input/output pois não temos separado
+    if (provider !== 'google') {
+      inputTokFinal  = Math.ceil(tokensUsed * 0.4);
+      outputTokFinal = Math.ceil(tokensUsed * 0.6);
+    }
+    const isPro = provider === 'gpt'; // No momento apenas GPT é tarifado fixo ou Pro
+    const creditsUsed = provider === 'google'
+      ? Math.ceil((inputTokFinal * FLASH_RATE.input + outputTokFinal * FLASH_RATE.output) / 1_000_000)
+      : Math.ceil(tokensUsed * 1.3); // GPT-4o-mini fallback
     console.log(`[AI] Request completed. Chat: ${chatId}, Provider: ${provider}, Credits: ${creditsUsed}`);
 
     return { text, tokensUsed, creditsUsed };

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { api, LabProject } from '../lib/api';
-import { FlaskConical, Plus, Clock, User, Trash2, Loader2, Building2 } from 'lucide-react';
+import { FlaskConical, Plus, Clock, User, Trash2, Loader2, Building2, Star } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export default function LabMural() {
@@ -208,6 +208,53 @@ export default function LabMural() {
   );
 }
 
+function StarRating({ 
+  value, 
+  onChange, 
+  readonly = false 
+}: { 
+  value: number; 
+  onChange?: (val: number) => void; 
+  readonly?: boolean;
+}) {
+  const [hover, setHover] = useState(0);
+
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          disabled={readonly}
+          onClick={(e) => {
+            e.stopPropagation();
+            onChange?.(star);
+          }}
+          onMouseEnter={() => !readonly && setHover(star)}
+          onMouseLeave={() => !readonly && setHover(0)}
+          className={cn(
+            "p-0.5 transition-all outline-none",
+            readonly ? "cursor-default" : "cursor-pointer hover:scale-110 active:scale-95"
+          )}
+        >
+          <Star
+            size={14}
+            className={cn(
+              "transition-colors",
+              (hover || value) >= star
+                ? "fill-amber-400 text-amber-400"
+                : "text-zinc-300 dark:text-zinc-700"
+            )}
+          />
+        </button>
+      ))}
+      {readonly && value > 0 && (
+        <span className="ml-1 text-[10px] font-black text-amber-500">{value.toFixed(1)}</span>
+      )}
+    </div>
+  );
+}
+
 function ProjectCard({
   project,
   isOwner,
@@ -269,6 +316,31 @@ function ProjectCard({
             <Clock size={11} />
             {updatedAt}
           </span>
+        </div>
+        
+        {/* Rating Section */}
+        <div className="mt-4 pt-3 border-t border-zinc-50 dark:border-zinc-800 flex items-center justify-between">
+          <StarRating 
+            value={project.avgStars || 0} 
+            readonly={isOwner} 
+            onChange={async (stars) => {
+              if (isOwner) return;
+              try {
+                await api.lab.rateProject(project.id, stars);
+                alert('Avaliação enviada!');
+              } catch (err: any) {
+                alert(err.message || 'Erro ao avaliar.');
+              }
+            }}
+          />
+          {project.feedbackCreator !== 0 && (
+            <div className={cn(
+              "text-[9px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded-md",
+              project.feedbackCreator === 1 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+            )}>
+              {project.feedbackCreator === 1 ? 'Objetivo Atingido' : 'Review Pendente'}
+            </div>
+          )}
         </div>
       </div>
     </div>

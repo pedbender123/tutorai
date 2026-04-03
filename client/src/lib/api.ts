@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:3001');
 
 export interface Institution {
   id: string;
@@ -80,6 +80,8 @@ export interface LabProject {
   description: string;
   htmlContent: string;
   isPublic: number;
+  avgStars: number;
+  feedbackCreator: number;
   createdAt: string;
   updatedAt: string;
   authorName: string;
@@ -174,10 +176,14 @@ class ApiClient {
     getProject: (id: string) => this.get<LabProject & { messages: LabMessage[] }>(`/api/lab/projects/${id}`),
     renameProject: (id: string, title: string) => this.put<{ ok: boolean }>(`/api/lab/projects/${id}/title`, { title }),
     deleteProject: (id: string) => this.delete<{ ok: boolean }>(`/api/lab/projects/${id}`),
-    sendMessage: (id: string, content: string) =>
+    sendMessage: (projectId: string, content: string, modelToUse?: string) =>
       this.post<{ userMessage: LabMessage; assistantMessage: LabMessage; htmlContent: string }>(
-        `/api/lab/projects/${id}/messages`, { content }
+        `/api/lab/projects/${projectId}/messages`, { content, modelToUse }
       ),
+    rateProject: (projectId: string, stars: number) =>
+      this.post<{ ok: boolean }>(`/api/lab/projects/${projectId}/rate`, { stars }),
+    giveFeedback: (projectId: string, type: 'like' | 'dislike') =>
+      this.post<{ ok: boolean }>(`/api/lab/projects/${projectId}/feedback`, { type }),
   };
 
   // Admin Endpoints

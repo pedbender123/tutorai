@@ -153,6 +153,10 @@ if (instCol && instCol.notnull === 1) {
   `);
 }
 
+// SimAgent migration: add new columns idempotently
+import { runSimAgentMigration } from './migrations/add_simagent_columns.js';
+runSimAgentMigration(db);
+
 // Seed Initial Data
 import { DEFAULT_PERSONAS } from './defaultPersonas.js';
 

@@ -3,6 +3,7 @@ import { Outlet, useNavigate, useLocation, useParams, Link } from 'react-router-
 import { useAuth } from '../contexts/AuthContext';
 import { Settings, LogOut, Menu, X, GraduationCap, LayoutGrid, BookOpen, MessageSquare, Plus, ChevronLeft, ChevronRight, FlaskConical } from 'lucide-react';
 import { cn } from '../lib/utils';
+import UpdateNotification from './UpdateNotification';
 import { api, Chat } from '../lib/api';
 
 export default function Layout() {
@@ -35,6 +36,7 @@ export default function Layout() {
 
   return (
     <div className="flex h-screen bg-white dark:bg-zinc-950 overflow-hidden font-sans text-zinc-900 dark:text-zinc-50">
+      <UpdateNotification />
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div

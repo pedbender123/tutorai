@@ -51,6 +51,9 @@ export const login = async (req: Request, res: Response) => {
 export const register = async (req: Request, res: Response) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password) return res.status(400).json({ error: 'Missing fields' });
+  if (!email.toLowerCase().endsWith('@ucs.br')) {
+    return res.status(403).json({ error: 'Apenas e-mails @ucs.br são permitidos para registro público.' });
+  }
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);

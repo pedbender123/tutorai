@@ -1,76 +1,145 @@
-import { generateChatResponse } from './ai.js';
-import db from './db.js';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { buildCodeIndex, patchHtmlWithFunctions } from './codeIndexer.js';
+import { runFlashAnalyst } from './labFlashAnalyst.js';
+import { determineTurnType } from './labTurnRouter.js';
+import { LabProject, EditPlan } from './labAgent.types.js';
+import {
+  LAB_CREATION_SYSTEM_PROMPT,
+  LAB_SURGICAL_SYSTEM_PROMPT,
+  buildFullRewriteUserMessage,
+} from './labPrompts.js';
 
-const LAB_SYSTEM_PROMPT = `Você é um especialista em criar simulações educacionais interativas em HTML/CSS/JavaScript puro.
+// 5 minutos — necessário para gerações complexas
+const REQUEST_TIMEOUT_MS = 300_000;
 
-REGRAS ABSOLUTAS:
-- Gere SEMPRE um arquivo HTML completo e autocontido. Zero dependências externas. Zero CDN. Zero bibliotecas.
-- Use apenas HTML, CSS e JavaScript vanilla.
-- Toda resposta que cria ou modifica a simulação DEVE terminar com exatamente um bloco de código assim:
-  \`\`\`html
-  <!DOCTYPE html>
-  ...
-  \`\`\`
-- O HTML deve ser completo e funcionar como arquivo standalone.
-- Ao receber feedback ou pedido de modificação, edite o HTML existente — não recomece do zero.
-- Descreva em linguagem natural e simples o que foi feito ANTES do bloco HTML. Nunca exiba o código ao aluno como tema principal da resposta.
-- Foco pedagógico: a simulação deve ensinar conceitos de forma interativa e visual.
-- Interface limpa, moderna, responsiva. Use cores, animações suaves e controles intuitivos.
-- Quando o aluno não especificar detalhes, tome decisões criativas que maximizem o valor pedagógico.
+// Preços USD/M tokens → R$ (USD * 5.5) → créditos (1M créditos = R$1)
+// Flash: $0.15 in / $0.60 out per M tokens
+// Pro:   $1.25 in / $10.00 out per M tokens
+const CREDIT_RATES: Record<string, { input: number; output: number }> = {
+  'gemini-2.5-flash': { input: 825_000,   output: 3_300_000  }, // 1M créditos = R$1
+  'gemini-2.5-pro':   { input: 6_875_000, output: 55_000_000 },
+};
 
-FORMATO DE RESPOSTA OBRIGATÓRIO:
-1. Texto explicando o que foi criado/modificado (linguagem natural, entusiasmada)
-2. Bloco \`\`\`html ... \`\`\` com o HTML completo`;
-
-/**
- * Extrai o bloco HTML da resposta da IA e retorna texto limpo + HTML separados.
- */
-function extractHtml(rawResponse: string): { text: string; html: string | null } {
-  const htmlMatch = rawResponse.match(/```html\s*([\s\S]*?)```/i);
-  if (!htmlMatch) {
-    return { text: rawResponse, html: null };
-  }
-  const html = htmlMatch[1].trim();
-  const text = rawResponse.replace(/```html\s*[\s\S]*?```/i, '').trim();
-  return { text, html };
+function calcCredits(model: string, inputTokens: number, outputTokens: number): number {
+  const rates = CREDIT_RATES[model] ?? CREDIT_RATES['gemini-2.5-flash'];
+  return Math.ceil(
+    (inputTokens  * rates.input  / 1_000_000) +
+    (outputTokens * rates.output / 1_000_000)
+  );
 }
 
-export async function generateLabResponse(
-  projectId: string,
-  userId: string,
-  userMessage: string
-): Promise<{ text: string; htmlContent: string | null; tokensUsed: number; creditsUsed: number }> {
-  // Busca histórico de mensagens do projeto
-  const rawHistory = db.prepare(
-    `SELECT role, content FROM lab_messages WHERE projectId = ? ORDER BY createdAt ASC`
-  ).all(projectId) as { role: string; content: string }[];
+function getGenAI(): GoogleGenerativeAI {
+  const key = (process.env.GEMINI_API_KEY || '').trim();
+  if (!key) throw new Error('GEMINI_API_KEY não configurada no servidor.');
+  return new GoogleGenerativeAI(key);
+}
 
-  const history = rawHistory.map(m => ({
-    role: m.role === 'user' ? 'user' : 'model' as 'user' | 'model',
-    content: m.content
-  }));
+export interface SimAgentResult {
+  explanation: string;
+  htmlContent: string;
+  codeIndex: Record<string, any>;
+  editPlan: EditPlan | null;
+  editScope: string;
+  patchedFunctions: string[];
+  tokensUsed: number;
+  creditsUsed: number;
+}
 
-  // Busca HTML atual para incluir no contexto se existir
-  const project = db.prepare(`SELECT htmlContent FROM lab_projects WHERE id = ?`).get(projectId) as { htmlContent: string } | undefined;
-  const currentHtml = project?.htmlContent || '';
+export async function runSimAgent(params: {
+  project: LabProject;
+  userMessage: string;
+  recentMessages: Array<{ role: string; content: string }>;
+  modelToUse?: string;
+}): Promise<SimAgentResult> {
+  const { project, userMessage, recentMessages, modelToUse: requestedModel } = params;
+  const turnType = determineTurnType(project);
+  const reqOpts = { timeout: REQUEST_TIMEOUT_MS };
 
-  // Se já tem HTML, injeta como contexto inicial para o modelo não perder o código
-  let effectiveMessage = userMessage;
-  if (currentHtml && history.length > 0) {
-    effectiveMessage = `${userMessage}\n\n[Código HTML atual do projeto para referência:\n\`\`\`html\n${currentHtml}\n\`\`\`]`;
-  }
+  // ───────────────────────────────────────────
+  // STAGE 1: Analyst (Flash)
+  // ───────────────────────────────────────────
+  const { plan: editPlan, inputTokens: flashIn, outputTokens: flashOut } =
+    await runFlashAnalyst({
+      genAI: getGenAI(),
+      projectContext: project.projectContext,
+      codeIndex: project.codeIndex,
+      recentMessages,
+      userMessage,
+      timeout: REQUEST_TIMEOUT_MS,
+    });
 
-  const result = await generateChatResponse(
-    history,
-    effectiveMessage,
-    // Passa um chatId fictício — o labAI não usa chatId para buscar persona (não tem)
-    // Precisamos de uma abordagem diferente: usar overrideSystemPrompt
-    projectId,
-    userId,
-    'google',
-    LAB_SYSTEM_PROMPT
+  let totalCredits = calcCredits('gemini-2.5-flash', flashIn, flashOut);
+  let totalTokens = flashIn + flashOut;
+
+  // ───────────────────────────────────────────
+  // STAGE 2: Coder (Requested Model or Auto)
+  // ───────────────────────────────────────────
+  const modelToUse = requestedModel || (turnType === 'creation' ? 'gemini-2.5-pro' : 'gemini-2.5-flash');
+  const model = getGenAI().getGenerativeModel(
+    { 
+      model: modelToUse, 
+      systemInstruction: editPlan.editScope === 'surgical' ? LAB_SURGICAL_SYSTEM_PROMPT : LAB_CREATION_SYSTEM_PROMPT 
+    },
+    reqOpts
   );
 
-  const { text, html } = extractHtml(result.text);
-  return { text, htmlContent: html, tokensUsed: result.tokensUsed, creditsUsed: result.creditsUsed };
+  let coderPrompt = '';
+  if (editPlan.editScope === 'surgical') {
+    const chunksText = Object.entries(editPlan.extractedCode)
+      .map(([name, code]) => `### Função atual: ${name}\n\`\`\`javascript\n${code}\n\`\`\``)
+      .join('\n\n');
+
+    coderPrompt = `## Intenção do usuário\n${editPlan.userIntent}\n\n## Funções a modificar\n${chunksText}\n\n## Instruções\n${editPlan.editInstructions}\n\nRetorne os blocos \`\`\`javascript:nomeDaFuncao modificados.`;
+  } else {
+    coderPrompt = buildFullRewriteUserMessage(editPlan, project.projectContext);
+  }
+
+  const result = await model.generateContent(coderPrompt);
+  const responseText = result.response.text();
+  
+  const coderIn  = result.response.usageMetadata?.promptTokenCount    ?? 0;
+  const coderOut = result.response.usageMetadata?.candidatesTokenCount ?? 0;
+  
+  totalTokens += coderIn + coderOut;
+  totalCredits += calcCredits(modelToUse, coderIn, coderOut);
+
+  // ───────────────────────────────────────────
+  // STAGE 3: Post-Processing & Sanity Check
+  // ───────────────────────────────────────────
+  let finalHtml = project.htmlContent;
+  let finalExplanation = '';
+  let patchedFunctions: string[] = [];
+
+  if (editPlan.editScope === 'surgical') {
+    const fnBlockRegex = /```javascript:(\w+)\n([\s\S]*?)\n```/g;
+    const newFunctions: { [name: string]: string } = {};
+    let match;
+    while ((match = fnBlockRegex.exec(responseText)) !== null) {
+      newFunctions[match[1]] = match[2];
+    }
+    finalHtml = patchHtmlWithFunctions(project.htmlContent, project.codeIndex, newFunctions);
+    patchedFunctions = Object.keys(newFunctions);
+    finalExplanation = responseText.split('```')[0].trim() || `Modificadas: ${patchedFunctions.join(', ')}.`;
+  } else {
+    const htmlMatch = responseText.match(/```html\n([\s\S]*?)\n```/);
+    finalHtml = htmlMatch ? htmlMatch[1] : project.htmlContent;
+    finalExplanation = responseText.split('```')[0].trim();
+  }
+
+  // Remove excess reasoning text to save tokens in DB
+  finalExplanation = finalExplanation
+    .replace(/RACIOCÍNIO:[\s\S]*?VISUAL & UX:[\s\S]*?CÓDIGO:/, '')
+    .replace(/\*\*RACIOCÍNIO ESTRUTURADO\*\*[\s\S]*?\*\*AUTO-REVISÃO\*\*[\s\S]*?/, '')
+    .trim();
+
+  return {
+    explanation: finalExplanation || 'Simulação atualizada.',
+    htmlContent: finalHtml,
+    codeIndex: buildCodeIndex(finalHtml),
+    editPlan,
+    editScope: editPlan.editScope,
+    patchedFunctions,
+    tokensUsed: totalTokens,
+    creditsUsed: totalCredits,
+  };
 }
