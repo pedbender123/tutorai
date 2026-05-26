@@ -48,11 +48,21 @@ export const login = async (req: Request, res: Response) => {
   res.json({ user, token });
 };
 
-export const register = async (req: Request, res: Response) => {
-  const { name, email, password } = req.body;
+export const register = async (req: AuthRequest, res: Response) => {
+  const { name, email, password, inviteCode } = req.body;
   if (!name || !email || !password) return res.status(400).json({ error: 'Missing fields' });
-  if (!email.toLowerCase().endsWith('@ucs.br')) {
-    return res.status(403).json({ error: 'Apenas e-mails @ucs.br são permitidos para registro público.' });
+
+  const isAdminCreation = req.user && (req.user.role === 'admin' || (req.user as any).isAdmin);
+
+  if (!isAdminCreation) {
+    if (!inviteCode) {
+      return res.status(403).json({ error: 'O cadastro só é permitido através de um convite/QR code de sala de aula.' });
+    }
+    // Verificar se a sala existe
+    const classroom = db.prepare('SELECT * FROM classrooms WHERE id = ?').get(inviteCode) as any;
+    if (!classroom) {
+      return res.status(400).json({ error: 'Código de convite inválido ou sala não encontrada.' });
+    }
   }
 
   try {
@@ -64,8 +74,8 @@ export const register = async (req: Request, res: Response) => {
     const role = isAdmin ? 'admin' : 'user';
 
     db.prepare(`
-      INSERT INTO users (id, name, email, password, role, isAdmin, lastResetProfessor, lastResetTutor, lastResetColega)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO users (id, name, email, password, role, isAdmin, lastResetProfessor, lastResetTutor, lastResetColega, classroomId)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       userId, 
       name, 
@@ -75,15 +85,22 @@ export const register = async (req: Request, res: Response) => {
       isAdmin,
       new Date().toISOString(), 
       new Date().toISOString(), 
-      new Date().toISOString()
+      new Date().toISOString(),
+      inviteCode || null
     );
 
-    // Automatic Provisioning by Domain
-    const domain = '@' + email.split('@')[1];
-    const institution = db.prepare('SELECT id FROM institutions WHERE domain = ?').get(domain) as { id: string };
-    
-    if (institution) {
-      db.prepare('INSERT INTO user_institutions (userId, institutionId) VALUES (?, ?)').run(userId, institution.id);
+    // Automatic Provisioning by Classroom or Domain fallback
+    if (inviteCode) {
+      const classroom = db.prepare('SELECT * FROM classrooms WHERE id = ?').get(inviteCode) as any;
+      if (classroom) {
+        db.prepare('INSERT OR IGNORE INTO user_institutions (userId, institutionId) VALUES (?, ?)').run(userId, classroom.institutionId);
+      }
+    } else {
+      const domain = '@' + email.split('@')[1];
+      const institution = db.prepare('SELECT id FROM institutions WHERE domain = ?').get(domain) as { id: string };
+      if (institution) {
+        db.prepare('INSERT OR IGNORE INTO user_institutions (userId, institutionId) VALUES (?, ?)').run(userId, institution.id);
+      }
     }
 
     const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId) as any;

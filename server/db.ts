@@ -128,6 +128,24 @@ db.exec(`
   );
 `);
 
+// Create classrooms table
+db.exec(`
+  CREATE TABLE IF NOT EXISTS classrooms (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    institutionId TEXT NOT NULL,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (institutionId) REFERENCES institutions(id) ON DELETE CASCADE
+  );
+`);
+
+// Migration: add classroomId to users table if not exists
+const userCols = db.prepare("PRAGMA table_info(users)").all() as any[];
+const classroomIdCol = userCols.find((c: any) => c.name === 'classroomId');
+if (!classroomIdCol) {
+  db.exec(`ALTER TABLE users ADD COLUMN classroomId TEXT REFERENCES classrooms(id) ON DELETE SET NULL;`);
+}
+
 // Migration: make lab_projects.institutionId nullable (recreate if still NOT NULL)
 const labCols = db.prepare("PRAGMA table_info(lab_projects)").all() as any[];
 const instCol = labCols.find((c: any) => c.name === 'institutionId');
@@ -153,6 +171,39 @@ if (instCol && instCol.notnull === 1) {
   `);
 }
 
+// Add imageUrl to personas if not already present
+const personaCols = db.prepare("PRAGMA table_info(personas)").all() as any[];
+if (!personaCols.find((c: any) => c.name === 'imageUrl')) {
+  db.exec("ALTER TABLE personas ADD COLUMN imageUrl TEXT DEFAULT ''");
+}
+
+// Security test tables
+db.exec(`
+  CREATE TABLE IF NOT EXISTS security_test_runs (
+    id TEXT PRIMARY KEY,
+    totalTests INTEGER DEFAULT 0,
+    passed INTEGER DEFAULT 0,
+    failed INTEGER DEFAULT 0,
+    warnings INTEGER DEFAULT 0,
+    errors INTEGER DEFAULT 0,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS security_test_results (
+    id TEXT PRIMARY KEY,
+    runId TEXT NOT NULL,
+    testId TEXT NOT NULL,
+    name TEXT NOT NULL,
+    category TEXT NOT NULL,
+    severity TEXT NOT NULL,
+    status TEXT NOT NULL,
+    message TEXT,
+    details TEXT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (runId) REFERENCES security_test_runs(id) ON DELETE CASCADE
+  );
+`);
+
 // SimAgent migration: add new columns idempotently
 import { runSimAgentMigration } from './migrations/add_simagent_columns.js';
 runSimAgentMigration(db);
@@ -164,7 +215,7 @@ import { DEFAULT_PERSONAS } from './defaultPersonas.js';
 db.prepare(`
   INSERT OR IGNORE INTO users (id, name, email, password, role, isAdmin)
   VALUES (?, ?, ?, ?, ?, ?)
-`).run('system', 'System', 'system@tutorai.edu', 'internal', 'admin', 1);
+`).run('system', 'System', 'system@scafi.edu', 'internal', 'admin', 1);
 
 // Seed Institution (UCS)
 db.prepare(`

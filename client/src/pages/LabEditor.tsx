@@ -22,8 +22,7 @@ export default function LabEditor() {
   const [previewKey, setPreviewKey] = useState(0);
   const [chatHidden, setChatHidden] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
-  const [loadingStage, setLoadingStage] = useState<'analyzing' | 'drafting' | 'coding' | 'reviewing' | null>(null);
-  const [modelChoice, setModelChoice] = useState<'gemini-2.5-flash' | 'gemini-2.5-pro'>('gemini-2.5-flash');
+  const [loadingStage, setLoadingStage] = useState<'thinking' | 'coding' | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -58,17 +57,9 @@ export default function LabEditor() {
     const currentInput = input;
     setInput('');
     setLoading(true);
-    setLoadingStage('analyzing');
+    setLoadingStage('thinking');
 
-    // Simulate mini-robot sequence
-    const stageTimer = setInterval(() => {
-      setLoadingStage(prev => {
-        if (prev === 'analyzing') return 'drafting';
-        if (prev === 'drafting') return 'coding';
-        if (prev === 'coding') return 'reviewing';
-        return prev;
-      });
-    }, 2500);
+    const stageTimer = setTimeout(() => setLoadingStage('coding'), 3000);
 
     const tempId = crypto.randomUUID();
     const optimisticMsg: LabMessage = {
@@ -84,7 +75,7 @@ export default function LabEditor() {
     setMessages(prev => [...prev, optimisticMsg]);
 
     try {
-      const { userMessage, assistantMessage, htmlContent: newHtml } = await api.lab.sendMessage(projectId!, currentInput, modelChoice);
+      const { userMessage, assistantMessage, htmlContent: newHtml } = await api.lab.sendMessage(projectId!, currentInput);
       setMessages(prev => [...prev.filter(m => m.id !== tempId), userMessage, assistantMessage]);
       if (newHtml !== htmlContent) {
         setHtmlContent(newHtml);
@@ -97,8 +88,7 @@ export default function LabEditor() {
     } finally {
       setLoading(false);
       setLoadingStage(null);
-      // @ts-ignore
-      clearInterval(stageTimer);
+      clearTimeout(stageTimer);
     }
   };
 
@@ -199,7 +189,7 @@ export default function LabEditor() {
                 )}
               </div>
             )}
-            <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] animate-pulse">Antigravity Mode</p>
+
           </div>
         </div>
 
@@ -226,31 +216,19 @@ export default function LabEditor() {
               <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
                 <Bot size={16} />
               </div>
-              <div className="bg-zinc-100 dark:bg-zinc-800/50 rounded-2xl rounded-tl-sm px-4 py-3 flex flex-col gap-2 min-w-[200px]">
+              <div className="bg-zinc-100 dark:bg-zinc-800/50 rounded-2xl rounded-tl-sm px-4 py-3 flex flex-col gap-2 min-w-[180px]">
                 <div className="flex items-center gap-2">
                   <div className="flex gap-1">
-                    <span className={cn("w-1.5 h-1.5 rounded-full animate-bounce", loadingStage === 'analyzing' ? "bg-primary" : "bg-primary/30")} />
-                    <span className={cn("w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.1s]", loadingStage === 'drafting' ? "bg-primary" : "bg-primary/30")} />
-                    <span className={cn("w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.2s]", loadingStage === 'coding' ? "bg-primary" : "bg-primary/30")} />
-                    <span className={cn("w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.3s]", loadingStage === 'reviewing' ? "bg-primary" : "bg-primary/30")} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
                   </div>
                   <span className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">
-                    {loadingStage === 'analyzing' && 'Analisando pedido...'}
-                    {loadingStage === 'drafting' && 'Esboçando lógica...'}
-                    {loadingStage === 'coding' && 'Codando simulação...'}
-                    {loadingStage === 'reviewing' && 'Revisando código...'}
+                    {loadingStage === 'coding' ? 'Gerando código...' : 'Pensando...'}
                   </span>
                 </div>
-                
-                {/* Progress bar visual */}
                 <div className="w-full h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
-                  <div className={cn(
-                    "h-full bg-primary transition-all duration-700 ease-in-out",
-                    loadingStage === 'analyzing' && "w-[15%]",
-                    loadingStage === 'drafting' && "w-[40%]",
-                    loadingStage === 'coding' && "w-[75%]",
-                    loadingStage === 'reviewing' && "w-[95%]"
-                  )} />
+                  <div className={cn("h-full bg-primary transition-all duration-1000 ease-in-out", loadingStage === 'coding' ? "w-[80%]" : "w-[20%]")} />
                 </div>
               </div>
             </div>
@@ -261,61 +239,28 @@ export default function LabEditor() {
       {/* Input Area: Premium Toolbar & Integrated Textarea */}
       <div className="p-4 bg-zinc-50 dark:bg-zinc-950/50 border-t border-zinc-100 dark:border-zinc-800 shrink-0">
         <div className="max-w-3xl mx-auto space-y-3">
-          {/* Controls: Model Selection and Status */}
-          <div className="flex items-center justify-between px-1">
-            <div className="flex items-center bg-zinc-200/50 dark:bg-zinc-800/50 p-1 rounded-xl w-fit">
-              <button
-                onClick={() => setModelChoice('gemini-2.5-flash')}
-                className={cn(
-                  "px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all",
-                  modelChoice === 'gemini-2.5-flash' 
-                    ? "bg-white dark:bg-zinc-700 text-primary shadow-sm" 
-                    : "text-zinc-400 hover:text-zinc-600"
-                )}
-              >
-                Flash 2.5
-              </button>
-              <button
-                onClick={() => setModelChoice('gemini-2.5-pro')}
-                className={cn(
-                  "px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all",
-                  modelChoice === 'gemini-2.5-pro' 
-                    ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-[0_2px_10px_rgba(245,158,11,0.3)]" 
-                    : "text-zinc-400 hover:text-zinc-600"
-                )}
-              >
-                Pro 2.5 ✨
-              </button>
+          {/* Feedback buttons */}
+          {isOwner && (
+            <div className="flex justify-end px-1">
+              <div className="flex items-center bg-zinc-100 dark:bg-zinc-800 rounded-lg p-0.5 border border-zinc-200 dark:border-zinc-700">
+                <button
+                  onClick={async () => { await api.lab.giveFeedback(projectId!, 'like'); alert('Feedback enviado! 👍'); }}
+                  className="p-1.5 rounded-md hover:bg-white dark:hover:bg-zinc-700 text-zinc-400 hover:text-green-600 transition-all"
+                  title="Atingiu o objetivo"
+                >
+                  <ThumbsUp size={12} />
+                </button>
+                <div className="w-[1px] h-3 bg-zinc-200 dark:bg-zinc-700 mx-0.5" />
+                <button
+                  onClick={async () => { await api.lab.giveFeedback(projectId!, 'dislike'); alert('Feedback enviado! 👎'); }}
+                  className="p-1.5 rounded-md hover:bg-white dark:hover:bg-zinc-700 text-zinc-400 hover:text-red-500 transition-all"
+                  title="Não atingiu o objetivo"
+                >
+                  <ThumbsDown size={12} />
+                </button>
+              </div>
             </div>
-
-            <div className="flex items-center gap-2">
-              {isOwner && (
-                <div className="flex items-center bg-zinc-100 dark:bg-zinc-800 rounded-lg p-0.5 border border-zinc-200 dark:border-zinc-700">
-                  <button 
-                    onClick={async () => {
-                      await api.lab.giveFeedback(projectId!, 'like');
-                      alert('Feedback enviado! 👍');
-                    }}
-                    className="p-1.5 rounded-md hover:bg-white dark:hover:bg-zinc-700 text-zinc-400 hover:text-green-600 transition-all"
-                    title="Atingiu o objetivo"
-                  >
-                    <ThumbsUp size={12} />
-                  </button>
-                  <div className="w-[1px] h-3 bg-zinc-200 dark:bg-zinc-700 mx-0.5" />
-                  <button 
-                    onClick={async () => {
-                      await api.lab.giveFeedback(projectId!, 'dislike');
-                      alert('Feedback enviado! 👎');
-                    }}
-                    className="p-1.5 rounded-md hover:bg-white dark:hover:bg-zinc-700 text-zinc-400 hover:text-red-500 transition-all"
-                    title="Não atingiu o objetivo"
-                  >
-                    <ThumbsDown size={12} />
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
+          )}
 
           <form onSubmit={handleSend} className="relative flex items-end gap-2">
             <div className="relative flex-1 group">
@@ -346,7 +291,7 @@ export default function LabEditor() {
           <div className="flex items-center justify-center gap-2 px-1">
              <div className="h-[1px] flex-1 bg-zinc-100 dark:bg-zinc-800" />
              <p className="text-[9px] font-black text-zinc-300 dark:text-zinc-600 uppercase tracking-[0.3em] whitespace-nowrap">
-              Mini Cloud Agent · {modelChoice === 'gemini-2.5-pro' ? 'Raciocínio Pro' : 'Processamento Flash'}
+              Lab · IA Generativa
             </p>
             <div className="h-[1px] flex-1 bg-zinc-100 dark:bg-zinc-800" />
           </div>

@@ -11,20 +11,17 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ACCENT_COLORS = {
-  blue: '#3b82f6',
-  purple: '#a855f7',
-  yellow: '#eab308',
-  white: '#ffffff', // Will be handled dynamically for text contrast
-  green: '#22c55e',
-  red: '#ef4444',
-  pink: '#ec4899',
+  cyberSky: '#38bdf8', // Cyber Sky (Acento de IA)
+  quantumGreen: '#10b981', // Quantum Green (Acento de Ciência)
+  auraViolet: '#a78bfa', // Aura Violet (Acento de Insight)
+  white: '#ffffff',
 };
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { userData, updateUserData } = useAuth();
 
   const themeMode = userData?.themeMode || 'dark';
-  const accentColor = userData?.accentColor || 'blue';
+  const accentColor = userData?.accentColor || 'cyberSky';
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -37,7 +34,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Handle accent color
-    const hexColor = ACCENT_COLORS[accentColor as keyof typeof ACCENT_COLORS] || ACCENT_COLORS.blue;
+    const hexColor = ACCENT_COLORS[accentColor as keyof typeof ACCENT_COLORS] || ACCENT_COLORS.cyberSky;
     root.style.setProperty('--color-primary', hexColor);
     
     // If accent is white in light mode, it might be invisible. Let's make it black in light mode.

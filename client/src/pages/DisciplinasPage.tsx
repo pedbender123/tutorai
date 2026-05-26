@@ -102,7 +102,7 @@ export default function DisciplinasPage() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">Gestão de Disciplinas</h1>
-          <p className="text-zinc-500 dark:text-zinc-400 mt-2 text-lg">Organize os conteúdos acadêmicos e vincule-os aos tutores.</p>
+          <p className="text-zinc-500 dark:text-zinc-400 mt-2 text-lg">Organize os conteúdos acadêmicos e vincule-os aos professores.</p>
         </div>
         {userData?.isAdmin && (
           <button

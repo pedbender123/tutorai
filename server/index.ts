@@ -102,6 +102,44 @@ app.delete('/api/admin/users/:userId/institutions/:institutionId', auth.authenti
   res.json({ success: true });
 });
 
+// Admin: Classrooms Management
+app.get('/api/admin/institutions/:institutionId/classrooms', auth.authenticate, requireAdmin, (req, res) => {
+  const { institutionId } = req.params;
+  const classrooms = db.prepare('SELECT * FROM classrooms WHERE institutionId = ? ORDER BY name ASC').all(institutionId);
+  res.json(classrooms);
+});
+
+app.post('/api/admin/institutions/:institutionId/classrooms', auth.authenticate, requireAdmin, (req, res) => {
+  const { institutionId } = req.params;
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ error: 'Nome da sala é obrigatório' });
+  const id = crypto.randomUUID();
+  db.prepare('INSERT INTO classrooms (id, name, institutionId) VALUES (?, ?, ?)').run(id, name, institutionId);
+  res.json({ id, name, institutionId });
+});
+
+app.patch('/api/admin/classrooms/:classroomId', auth.authenticate, requireAdmin, (req, res) => {
+  const { classroomId } = req.params;
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ error: 'Nome da sala é obrigatório' });
+  db.prepare('UPDATE classrooms SET name = ? WHERE id = ?').run(name, classroomId);
+  res.json({ id: classroomId, name });
+});
+
+app.delete('/api/admin/classrooms/:classroomId', auth.authenticate, requireAdmin, (req, res) => {
+  const { classroomId } = req.params;
+  db.prepare('DELETE FROM classrooms WHERE id = ?').run(classroomId);
+  res.json({ success: true });
+});
+
+// Public: Get invite info
+app.get('/api/auth/invite/:inviteCode', (req, res) => {
+  const { inviteCode } = req.params;
+  const classroom = db.prepare('SELECT c.name as className, i.name as instName FROM classrooms c JOIN institutions i ON c.institutionId = i.id WHERE c.id = ?').get(inviteCode) as any;
+  if (!classroom) return res.status(404).json({ error: 'Código de convite inválido ou sala não encontrada.' });
+  res.json(classroom);
+});
+
 // Personas Routes (Filtered by user institutions)
 app.get('/api/personas', auth.authenticate, (req: any, res) => {
   // Admins see everything; regular users see public + their institutions
@@ -133,14 +171,14 @@ app.get('/api/personas', auth.authenticate, (req: any, res) => {
 });
 
 app.post('/api/personas', auth.authenticate, requireAdmin, (req: any, res) => {
-  const { nome, descricao, saudacao, documentoPedagogico, isGenerico, institutionId } = req.body;
+  const { nome, descricao, saudacao, documentoPedagogico, isGenerico, institutionId, imageUrl } = req.body;
   if (!isGenerico && !institutionId) return res.status(400).json({ error: 'Instituição é obrigatória para este tipo de persona.' });
 
   const id = crypto.randomUUID();
   db.prepare(`
-    INSERT INTO personas (id, userId, institutionId, nome, descricao, saudacao, documentoPedagogico, isGenerico)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(id, req.user.id, isGenerico ? null : institutionId, nome, descricao, saudacao, documentoPedagogico, isGenerico ? 1 : 0);
+    INSERT INTO personas (id, userId, institutionId, nome, descricao, saudacao, documentoPedagogico, isGenerico, imageUrl)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(id, req.user.id, isGenerico ? null : institutionId, nome, descricao, saudacao, documentoPedagogico, isGenerico ? 1 : 0, imageUrl || '');
 
   const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id);
   res.json(persona);
@@ -148,12 +186,12 @@ app.post('/api/personas', auth.authenticate, requireAdmin, (req: any, res) => {
 
 app.put('/api/personas/:id', auth.authenticate, requireAdmin, (req: any, res) => {
   const { id } = req.params;
-  const { nome, descricao, saudacao, documentoPedagogico, isGenerico, institutionId } = req.body;
+  const { nome, descricao, saudacao, documentoPedagogico, isGenerico, institutionId, imageUrl } = req.body;
   db.prepare(`
     UPDATE personas
-    SET nome = ?, descricao = ?, saudacao = ?, documentoPedagogico = ?, isGenerico = ?, institutionId = ?
+    SET nome = ?, descricao = ?, saudacao = ?, documentoPedagogico = ?, isGenerico = ?, institutionId = ?, imageUrl = ?
     WHERE id = ?
-  `).run(nome, descricao, saudacao, documentoPedagogico, isGenerico ? 1 : 0, isGenerico ? null : (institutionId || null), id);
+  `).run(nome, descricao, saudacao, documentoPedagogico, isGenerico ? 1 : 0, isGenerico ? null : (institutionId || null), imageUrl || '', id);
   const persona = db.prepare(`
     SELECT p.*, i.name as institutionName
     FROM personas p LEFT JOIN institutions i ON p.institutionId = i.id
@@ -597,6 +635,25 @@ app.post('/api/lab/projects/:id/feedback', auth.authenticate, (req: any, res) =>
   db.prepare('UPDATE lab_projects SET feedback_creator = ? WHERE id = ?').run(value, projectId);
 
   res.json({ ok: true });
+});
+
+// ==================== SECURITY ROUTES (Admin only) ====================
+
+app.get('/api/admin/security/runs', auth.authenticate, requireAdmin, (req, res) => {
+  const runs = db.prepare(
+    'SELECT * FROM security_test_runs ORDER BY createdAt DESC LIMIT 20'
+  ).all();
+  res.json(runs);
+});
+
+app.get('/api/admin/security/runs/:runId', auth.authenticate, requireAdmin, (req, res) => {
+  const { runId } = req.params;
+  const run = db.prepare('SELECT * FROM security_test_runs WHERE id = ?').get(runId);
+  if (!run) return res.status(404).json({ error: 'Run not found' });
+  const results = db.prepare(
+    'SELECT * FROM security_test_results WHERE runId = ? ORDER BY severity ASC'
+  ).all(runId);
+  res.json({ ...run as any, results });
 });
 
 // Serve static files in production

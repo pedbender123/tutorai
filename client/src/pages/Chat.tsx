@@ -1,315 +1,407 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Send, Loader2, User as UserIcon, GraduationCap, Bot, BookOpen, Plus } from 'lucide-react';
+import { Send, Loader2, User as UserIcon, Plus, ChevronDown, Check } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { cn } from '../lib/utils';
 import { api, Chat as ChatType, Message, Persona, Disciplina } from '../lib/api';
-import NewChatDialog from '../components/chat/NewChatDialog';
+
+function ProfessorAvatar({ persona, size = 'md' }: { persona: Persona | null; size?: 'sm' | 'md' | 'lg' }) {
+  const dim = size === 'sm' ? 'w-8 h-8' : size === 'lg' ? 'w-14 h-14' : 'w-10 h-10';
+  const radius = size === 'lg' ? 'rounded-2xl' : 'rounded-xl';
+  if (persona?.imageUrl) {
+    return (
+      <img
+        src={persona.imageUrl}
+        alt={persona.nome}
+        className={cn(dim, radius, 'object-cover shrink-0 border border-zinc-200 dark:border-zinc-700')}
+      />
+    );
+  }
+  const initial = persona?.nome?.charAt(0).toUpperCase() || '?';
+  return (
+    <div className={cn(dim, radius, 'bg-primary/10 flex items-center justify-center shrink-0 text-primary font-black border border-primary/20', size === 'sm' ? 'text-xs' : 'text-base')}>
+      {initial}
+    </div>
+  );
+}
 
 export default function Chat() {
- const { chatId } = useParams<{ chatId: string }>();
- const navigate = useNavigate();
- const { user, userData, refreshUserData } = useAuth();
+  const { chatId } = useParams<{ chatId: string }>();
+  const navigate = useNavigate();
+  const { user, refreshUserData } = useAuth();
 
- const [chat, setChat] = useState<ChatType | null>(null);
- const [persona, setPersona] = useState<Persona | null>(null);
- const [disciplina, setDisciplina] = useState<Disciplina | null>(null);
- const [messages, setMessages] = useState<Message[]>([]);
- const [input, setInput] = useState('');
- const [loading, setLoading] = useState(false);
- const [initializing, setInitializing] = useState(false);
- const [isNewChatOpen, setIsNewChatOpen] = useState(false);
- const provider = 'google' as const; // GPT desabilitado temporariamente
+  const [chat, setChat] = useState<ChatType | null>(null);
+  const [allChats, setAllChats] = useState<ChatType[]>([]);
+  const [persona, setPersona] = useState<Persona | null>(null);
+  const [allPersonas, setAllPersonas] = useState<Persona[]>([]);
+  const [allDisciplinas, setAllDisciplinas] = useState<Disciplina[]>([]);
+  const [selectedProfessorForNewChat, setSelectedProfessorForNewChat] = useState<Persona | null>(null);
+  const [disciplina, setDisciplina] = useState<Disciplina | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [initializing, setInitializing] = useState(false);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
 
- const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const switcherRef = useRef<HTMLDivElement>(null);
 
- const scrollToBottom = () => {
- messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
- };
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (switcherRef.current && !switcherRef.current.contains(e.target as Node)) {
+        setSwitcherOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
- // Load chat data
- useEffect(() => {
- if (!chatId || !user) {
- setChat(null);
- setMessages([]);
- return;
- }
+  useEffect(() => {
+    if (!user) return;
+    api.get<ChatType[]>('/api/chats').then(setAllChats).catch(console.error);
+    api.get<Persona[]>('/api/personas').then(setAllPersonas).catch(console.error);
+    api.get<Disciplina[]>('/api/disciplinas').then(setAllDisciplinas).catch(console.error);
+  }, [user]);
 
- const loadChat = async () => {
- setInitializing(true);
- try {
- const chats = await api.get<ChatType[]>('/api/chats');
- const currentChat = chats.find(c => c.id === chatId);
- 
- if (!currentChat) {
- navigate('/mural');
- return;
- }
+  useEffect(() => {
+    if (!chatId || !user) {
+      setChat(null);
+      setMessages([]);
+      return;
+    }
+    const loadChat = async () => {
+      setInitializing(true);
+      try {
+        const [chats, msgs, personas, disc] = await Promise.all([
+          api.get<ChatType[]>('/api/chats'),
+          api.get<Message[]>(`/api/chats/${chatId}/messages`),
+          api.get<Persona[]>('/api/personas'),
+          api.get<Disciplina[]>('/api/disciplinas').catch(() => [] as Disciplina[]),
+        ]);
+        setAllChats(chats);
+        setAllPersonas(personas);
+        setAllDisciplinas(disc);
+        const currentChat = chats.find(c => c.id === chatId);
+        if (!currentChat) { navigate('/chat'); return; }
+        setChat(currentChat);
+        setMessages(msgs);
+        setPersona(personas.find(p => p.id === currentChat.personaDbId) || null);
+        setDisciplina(currentChat.disciplinaId ? disc.find(d => d.id === currentChat.disciplinaId) || null : null);
+      } catch {
+        navigate('/chat');
+      } finally {
+        setInitializing(false);
+      }
+    };
+    loadChat();
+  }, [chatId, user, navigate]);
 
- setChat(currentChat);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
- // Fetch persona and messages in parallel
- const [msgs, prs, dcs] = await Promise.all([
- api.get<Message[]>(`/api/chats/${chatId}/messages`),
- api.get<Persona[]>('/api/personas'),
- currentChat.disciplinaId ? api.get<Disciplina[]>('/api/disciplinas') : Promise.resolve([])
- ]);
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || loading || !chatId || !user) return;
+    const currentInput = input;
+    setInput('');
+    setLoading(true);
+    const tempId = crypto.randomUUID();
+    setMessages(prev => [...prev, { id: tempId, chatId, userId: user.id, role: 'user', content: currentInput, createdAt: new Date().toISOString(), tokensUsed: 0, creditsUsed: 0 }]);
+    try {
+      const { userMessage, modelMessage } = await api.post<any>(`/api/chats/${chatId}/messages`, { content: currentInput, provider: 'google' });
+      setMessages(prev => [...prev.filter(m => m.id !== tempId), userMessage, modelMessage]);
+      await refreshUserData();
+    } catch (error: any) {
+      alert(error.message || 'Erro ao enviar mensagem.');
+      setMessages(prev => prev.filter(m => m.id !== tempId));
+      setInput(currentInput);
+    } finally {
+      setLoading(false);
+    }
+  };
 
- setMessages(msgs);
- setPersona(prs.find(p => p.id === currentChat.personaDbId) || null);
- if (currentChat.disciplinaId) {
- setDisciplina(dcs.find(d => d.id === currentChat.disciplinaId) || null);
- } else {
- setDisciplina(null);
- }
+  const onStartChat = async (personaId: string, disciplinaId?: string) => {
+    try {
+      const { chat: newChat } = await api.post<any>('/api/chats', { professorId: personaId, disciplinaId });
+      setAllChats(prev => [newChat, ...prev]);
+      setSelectedProfessorForNewChat(null);
+      navigate(`/chat/${newChat.id}`);
+    } catch {
+      alert('Erro ao iniciar chat');
+    }
+  };
 
- } catch (err) {
- console.error('Failed to load chat:', err);
- navigate('/mural');
- } finally {
- setInitializing(false);
- }
- };
+  // Empty state — no chat selected
+  if (!chatId && !initializing) {
+    const vinculadas = selectedProfessorForNewChat
+      ? allDisciplinas.filter(d => d.professores_vinculados?.includes(selectedProfessorForNewChat.id))
+      : [];
 
- loadChat();
- }, [chatId, user, navigate]);
+    return (
+      <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-950">
+        {/* Top bar */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-150 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-10 shrink-0">
+          <p className="text-sm font-black text-slate-400 uppercase tracking-widest">
+            {selectedProfessorForNewChat ? 'Selecionar Disciplina' : 'Chat'}
+          </p>
+        </div>
 
- useEffect(() => {
- scrollToBottom();
- }, [messages]);
+        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+          <div className="max-w-4xl mx-auto space-y-6">
+            {!selectedProfessorForNewChat ? (
+              // Seleção de Professores
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-250">
+                <div className="text-center md:text-left max-w-xl">
+                  <h2 className="text-2xl font-black text-slate-900 dark:text-white font-display">Escolha um Professor</h2>
+                  <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">
+                    Inicie uma conversa direcionada com um dos nossos professores virtuais especializados.
+                  </p>
+                </div>
 
- const handleSend = async (e: React.FormEvent) => {
- e.preventDefault();
- if (!input.trim() || loading || !chatId || !user) return;
+                <div className="grid md:grid-cols-2 gap-4">
+                  {allPersonas.map(p => {
+                    const discs = allDisciplinas.filter(d => d.professores_vinculados?.includes(p.id));
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => {
+                          if (p.isGenerico || discs.length === 0) {
+                            onStartChat(p.id);
+                          } else if (discs.length === 1) {
+                            onStartChat(p.id, discs[0].id);
+                          } else {
+                            setSelectedProfessorForNewChat(p);
+                          }
+                        }}
+                        className="flex gap-4 p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 text-left hover:border-primary/50 dark:hover:border-primary/40 hover:shadow-lg dark:hover:shadow-primary/5 transition-all group active:scale-[0.99]"
+                      >
+                        <ProfessorAvatar persona={p} size="lg" />
+                        <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                          <div>
+                            <p className="text-base font-black text-slate-850 dark:text-slate-250 truncate group-hover:text-primary transition-colors leading-tight">
+                              {p.nome}
+                            </p>
+                            <p className="text-xs text-slate-550 dark:text-slate-400 mt-1.5 line-clamp-2">
+                              {p.descricao}
+                            </p>
+                          </div>
+                          
+                          <div className="flex items-center gap-1.5 mt-3">
+                            <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400">
+                              {p.isGenerico ? 'Generalista' : discs.length === 1 ? '1 Disciplina' : `${discs.length} Disciplinas`}
+                            </span>
+                            {discs.length > 0 && !p.isGenerico && (
+                              <span className="text-[10px] font-black text-slate-400 truncate max-w-[150px]">
+                                {discs.map(d => d.nome).join(', ')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                  {allPersonas.length === 0 && (
+                    <div className="col-span-2 text-center text-slate-400 py-12 border border-dashed border-slate-200 dark:border-slate-800 rounded-3xl">
+                      Nenhum professor cadastrado.
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              // Seleção de Disciplinas do Professor Selecionado
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-250">
+                <div className="flex items-start gap-4">
+                  <ProfessorAvatar persona={selectedProfessorForNewChat} size="md" />
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-lg font-black text-slate-900 dark:text-white font-display">
+                      Disciplinas de {selectedProfessorForNewChat.nome}
+                    </h2>
+                    <p className="text-xs text-slate-550 dark:text-slate-400 mt-0.5">
+                      Este professor leciona múltiplas disciplinas. Escolha com qual deseja trabalhar.
+                    </p>
+                  </div>
+                </div>
 
- const currentInput = input;
- setInput('');
- setLoading(true);
+                <div className="grid md:grid-cols-2 gap-4">
+                  {vinculadas.map(d => (
+                    <button
+                      key={d.id}
+                      onClick={() => onStartChat(selectedProfessorForNewChat.id, d.id)}
+                      className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left hover:border-primary/50 dark:hover:border-primary/40 hover:shadow-lg transition-all group active:scale-[0.99]"
+                    >
+                      <p className="text-sm font-black text-slate-850 dark:text-slate-250 group-hover:text-primary transition-colors">
+                        {d.nome}
+                      </p>
+                      <p className="text-xs text-slate-400 mt-1 line-clamp-3">
+                        {d.conteudo}
+                      </p>
+                    </button>
+                  ))}
+                </div>
 
- // Optimistic user message
- const tempId = crypto.randomUUID();
- const optimisticMsg: Message = {
- id: tempId,
- chatId,
- userId: user.id,
- role: 'user',
- content: currentInput,
- createdAt: new Date().toISOString(),
- tokensUsed: 0,
- creditsUsed: 0
- };
- setMessages(prev => [...prev, optimisticMsg]);
+                <div className="pt-2">
+                  <button
+                    onClick={() => setSelectedProfessorForNewChat(null)}
+                    className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-650 dark:text-slate-300 rounded-xl text-xs font-bold transition-all"
+                  >
+                    Voltar para Professores
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
- try {
- const { userMessage, modelMessage } = await api.post<any>(`/api/chats/${chatId}/messages`, {
- content: currentInput,
- provider
- });
- 
- setMessages(prev => [
- ...prev.filter(m => m.id !== tempId),
- userMessage,
- modelMessage
- ]);
- await refreshUserData();
- } catch (error: any) {
- alert(error.message || 'Erro ao enviar mensagem.');
- setMessages(prev => prev.filter(m => m.id !== tempId));
- setInput(currentInput);
- } finally {
- setLoading(false);
- }
- };
+  return (
+    <div className="flex flex-col h-full bg-white dark:bg-zinc-950 font-sans">
+      {/* ── Header with chat switcher ── */}
+      <div className="flex items-center gap-3 px-5 py-3 border-b border-zinc-100 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md sticky top-0 z-10 shrink-0">
+        {/* Switcher trigger */}
+        <div className="relative flex-1 min-w-0" ref={switcherRef}>
+          <button
+            onClick={() => setSwitcherOpen(o => !o)}
+            className="flex items-center gap-3 max-w-sm hover:bg-zinc-50 dark:hover:bg-zinc-800/50 rounded-2xl px-2 py-1.5 -mx-2 transition-all group"
+          >
+            <ProfessorAvatar persona={persona} size="md" />
+            <div className="min-w-0 text-left">
+              <p className="text-sm font-black text-zinc-900 dark:text-zinc-100 truncate leading-tight">
+                {persona?.nome || 'Carregando...'}
+              </p>
+              {disciplina && (
+                <p className="text-[11px] text-zinc-400 truncate">{disciplina.nome}</p>
+              )}
+            </div>
+            <ChevronDown size={15} className={cn('text-zinc-400 shrink-0 transition-transform', switcherOpen && 'rotate-180')} />
+          </button>
 
- const onStartChat = async (personaId: string, disciplinaId?: string) => {
- try {
- const { chat } = await api.post<any>('/api/chats', { 
- professorId: personaId, 
- disciplinaId 
- });
- setIsNewChatOpen(false);
- navigate(`/chat/${chat.id}`);
- } catch (err) {
- alert('Erro ao iniciar chat');
- }
- };
+          {/* Dropdown */}
+          {switcherOpen && (
+            <div className="absolute top-full left-0 mt-2 w-72 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl shadow-black/10 z-50 overflow-hidden">
+              <div className="p-2 max-h-72 overflow-y-auto custom-scrollbar">
+                <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest px-2 py-1">Conversas</p>
+                {allChats.map(c => {
+                  const p = allPersonas.find(p => p.id === c.personaDbId);
+                  const isCurrent = c.id === chatId;
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => { navigate(`/chat/${c.id}`); setSwitcherOpen(false); }}
+                      className={cn(
+                        'w-full flex items-center gap-2.5 px-2 py-2 rounded-xl text-left transition-all',
+                        isCurrent ? 'bg-primary/10 text-primary' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
+                      )}
+                    >
+                      <ProfessorAvatar persona={p || null} size="sm" />
+                      <span className="text-sm font-bold truncate flex-1">{c.title}</span>
+                      {isCurrent && <Check size={14} className="text-primary shrink-0" />}
+                    </button>
+                  );
+                })}
+                {allChats.length === 0 && (
+                  <p className="text-xs text-zinc-400 px-2 py-3 text-center">Nenhuma conversa</p>
+                )}
+              </div>
+              <div className="border-t border-zinc-100 dark:border-zinc-800 p-2">
+                <button
+                  onClick={() => { navigate('/chat'); setSelectedProfessorForNewChat(null); setSwitcherOpen(false); }}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-primary hover:bg-primary/10 transition-all"
+                >
+                  <Plus size={16} />
+                  Iniciar Novo Chat
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
- if (!chatId && !initializing) {
- return (
- <div className="h-full flex flex-col items-center justify-center p-6 text-center bg-zinc-50 dark:bg-zinc-950 font-sans">
- <div className="w-24 h-24 bg-primary text-primary-foreground rounded-[2.5rem] flex items-center justify-center mb-8 shadow-2xl shadow-primary/40 animate-bounce-slow">
- <GraduationCap size={48} />
- </div>
- <h2 className="text-3xl font-black mb-4 text-zinc-900 dark:text-white tracking-tighter">Escolha seu Tutor</h2>
- <p className="text-zinc-500 dark:text-zinc-400 max-w-md mb-6 text-lg font-medium leading-relaxed">
- Selecione um professor virtual e uma disciplina para começar a "pensar junto".
- </p>
- <button
- onClick={() => setIsNewChatOpen(true)}
- className="group flex items-center gap-3 px-10 py-5 bg-primary text-primary-foreground rounded-[2rem] font-black text-xl shadow-2xl shadow-primary/30 hover:opacity-90 active:scale-95 transition-all"
- >
- <Plus size={24} />
- Iniciar Nova Conversa
- </button>
- <NewChatDialog 
- isOpen={isNewChatOpen} 
- onClose={() => setIsNewChatOpen(false)} 
- onStartChat={onStartChat} 
- />
- </div>
-);
- }
+      {/* ── Messages ── */}
+      <div className="flex-1 overflow-y-auto px-4 py-6 custom-scrollbar">
+        {initializing ? (
+          <div className="h-full flex items-center justify-center gap-3">
+            <Loader2 className="animate-spin text-primary" size={24} />
+          </div>
+        ) : (
+          <div className="max-w-3xl mx-auto w-full space-y-5">
+            {messages.map(msg => (
+              <MessageBubble key={msg.id} msg={msg} persona={persona} />
+            ))}
+            {loading && (
+              <div className="flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <ProfessorAvatar persona={persona} size="sm" />
+                <div className="bg-zinc-100 dark:bg-zinc-800/50 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                  <span className="w-1.5 h-1.5 bg-primary/70 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                  <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" />
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} className="h-2" />
+          </div>
+        )}
+      </div>
 
- return (
- <div className="flex flex-col h-full bg-white dark:bg-zinc-950 font-sans">
- {/* Header */}
- <div className="flex items-center gap-4 px-8 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md sticky top-0 z-10 shrink-0">
- <div className="w-12 h-12 rounded-2xl bg-primary/10 dark:bg-primary/10 flex items-center justify-center text-primary dark:text-primary shrink-0 shadow-sm">
- <Bot size={28} />
- </div>
- <div className="flex-1 min-w-0">
- <div className="flex items-center gap-2">
- <p className="text-lg font-black text-zinc-900 dark:text-zinc-100 truncate tracking-tight">{persona?.nome || 'Carregando...'}</p>
- {persona?.isGenerico ? (
- <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase rounded-lg">Generalista</span>
-) : (
- <span className="px-2 py-0.5 bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary text-[10px] font-black uppercase rounded-lg">Especialista</span>
-)}
- </div>
- {disciplina && (
- <div className="flex items-center gap-1.5 text-zinc-400 dark:text-zinc-500 text-xs font-bold">
- <BookOpen size={12} />
- <span className="truncate">{disciplina.nome}</span>
- </div>
-)}
- </div>
- <button
- onClick={() => setIsNewChatOpen(true)}
- className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-2xl font-black text-sm hover:bg-primary hover:text-primary-foreground transition-all shadow-sm active:scale-95"
- >
- <Plus size={18} />
- Novo Chat
- </button>
- </div>
-
- {/* Messages Area */}
- <div className="flex-1 overflow-y-auto px-4 py-8 custom-scrollbar">
- {initializing ? (
- <div className="h-full flex flex-col items-center justify-center gap-4">
- <Loader2 className="animate-spin text-primary"size={32} />
- <p className="text-sm font-black text-zinc-400 uppercase tracking-widest">Sincronizando Chat...</p>
- </div>
-) : (
- <div className="max-w-4xl mx-auto w-full space-y-6">
- {messages.map((msg) => (
- <MessageBubble key={msg.id} msg={msg} persona={persona} />
-))}
- 
- {loading && persona && (
- <div className="flex gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
- <div className="w-10 h-10 rounded-2xl bg-primary/10 dark:bg-primary/10 flex items-center justify-center text-primary dark:text-primary shrink-0">
- <Bot size={20} />
- </div>
- <div className="bg-zinc-100 dark:bg-zinc-800/50 rounded-3xl rounded-tl-sm px-6 py-4 flex items-center gap-3">
- <div className="flex gap-1">
- <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce [animation-delay:-0.3s]"/>
- <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.15s]"/>
- <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce"/>
- </div>
- <span className="text-xs font-black text-zinc-400 uppercase tracking-widest">{persona.nome.split(' ')[persona.nome.split(' ').length - 1]} está analisando...</span>
- </div>
- </div>
-)}
- <div ref={messagesEndRef} className="h-4"/>
- </div>
-)}
- </div>
-
- {/* Input Area */}
- <div className="px-8 py-6 bg-white dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-800">
- <div className="max-w-4xl mx-auto">
- <form onSubmit={handleSend} className="relative flex items-end gap-3">
- <div className="relative flex-1 group">
- <textarea
- value={input}
- onChange={(e) => setInput(e.target.value)}
- onKeyDown={(e) => {
- if (e.key === 'Enter' && !e.shiftKey) {
- e.preventDefault();
- handleSend(e);
- }
- }}
- placeholder={persona ? `Pergunte sobre ${disciplina?.nome || 'estudos'} para o ${persona.nome.split(' ')[0]}...` : 'Digite sua mensagem...'}
- disabled={initializing || !chatId}
- className="w-full max-h-48 min-h-[64px] bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-[2rem] px-6 py-5 pr-20 resize-none focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary group-hover:border-zinc-300 transition-all text-zinc-900 dark:text-zinc-100 font-medium leading-relaxed"
- rows={1}
- />
- <button
- type="submit"
- disabled={!input.trim() || loading || initializing || !chatId}
- className="absolute right-2 bottom-2 w-12 h-12 bg-primary text-primary-foreground rounded-[1.5rem] flex items-center justify-center hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed group-hover:shadow-primary/40"
- >
- <Send size={22} className="ml-0.5"/>
- </button>
- </div>
- </form>
- <div className="flex items-center justify-between px-6 mt-4">
- <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
- Protocolo Socrático Ativo
- </p>
- <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
- Pressione Enter para enviar
- </p>
- </div>
- </div>
- </div>
-
- <NewChatDialog 
- isOpen={isNewChatOpen} 
- onClose={() => setIsNewChatOpen(false)} 
- onStartChat={onStartChat} 
- />
- </div>
-);
+      {/* ── Input ── */}
+      <div className="px-4 py-4 bg-white dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-800">
+        <div className="max-w-3xl mx-auto">
+          <form onSubmit={handleSend} className="relative flex items-end gap-2">
+            <textarea
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e); } }}
+              placeholder={persona ? `Pergunte para ${persona.nome.split(' ')[0]}...` : 'Digite sua mensagem...'}
+              disabled={initializing || !chatId}
+              className="flex-1 max-h-40 min-h-[52px] bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl px-5 py-3.5 pr-14 resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all text-zinc-900 dark:text-zinc-100 text-sm leading-relaxed"
+              rows={1}
+            />
+            <button
+              type="submit"
+              disabled={!input.trim() || loading || initializing || !chatId}
+              className="absolute right-2 bottom-2 w-10 h-10 bg-primary text-primary-foreground rounded-xl flex items-center justify-center hover:opacity-90 active:scale-95 transition-all shadow-md shadow-primary/20 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Send size={18} className="ml-0.5" />
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function MessageBubble({ msg, persona }: { msg: Message; persona: Persona | null }) {
- const isUser = msg.role === 'user';
-
- return (
- <div className={cn('flex gap-5 animate-in fade-in slide-in-from-bottom-4 duration-500', isUser ? 'flex-row-reverse' : 'flex-row')}>
- {/* Avatar */}
- <div className={cn(
- 'w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm transition-transform hover:scale-105',
- isUser
- ? 'bg-primary text-primary-foreground'
- : 'bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 text-primary dark:text-primary'
-)}>
- {isUser ? <UserIcon size={20} /> : <Bot size={22} />}
- </div>
-
- {/* Bubble */}
- <div className={cn(
- 'max-w-[85%] sm:max-w-[75%] rounded-[2rem] px-7 py-5 shadow-sm',
- isUser
- ? 'bg-primary text-primary-foreground rounded-tr-sm shadow-primary/10'
- : 'bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-tl-sm'
-)}>
- {isUser ? (
- <p className="whitespace-pre-wrap text-[15px] font-semibold leading-relaxed">{msg.content}</p>
-) : (
- <div className="space-y-3">
- <div className="markdown-body prose dark:prose-invert prose-primary max-w-none text-[15px] leading-relaxed font-medium">
- <Markdown>{msg.content}</Markdown>
- </div>
- <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800/50 flex items-center justify-between">
- <span className="text-[9px] font-black text-zinc-300 dark:text-zinc-600 uppercase tracking-widest">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
- <span className="text-[9px] font-black text-primary/50 uppercase tracking-widest">Residência Pedagógica</span>
- </div>
- </div>
-)}
- </div>
- </div>
-);
+  const isUser = msg.role === 'user';
+  return (
+    <div className={cn('flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300', isUser ? 'flex-row-reverse' : 'flex-row')}>
+      <div className={cn('shrink-0 mt-1', isUser ? 'w-8 h-8 rounded-xl bg-primary text-primary-foreground flex items-center justify-center' : '')}>
+        {isUser
+          ? <UserIcon size={16} />
+          : <ProfessorAvatar persona={persona} size="sm" />
+        }
+      </div>
+      <div className={cn(
+        'max-w-[78%] rounded-2xl px-4 py-3 text-sm leading-relaxed',
+        isUser
+          ? 'bg-primary text-primary-foreground rounded-tr-sm'
+          : 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 rounded-tl-sm'
+      )}>
+        {isUser ? (
+          <p className="whitespace-pre-wrap font-medium">{msg.content}</p>
+        ) : (
+          <div className="markdown-body prose dark:prose-invert prose-primary max-w-none text-sm leading-relaxed">
+            <Markdown>{msg.content}</Markdown>
+          </div>
+        )}
+        {!isUser && (
+          <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 mt-2 uppercase tracking-widest">
+            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </p>
+        )}
+      </div>
+    </div>
+  );
 }

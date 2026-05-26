@@ -33,9 +33,10 @@ export async function runFlashAnalyst(params: {
 }): Promise<{ plan: EditPlan; inputTokens: number; outputTokens: number }> {
   const { genAI, projectContext, codeIndex, recentMessages, userMessage, timeout } = params;
 
-  const indexSummary = Object.entries(codeIndex)
-    .map(([name, entry]) => `### função: ${name}\n\`\`\`javascript\n${entry.rawCode}\n\`\`\``)
-    .join('\n\n');
+  // Send only function signatures to save tokens; full code is extracted later by the Coder step
+  const indexSummary = Object.keys(codeIndex).length > 0
+    ? `Funções existentes: ${Object.keys(codeIndex).join(', ')}`
+    : 'Nenhuma função indexada encontrada.';
 
   const historyText = recentMessages
     .slice(-6)

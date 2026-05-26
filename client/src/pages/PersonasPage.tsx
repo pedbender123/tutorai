@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { api, Persona, Institution } from '../lib/api';
-import { Plus, Edit2, Trash2, Copy, Check, Info, Bot, Building2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Copy, Check, Info, Building2, Camera } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx } from 'clsx';
 import { useAuth } from '../contexts/AuthContext';
@@ -82,8 +82,10 @@ export default function PersonasPage() {
     saudacao: '',
     documentoPedagogico: '',
     isGenerico: false,
-    institutionId: ''
+    institutionId: '',
+    imageUrl: '',
   });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadData();
@@ -104,6 +106,15 @@ export default function PersonasPage() {
     }
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) { alert('Imagem muito grande. Máximo 3MB.'); return; }
+    const reader = new FileReader();
+    reader.onload = ev => setFormData(prev => ({ ...prev, imageUrl: ev.target?.result as string }));
+    reader.readAsDataURL(file);
+  };
+
   const handleOpenModal = (persona?: Persona) => {
     if (persona) {
       setEditingPersona(persona);
@@ -113,24 +124,19 @@ export default function PersonasPage() {
         saudacao: persona.saudacao,
         documentoPedagogico: persona.documentoPedagogico,
         isGenerico: !!persona.isGenerico,
-        institutionId: persona.institutionId || ''
+        institutionId: persona.institutionId || '',
+        imageUrl: persona.imageUrl || '',
       });
     } else {
       setEditingPersona(null);
-      setFormData({
-        nome: '',
-        descricao: '',
-        saudacao: '',
-        documentoPedagogico: '',
-        isGenerico: false,
-        institutionId: institutions[0]?.id || ''
-      });
+      setFormData({ nome: '', descricao: '', saudacao: '', documentoPedagogico: '', isGenerico: false, institutionId: institutions[0]?.id || '', imageUrl: '' });
     }
     setIsModalOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.imageUrl) { alert('Por favor, adicione uma foto para o professor.'); return; }
     try {
       if (editingPersona) {
         await api.put(`/api/personas/${editingPersona.id}`, formData);
@@ -165,7 +171,7 @@ export default function PersonasPage() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">Mural de Personas</h1>
-          <p className="text-zinc-500 dark:text-zinc-400 mt-2 text-lg">Gerencie os perfis didáticos dos seus tutores virtuais.</p>
+          <p className="text-zinc-500 dark:text-zinc-400 mt-2 text-lg">Gerencie os perfis didáticos dos seus professores virtuais.</p>
         </div>
         {userData?.isAdmin && (
           <button
@@ -194,8 +200,11 @@ export default function PersonasPage() {
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="relative">
-                  <div className="w-16 h-16 rounded-2xl bg-primary/10 dark:bg-primary/10 flex items-center justify-center text-primary dark:text-primary overflow-hidden">
-                    <Bot size={32} />
+                  <div className="w-16 h-16 rounded-2xl bg-primary/10 overflow-hidden flex items-center justify-center text-primary">
+                    {persona.imageUrl
+                      ? <img src={persona.imageUrl} alt={persona.nome} className="w-full h-full object-cover" />
+                      : <span className="text-2xl font-black">{persona.nome.charAt(0)}</span>
+                    }
                   </div>
                   {persona.isGenerico ? (
                     <span className="absolute -top-1 -right-1 flex h-4 w-4">
@@ -233,7 +242,7 @@ export default function PersonasPage() {
               </p>
 
               <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs font-medium uppercase tracking-wider text-zinc-400">
-                <span>{persona.isGenerico ? 'Tutor Generalista' : 'Tutor Especialista'}</span>
+                <span>{persona.isGenerico ? 'Professor Generalista' : 'Professor Especialista'}</span>
                 <span>{new Date(persona.createdAt).toLocaleDateString()}</span>
               </div>
             </motion.div>
@@ -276,6 +285,32 @@ export default function PersonasPage() {
                 </div>
 
                 <div className="space-y-4">
+                  {/* Image upload — obrigatório */}
+                  <div className="flex flex-col items-center gap-3">
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="relative w-24 h-24 rounded-3xl bg-zinc-100 dark:bg-zinc-800 border-2 border-dashed border-zinc-300 dark:border-zinc-700 overflow-hidden cursor-pointer hover:border-primary transition-all group"
+                    >
+                      {formData.imageUrl ? (
+                        <img src={formData.imageUrl} alt="preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-zinc-400 group-hover:text-primary transition-colors">
+                          <Camera size={24} />
+                          <span className="text-[9px] font-black uppercase tracking-wider">Foto</span>
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all" />
+                    </div>
+                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+                    <div className="text-center">
+                      <p className="text-xs font-bold text-zinc-500">Foto do Professor <span className="text-red-500">*</span></p>
+                      <p className="text-[10px] text-zinc-400">JPG, PNG · máx 3MB</p>
+                    </div>
+                    {!formData.imageUrl && (
+                      <p className="text-[10px] text-red-400 font-bold">Imagem obrigatória para criar um professor.</p>
+                    )}
+                  </div>
+
                   {!formData.isGenerico && (
                     <div>
                       <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">Instituição</label>
@@ -347,7 +382,7 @@ export default function PersonasPage() {
                         <div>
                           <h4 className="font-bold text-primary mb-1">Não sabe como preencher?</h4>
                           <p className="text-sm text-primary/70 leading-relaxed mb-4">
-                            Use o Prompt de Extração! Copie o prompt abaixo e cole no Gemini junto com a transcrição de uma aula do professor.
+                            Use o Prompt de Extração! Copie o prompt abaixo e cole em qualquer IA junto com a transcrição de uma aula do professor.
                           </p>
                           <button
                             type="button"

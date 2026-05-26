@@ -63,10 +63,10 @@ export default function UpdateNotification() {
               title="Lab Agent Reestruturado"
               description="Novo fluxo de raciocínio (Pensando, Entendendo, Codando) para simulações mais precisas."
             />
-            <UpdateItem 
+            <UpdateItem
               icon={<Zap className="w-5 h-5 text-amber-500" />}
-              title="Gemini 2.5 Pro & Flash"
-              description="Modelos de última geração com maior contexto e menor latência."
+              title="IA de Última Geração"
+              description="Motor de IA atualizado com maior contexto e menor latência."
             />
             <UpdateItem 
               icon={<CheckCircle2 className="w-5 h-5 text-blue-500" />}

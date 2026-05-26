@@ -7,6 +7,13 @@ export interface Institution {
   createdAt: string;
 }
 
+export interface Classroom {
+  id: string;
+  name: string;
+  institutionId: string;
+  createdAt: string;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -20,6 +27,7 @@ export interface User {
   tokensColega: number;
   creditsMonthly: number;
   institutions: string[];
+  classroomId?: string;
 }
 
 export interface UserAdmin extends User {
@@ -36,6 +44,7 @@ export interface Persona {
   saudacao: string;
   documentoPedagogico: string;
   isGenerico: boolean;
+  imageUrl?: string;
   createdAt: string;
 }
 
@@ -194,6 +203,12 @@ class ApiClient {
       create: (data: Omit<Institution, 'id' | 'createdAt'>) => this.post<Institution>('/api/admin/institutions', data),
       update: (id: string, data: Partial<Omit<Institution, 'id' | 'createdAt'>>) => this.patch<Institution>(`/api/admin/institutions/${id}`, data),
       delete: (id: string) => this.delete<void>(`/api/admin/institutions/${id}`),
+    },
+    classrooms: {
+      getByInstitution: (institutionId: string) => this.get<Classroom[]>(`/api/admin/institutions/${institutionId}/classrooms`),
+      create: (institutionId: string, name: string) => this.post<Classroom>(`/api/admin/institutions/${institutionId}/classrooms`, { name }),
+      update: (id: string, name: string) => this.patch<Classroom>(`/api/admin/classrooms/${id}`, { name }),
+      delete: (id: string) => this.delete<void>(`/api/admin/classrooms/${id}`),
     },
     users: {
       getAll: () => this.get<UserAdmin[]>('/api/admin/users'),
