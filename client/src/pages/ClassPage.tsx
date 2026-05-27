@@ -38,7 +38,7 @@ export default function ClassPage() {
             Class
           </h1>
           <p className="text-lg text-slate-500 dark:text-slate-400 leading-relaxed max-w-md">
-            O ambiente de sala de aula virtual do SCAFI está chegando — projetado para tornar o aprendizado mais confortável, bonito e eficaz.
+            O ambiente de sala de aula virtual do SCAFFL está chegando — projetado para tornar o aprendizado mais confortável, bonito e eficaz.
           </p>
         </div>
 

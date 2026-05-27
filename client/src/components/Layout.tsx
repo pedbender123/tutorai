@@ -107,7 +107,7 @@ export default function Layout() {
             <div className="bg-primary text-primary-foreground p-1.5 rounded-xl shrink-0">
               <FlaskConical size={20} />
             </div>
-            <span className="font-display tracking-tight font-black scafi-logo-text">SCAFI</span>
+            <span className="font-display tracking-tight font-black scaffl-logo-text">SCAFFL</span>
           </Link>
           {isCollapsed && (
             <Link to="/" className="hidden md:flex bg-primary text-primary-foreground p-1.5 rounded-xl shrink-0 mx-auto">
@@ -220,7 +220,7 @@ export default function Layout() {
           <button onClick={() => setSidebarOpen(true)} className="text-slate-500 p-1">
             <Menu size={22} />
           </button>
-          <span className="ml-3 font-display tracking-tight font-black scafi-logo-text">SCAFI</span>
+          <span className="ml-3 font-display tracking-tight font-black scaffl-logo-text">SCAFFL</span>
         </header>
         <div className="flex-1 overflow-auto relative">
           <Outlet />

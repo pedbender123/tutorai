@@ -8,7 +8,7 @@ const TIMEOUT_MS = 300_000;
 // Flash 2.5: $0.30/M normal in, $0.03/M cached in, $2.50/M out (Dólar a R$ 5,50, 1M créditos = R$ 1,00)
 const CREDIT_RATE = { input: 1_650_000, input_cached: 165_000, output: 13_750_000 };
 
-const SYSTEM_PROMPT = `Você é o Mini-Agente de Código do laboratório de simulações físicas do SCAFI.
+const SYSTEM_PROMPT = `Você é o Mini-Agente de Código do laboratório de simulações físicas do SCAFFL.
 Sua missão é estritamente técnica: criar ou modificar o código de simuladores interativos em HTML/JS/CSS.
 
 REGRAS DE CONDUTA E EXECUÇÃO RÍGIDAS (SEM EXCEÇÃO):

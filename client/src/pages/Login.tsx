@@ -78,7 +78,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex bg-zinc-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50 transition-colors duration-200">
       
-      {/* PAINEL ESQUERDO: Manifesto e Branding SCAFI (Somente em telas médias/grandes) */}
+      {/* PAINEL ESQUERDO: Manifesto e Branding SCAFFL (Somente em telas médias/grandes) */}
       <div 
         className="hidden lg:flex lg:w-1/2 relative border-r border-slate-200 dark:border-slate-800 flex-col justify-between p-12 overflow-hidden animate-in fade-in duration-500"
         style={{ background: 'linear-gradient(135deg, #047857 0%, #10b981 25%, #06b6d4 50%, #3b82f6 75%, #8b5cf6 100%)' }}
@@ -95,7 +95,7 @@ export default function Login() {
           <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-900 shadow-lg shadow-black/10">
             <FlaskConical size={20} className="text-emerald-600" />
           </div>
-          <span className="font-display font-black text-xl tracking-wider text-white">SCAFI</span>
+          <span className="font-display font-black text-xl tracking-wider text-white">SCAFFL</span>
         </div>
 
         {/* Centro: Manifesto */}
@@ -107,13 +107,13 @@ export default function Login() {
             A ciência não é feita para ser assistida. É feita para ser construída.
           </h1>
           <p className="text-slate-100/90 leading-relaxed text-sm">
-            A SCAFI não entrega respostas prontas; ela fornece a estrutura necessária para você modelar seu próprio entendimento. Uma parceria inteligente entre estudantes, professores e tecnologia para expandir o potencial acadêmico.
+            A SCAFFL não entrega respostas prontas; ela fornece a estrutura necessária para você modelar seu próprio entendimento. Uma parceria inteligente entre estudantes, professores e tecnologia para expandir o potencial acadêmico.
           </p>
         </div>
 
         {/* Rodapé Manifesto */}
         <div className="relative text-xs text-white/70 flex items-center gap-2">
-          <span>© 2026 SCAFI Platform. Todos os direitos reservados.</span>
+          <span>© 2026 SCAFFL Platform. Todos os direitos reservados.</span>
         </div>
       </div>
 
@@ -168,7 +168,7 @@ export default function Login() {
             <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/25 mb-3">
               <FlaskConical size={24} />
             </div>
-            <span className="font-display font-black text-2xl tracking-wider scafi-logo-text">SCAFI</span>
+            <span className="font-display font-black text-2xl tracking-wider scaffl-logo-text">SCAFFL</span>
           </div>
 
           <div className="space-y-3 text-center lg:text-left">
@@ -317,7 +317,7 @@ export default function Login() {
 
         </div>
         <div className="text-xs text-center text-slate-400 dark:text-slate-600 mt-8 shrink-0">
-          SCAFI Platform · Versão Experimental 2026
+          SCAFFL Platform · Versão Experimental 2026
         </div>
       </div>
     </div>

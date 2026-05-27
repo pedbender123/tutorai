@@ -269,7 +269,7 @@ export default function Settings() {
                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Projetos no Lab</span>
                   <span className="text-[10px] font-black text-slate-500">até {projectLimit} projetos</span>
                 </div>
-                <p className="text-[11px] pt-1 border-t border-slate-200 dark:border-slate-800">O SCAFI opera em créditos de baixo custo (1 crédito = 1 token). Seu saldo é renovado automaticamente todo mês.</p>
+                <p className="text-[11px] pt-1 border-t border-slate-200 dark:border-slate-800">O SCAFFL opera em créditos de baixo custo (1 crédito = 1 token). Seu saldo é renovado automaticamente todo mês.</p>
               </div>
             </div>
           </div>

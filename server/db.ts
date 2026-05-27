@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import bcrypt from 'bcryptjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const dbPath = join(__dirname, 'tutorai.db');
@@ -208,30 +209,35 @@ db.exec(`
 import { runSimAgentMigration } from './migrations/add_simagent_columns.js';
 runSimAgentMigration(db);
 
-// Seed Initial Data
-import { DEFAULT_PERSONAS } from './defaultPersonas.js';
-
 // Ensure system user exists
 db.prepare(`
   INSERT OR IGNORE INTO users (id, name, email, password, role, isAdmin)
   VALUES (?, ?, ?, ?, ?, ?)
-`).run('system', 'System', 'system@scafi.edu', 'internal', 'admin', 1);
+`).run('system', 'System', 'system@scaffl.edu', 'internal', 'admin', 1);
 
-// Seed Institution (UCS)
-db.prepare(`
-  INSERT OR IGNORE INTO institutions (id, name, domain)
-  VALUES (?, ?, ?)
-`).run('ucs', 'UCS - Universidade de Caxias do Sul', '@ucs.br');
-
-const insertPersona = db.prepare(`
-  INSERT OR IGNORE INTO personas (id, userId, institutionId, nome, descricao, saudacao, documentoPedagogico, isGenerico)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-`);
-
-for (const p of DEFAULT_PERSONAS) {
-  // Tutor Genérico is public (institutionId = null), Agostinho is UCS
-  const instId = p.id === 'tutor-generico' ? null : 'ucs';
-  insertPersona.run(p.id, 'system', instId, p.nome, p.descricao, p.saudacao, p.documentoPedagogico, p.isGenerico ? 1 : 0);
+// Seed Super Admin from Environment Variables if configured
+const superEmail = process.env.SUPER_ADMIN_EMAIL;
+const superPassword = process.env.ADMIN_PASSWORD;
+if (superEmail && superPassword) {
+  const hashedPassword = bcrypt.hashSync(superPassword, 10);
+  db.prepare(`
+    INSERT INTO users (id, name, email, password, role, isAdmin, lastResetProfessor, lastResetTutor, lastResetColega)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(email) DO UPDATE SET
+      password = excluded.password,
+      role = 'admin',
+      isAdmin = 1
+  `).run(
+    'super-admin',
+    'Super Admin',
+    superEmail.toLowerCase(),
+    hashedPassword,
+    'admin',
+    1,
+    new Date().toISOString(),
+    new Date().toISOString(),
+    new Date().toISOString()
+  );
 }
 
 export default db;
