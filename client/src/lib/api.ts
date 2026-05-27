@@ -105,6 +105,9 @@ export interface LabMessage {
   tokensUsed: number;
   creditsUsed: number;
   createdAt: string;
+  edit_scope?: 'full_rewrite' | 'surgical' | null;
+  patched_functions?: string | null;
+  imageUrl?: string | null;
 }
 
 class ApiClient {
@@ -185,9 +188,9 @@ class ApiClient {
     getProject: (id: string) => this.get<LabProject & { messages: LabMessage[] }>(`/api/lab/projects/${id}`),
     renameProject: (id: string, title: string) => this.put<{ ok: boolean }>(`/api/lab/projects/${id}/title`, { title }),
     deleteProject: (id: string) => this.delete<{ ok: boolean }>(`/api/lab/projects/${id}`),
-    sendMessage: (projectId: string, content: string, modelToUse?: string) =>
+    sendMessage: (projectId: string, content: string, modelToUse?: string, userImageUrl?: string) =>
       this.post<{ userMessage: LabMessage; assistantMessage: LabMessage; htmlContent: string }>(
-        `/api/lab/projects/${projectId}/messages`, { content, modelToUse }
+        `/api/lab/projects/${projectId}/messages`, { content, modelToUse, userImageUrl }
       ),
     rateProject: (projectId: string, stars: number) =>
       this.post<{ ok: boolean }>(`/api/lab/projects/${projectId}/rate`, { stars }),

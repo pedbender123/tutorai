@@ -37,6 +37,9 @@ export function runSimAgentMigration(db: InstanceType<typeof Database>): void {
   if (!msgColNames.includes('creditsUsed')) {
     db.exec(`ALTER TABLE lab_messages ADD COLUMN creditsUsed INTEGER DEFAULT 0`);
   }
+  if (!msgColNames.includes('imageUrl')) {
+    db.exec(`ALTER TABLE lab_messages ADD COLUMN imageUrl TEXT DEFAULT NULL`);
+  }
 
   // Ratings & Feedback
   if (!colNames.includes('feedback_creator')) {

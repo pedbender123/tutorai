@@ -14,7 +14,7 @@ function ProfessorAvatar({ persona, size = 'md' }: { persona: Persona | null; si
       <img
         src={persona.imageUrl}
         alt={persona.nome}
-        className={cn(dim, radius, 'object-cover shrink-0 border border-zinc-200 dark:border-zinc-700')}
+        className={cn(dim, radius, 'object-cover shrink-0 border border-slate-200 dark:border-slate-700')}
       />
     );
   }
@@ -258,32 +258,32 @@ export default function Chat() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-zinc-950 font-sans">
+    <div className="flex flex-col h-full bg-white dark:bg-slate-950 font-sans">
       {/* ── Header with chat switcher ── */}
-      <div className="flex items-center gap-3 px-5 py-3 border-b border-zinc-100 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md sticky top-0 z-10 shrink-0">
+      <div className="flex items-center gap-3 px-5 py-3 border-b border-slate-100 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md sticky top-0 z-10 shrink-0">
         {/* Switcher trigger */}
         <div className="relative flex-1 min-w-0" ref={switcherRef}>
           <button
             onClick={() => setSwitcherOpen(o => !o)}
-            className="flex items-center gap-3 max-w-sm hover:bg-zinc-50 dark:hover:bg-zinc-800/50 rounded-2xl px-2 py-1.5 -mx-2 transition-all group"
+            className="flex items-center gap-3 max-w-sm hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-2xl px-2 py-1.5 -mx-2 transition-all group"
           >
             <ProfessorAvatar persona={persona} size="md" />
             <div className="min-w-0 text-left">
-              <p className="text-sm font-black text-zinc-900 dark:text-zinc-100 truncate leading-tight">
+              <p className="text-sm font-black text-slate-900 dark:text-slate-100 truncate leading-tight">
                 {persona?.nome || 'Carregando...'}
               </p>
               {disciplina && (
-                <p className="text-[11px] text-zinc-400 truncate">{disciplina.nome}</p>
+                <p className="text-[11px] text-slate-400 truncate">{disciplina.nome}</p>
               )}
             </div>
-            <ChevronDown size={15} className={cn('text-zinc-400 shrink-0 transition-transform', switcherOpen && 'rotate-180')} />
+            <ChevronDown size={15} className={cn('text-slate-400 shrink-0 transition-transform', switcherOpen && 'rotate-180')} />
           </button>
 
           {/* Dropdown */}
           {switcherOpen && (
-            <div className="absolute top-full left-0 mt-2 w-72 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl shadow-black/10 z-50 overflow-hidden">
+            <div className="absolute top-full left-0 mt-2 w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl shadow-black/10 z-50 overflow-hidden">
               <div className="p-2 max-h-72 overflow-y-auto custom-scrollbar">
-                <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest px-2 py-1">Conversas</p>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-2 py-1">Conversas</p>
                 {allChats.map(c => {
                   const p = allPersonas.find(p => p.id === c.personaDbId);
                   const isCurrent = c.id === chatId;
@@ -293,7 +293,7 @@ export default function Chat() {
                       onClick={() => { navigate(`/chat/${c.id}`); setSwitcherOpen(false); }}
                       className={cn(
                         'w-full flex items-center gap-2.5 px-2 py-2 rounded-xl text-left transition-all',
-                        isCurrent ? 'bg-primary/10 text-primary' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
+                        isCurrent ? 'bg-primary/10 text-primary' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
                       )}
                     >
                       <ProfessorAvatar persona={p || null} size="sm" />
@@ -303,10 +303,10 @@ export default function Chat() {
                   );
                 })}
                 {allChats.length === 0 && (
-                  <p className="text-xs text-zinc-400 px-2 py-3 text-center">Nenhuma conversa</p>
+                  <p className="text-xs text-slate-400 px-2 py-3 text-center">Nenhuma conversa</p>
                 )}
               </div>
-              <div className="border-t border-zinc-100 dark:border-zinc-800 p-2">
+              <div className="border-t border-slate-100 dark:border-slate-800 p-2">
                 <button
                   onClick={() => { navigate('/chat'); setSelectedProfessorForNewChat(null); setSwitcherOpen(false); }}
                   className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-primary hover:bg-primary/10 transition-all"
@@ -334,7 +334,7 @@ export default function Chat() {
             {loading && (
               <div className="flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <ProfessorAvatar persona={persona} size="sm" />
-                <div className="bg-zinc-100 dark:bg-zinc-800/50 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-2">
+                <div className="bg-slate-100 dark:bg-slate-800/50 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-2">
                   <span className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-bounce [animation-delay:-0.3s]" />
                   <span className="w-1.5 h-1.5 bg-primary/70 rounded-full animate-bounce [animation-delay:-0.15s]" />
                   <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" />
@@ -347,7 +347,7 @@ export default function Chat() {
       </div>
 
       {/* ── Input ── */}
-      <div className="px-4 py-4 bg-white dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-800">
+      <div className="px-4 py-4 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
         <div className="max-w-3xl mx-auto">
           <form onSubmit={handleSend} className="relative flex items-end gap-2">
             <textarea
@@ -356,7 +356,7 @@ export default function Chat() {
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e); } }}
               placeholder={persona ? `Pergunte para ${persona.nome.split(' ')[0]}...` : 'Digite sua mensagem...'}
               disabled={initializing || !chatId}
-              className="flex-1 max-h-40 min-h-[52px] bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl px-5 py-3.5 pr-14 resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all text-zinc-900 dark:text-zinc-100 text-sm leading-relaxed"
+              className="flex-1 max-h-40 min-h-[52px] bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-5 py-3.5 pr-14 resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all text-slate-900 dark:text-slate-100 text-sm leading-relaxed"
               rows={1}
             />
             <button
@@ -387,7 +387,7 @@ function MessageBubble({ msg, persona }: { msg: Message; persona: Persona | null
         'max-w-[78%] rounded-2xl px-4 py-3 text-sm leading-relaxed',
         isUser
           ? 'bg-primary text-primary-foreground rounded-tr-sm'
-          : 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 rounded-tl-sm'
+          : 'bg-slate-100 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 rounded-tl-sm'
       )}>
         {isUser ? (
           <p className="whitespace-pre-wrap font-medium">{msg.content}</p>
@@ -397,7 +397,7 @@ function MessageBubble({ msg, persona }: { msg: Message; persona: Persona | null
           </div>
         )}
         {!isUser && (
-          <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 mt-2 uppercase tracking-widest">
+          <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 mt-2 uppercase tracking-widest">
             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </p>
         )}

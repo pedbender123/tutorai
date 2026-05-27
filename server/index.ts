@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import crypto from 'crypto';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 import db from './db.js';
 import * as auth from './auth.js';
 import * as ai from './ai.js';
@@ -18,8 +19,15 @@ dotenv.config({ path: join(dirname(fileURLToPath(import.meta.url)), '../.env') }
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const uploadsDir = join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static(uploadsDir));
 
 // Global Rate Limiter: 10 requests per minute
 const limiter = rateLimit({
@@ -202,8 +210,30 @@ app.put('/api/personas/:id', auth.authenticate, requireAdmin, (req: any, res) =>
 
 app.delete('/api/personas/:id', auth.authenticate, (req: any, res) => {
   const { id } = req.params;
-  db.prepare('DELETE FROM personas WHERE id = ? AND userId = ?').run(id, req.user.id);
-  res.json({ success: true });
+
+  const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id) as any;
+  if (!persona) return res.status(404).json({ error: 'Persona não encontrada.' });
+  if (persona.userId !== req.user.id && req.user.isAdmin !== 1) {
+    return res.status(403).json({ error: 'Não autorizado.' });
+  }
+
+  const deleteTx = db.transaction(() => {
+    const chats = db.prepare('SELECT id FROM chats WHERE personaDbId = ?').all(id) as { id: string }[];
+    const deleteMsgs = db.prepare('DELETE FROM messages WHERE chatId = ?');
+    for (const c of chats) {
+      deleteMsgs.run(c.id);
+    }
+    db.prepare('DELETE FROM chats WHERE personaDbId = ?').run(id);
+    db.prepare('DELETE FROM persona_disciplina WHERE personaId = ?').run(id);
+    db.prepare('DELETE FROM personas WHERE id = ?').run(id);
+  });
+
+  try {
+    deleteTx();
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Erro ao deletar persona.' });
+  }
 });
 
 // Disciplinas Routes (Filtered by user institutions)
@@ -288,8 +318,30 @@ app.put('/api/disciplinas/:id', auth.authenticate, requireAdmin, (req: any, res)
 
 app.delete('/api/disciplinas/:id', auth.authenticate, (req: any, res) => {
   const { id } = req.params;
-  db.prepare('DELETE FROM disciplinas WHERE id = ? AND userId = ?').run(id, req.user.id);
-  res.json({ success: true });
+
+  const disciplina = db.prepare('SELECT * FROM disciplinas WHERE id = ?').get(id) as any;
+  if (!disciplina) return res.status(404).json({ error: 'Disciplina não encontrada.' });
+  if (disciplina.userId !== req.user.id && req.user.isAdmin !== 1) {
+    return res.status(403).json({ error: 'Não autorizado.' });
+  }
+
+  const deleteTx = db.transaction(() => {
+    const chats = db.prepare('SELECT id FROM chats WHERE disciplinaId = ?').all(id) as { id: string }[];
+    const deleteMsgs = db.prepare('DELETE FROM messages WHERE chatId = ?');
+    for (const c of chats) {
+      deleteMsgs.run(c.id);
+    }
+    db.prepare('DELETE FROM chats WHERE disciplinaId = ?').run(id);
+    db.prepare('DELETE FROM persona_disciplina WHERE disciplinaId = ?').run(id);
+    db.prepare('DELETE FROM disciplinas WHERE id = ?').run(id);
+  });
+
+  try {
+    deleteTx();
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Erro ao deletar disciplina.' });
+  }
 });
 
 // Chat Routes
@@ -507,7 +559,7 @@ app.delete('/api/lab/projects/:id', auth.authenticate, (req: any, res) => {
 app.post('/api/lab/projects/:id/messages', auth.authenticate, limiter, async (req: any, res) => {
   const userId = req.user.id;
   const { id: projectId } = req.params;
-  const { content, modelToUse } = req.body;
+  const { content, modelToUse, userImageUrl } = req.body;
   if (!content?.trim()) return res.status(400).json({ error: 'content é obrigatório.' });
 
   const rawProject = db.prepare(`
@@ -533,11 +585,27 @@ app.post('/api/lab/projects/:id/messages', auth.authenticate, limiter, async (re
     ORDER BY createdAt DESC LIMIT 8
   `).all(projectId) as any[]).reverse();
 
+  let savedImageUrl: string | null = null;
+  if (userImageUrl) {
+    try {
+      const base64Data = userImageUrl.includes('base64,')
+        ? userImageUrl.split('base64,')[1]
+        : userImageUrl;
+      const buffer = Buffer.from(base64Data, 'base64');
+      const filename = `screenshot_${crypto.randomUUID()}.jpg`;
+      const filepath = join(uploadsDir, filename);
+      fs.writeFileSync(filepath, buffer);
+      savedImageUrl = `/uploads/${filename}`;
+    } catch (imgErr) {
+      console.error('Erro ao salvar desenho:', imgErr);
+    }
+  }
+
   // Salva mensagem do usuário
   const userMsgId = crypto.randomUUID();
   db.prepare(
-    `INSERT INTO lab_messages (id, projectId, userId, role, content) VALUES (?, ?, ?, 'user', ?)`
-  ).run(userMsgId, projectId, userId, content.trim());
+    `INSERT INTO lab_messages (id, projectId, userId, role, content, imageUrl) VALUES (?, ?, ?, 'user', ?, ?)`
+  ).run(userMsgId, projectId, userId, content.trim(), savedImageUrl);
 
   try {
     const agentResult = await runSimAgent({
@@ -545,6 +613,7 @@ app.post('/api/lab/projects/:id/messages', auth.authenticate, limiter, async (re
       userMessage: content.trim(),
       recentMessages,
       modelToUse,
+      userImageUrl,
     });
 
     // Salva resposta do assistente
@@ -657,7 +726,6 @@ app.get('/api/admin/security/runs/:runId', auth.authenticate, requireAdmin, (req
 });
 
 // Serve static files in production
-const __dirname = dirname(fileURLToPath(import.meta.url));
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(join(__dirname, '../client/dist')));
   app.get('*', (req, res, next) => {

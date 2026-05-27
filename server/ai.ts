@@ -14,8 +14,8 @@ let tokenHistory: { timestamp: number, tokens: number }[] = [];
 const TPM_LIMIT = 250000;
 const TPM_WINDOW_MS = 60000;
 
-// Flash/Pro 2.5: $0.15/$1.25 in / $0.60/$10.00 out → 825/6875 in / 3300/55000 out créditos/M tokens
-const FLASH_RATE = { input: 825, output: 3_300 };
+// Flash 2.5: $0.30/M normal in, $0.03/M cached in, $2.50/M out (Dólar a R$ 5,50, 1M créditos = R$ 1,00)
+const FLASH_RATE = { input: 1_650_000, input_cached: 165_000, output: 13_750_000 };
 const PRO_RATE  = { input: 6_875, output: 55_000 };
 // GPT desabilitado temporariamente
 // const GPT_RATE = 1.3;
@@ -106,6 +106,7 @@ async function _generateChatResponse(
     let tokensUsed = 0;
     let inputTokFinal = 0;
     let outputTokFinal = 0;
+    let cachedTok = 0;
 
     if (provider === 'google') {
       // Traffic Shaping for Gemini
@@ -150,6 +151,7 @@ async function _generateChatResponse(
       outputTokFinal = response.usageMetadata?.candidatesTokenCount ?? Math.ceil(text.length / 4);
       tokensUsed = inputTokFinal + outputTokFinal;
       tokenHistory.push({ timestamp: Date.now(), tokens: tokensUsed });
+      cachedTok = (response.usageMetadata as any)?.cachedContentTokenCount ?? 0;
 
     } else {
       // OpenAI GPT-4o-mini
@@ -172,11 +174,12 @@ async function _generateChatResponse(
       inputTokFinal  = Math.ceil(tokensUsed * 0.4);
       outputTokFinal = Math.ceil(tokensUsed * 0.6);
     }
-    const isPro = provider === 'gpt'; // No momento apenas GPT é tarifado fixo ou Pro
+    const normalInputTok = Math.max(0, inputTokFinal - cachedTok);
+    
     const creditsUsed = provider === 'google'
-      ? Math.ceil((inputTokFinal * FLASH_RATE.input + outputTokFinal * FLASH_RATE.output) / 1_000_000)
+      ? Math.ceil((normalInputTok * FLASH_RATE.input + cachedTok * FLASH_RATE.input_cached + outputTokFinal * FLASH_RATE.output) / 1_000_000)
       : Math.ceil(tokensUsed * 1.3); // GPT-4o-mini fallback
-    console.log(`[AI] Request completed. Chat: ${chatId}, Provider: ${provider}, Credits: ${creditsUsed}`);
+    console.log(`[AI] Request completed. Chat: ${chatId}, Provider: ${provider}, Credits: ${creditsUsed} (cached: ${cachedTok}, normal: ${normalInputTok}, output: ${outputTokFinal})`);
 
     return { text, tokensUsed, creditsUsed };
 

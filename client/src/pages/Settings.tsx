@@ -209,25 +209,25 @@ export default function Settings() {
   return (
     <div className="p-5 max-w-5xl mx-auto space-y-5">
       <div>
-        <h1 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-white">Configurações</h1>
-        <p className="text-zinc-500 dark:text-zinc-400 mt-0.5 text-sm">Gerencie sua conta e preferências do sistema.</p>
+        <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Configurações</h1>
+        <p className="text-slate-500 dark:text-slate-400 mt-0.5 text-sm">Gerencie sua conta e preferências do sistema.</p>
       </div>
 
       {/* Main tabs */}
-      <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800 w-fit">
-        <button onClick={() => setActiveTab('usage')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5", activeTab === 'usage' ? "bg-white dark:bg-zinc-800 text-primary shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300")}>
+      <div className="flex items-center bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 w-fit">
+        <button onClick={() => setActiveTab('usage')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5", activeTab === 'usage' ? "bg-white dark:bg-slate-800 text-primary shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300")}>
           <Zap size={14} /> Uso
         </button>
-        <button onClick={() => setActiveTab('appearance')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5", activeTab === 'appearance' ? "bg-white dark:bg-zinc-800 text-primary shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300")}>
+        <button onClick={() => setActiveTab('appearance')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5", activeTab === 'appearance' ? "bg-white dark:bg-slate-800 text-primary shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300")}>
           <Palette size={14} /> Aparência
         </button>
         {!!userData.isAdmin && (
-          <button onClick={() => setActiveTab('admin')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5", activeTab === 'admin' ? "bg-white dark:bg-zinc-800 text-primary shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300")}>
+          <button onClick={() => setActiveTab('admin')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5", activeTab === 'admin' ? "bg-white dark:bg-slate-800 text-primary shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300")}>
             <Shield size={14} /> Admin
           </button>
         )}
         {!!userData.isAdmin && (
-          <button onClick={() => setActiveTab('security')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5", activeTab === 'security' ? "bg-white dark:bg-zinc-800 text-primary shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300")}>
+          <button onClick={() => setActiveTab('security')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5", activeTab === 'security' ? "bg-white dark:bg-slate-800 text-primary shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300")}>
             <ShieldCheck size={14} /> Segurança
           </button>
         )}
@@ -236,40 +236,40 @@ export default function Settings() {
       <div className="space-y-6">
         {/* ===== USO ===== */}
         {activeTab === 'usage' && (
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm space-y-6">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary"><Zap size={20} /></div>
               <div>
                 <h2 className="text-base font-bold">Consumo Mensal</h2>
-                <p className="text-xs text-zinc-500">Acompanhamento do uso de créditos de IA.</p>
+                <p className="text-xs text-slate-505">Acompanhamento do uso de créditos de IA.</p>
               </div>
             </div>
             <div className="space-y-3">
               <div className="flex justify-between items-end">
                 <div className="space-y-0.5">
-                  <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Créditos Gastos</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Créditos Gastos</span>
                   <p className="text-2xl font-black text-primary">{creditsMonthly.toLocaleString()}</p>
                 </div>
                 <div className="text-right space-y-0.5">
-                  <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Limite da Cota</span>
-                  <p className="text-lg font-bold text-zinc-400">{limitMonthly.toLocaleString()}</p>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Limite da Cota</span>
+                  <p className="text-lg font-bold text-slate-400">{limitMonthly.toLocaleString()}</p>
                 </div>
               </div>
-              <div className="h-4 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden border border-zinc-200/50 dark:border-zinc-700/50">
+              <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-700/50">
                 <motion.div initial={{ width: 0 }} animate={{ width: `${usageMonthly}%` }} className={cn("h-full rounded-full transition-all duration-500", usageMonthly > 90 ? "bg-red-500" : usageMonthly > 75 ? "bg-yellow-500" : "bg-primary")} />
               </div>
-              <div className="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed space-y-2">
+              <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 text-sm text-slate-500 dark:text-slate-400 leading-relaxed space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Plano</span>
-                  <span className={cn("text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg", hasInstitution ? "bg-primary/10 text-primary" : "bg-zinc-200 dark:bg-zinc-800 text-zinc-500")}>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Plano</span>
+                  <span className={cn("text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg", hasInstitution ? "bg-primary/10 text-primary" : "bg-slate-200 dark:bg-slate-800 text-slate-500")}>
                     {hasInstitution ? 'Institucional' : 'Gratuito'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Projetos no Lab</span>
-                  <span className="text-[10px] font-black text-zinc-500">até {projectLimit} projetos</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Projetos no Lab</span>
+                  <span className="text-[10px] font-black text-slate-500">até {projectLimit} projetos</span>
                 </div>
-                <p className="text-[11px] pt-1 border-t border-zinc-200 dark:border-zinc-800">O SCAFI opera em créditos de baixo custo (1 crédito = 1 token). Seu saldo é renovado automaticamente todo mês.</p>
+                <p className="text-[11px] pt-1 border-t border-slate-200 dark:border-slate-800">O SCAFI opera em créditos de baixo custo (1 crédito = 1 token). Seu saldo é renovado automaticamente todo mês.</p>
               </div>
             </div>
           </div>
@@ -277,28 +277,28 @@ export default function Settings() {
 
         {/* ===== APARÊNCIA ===== */}
         {activeTab === 'appearance' && (
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm space-y-6">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary"><Palette size={20} /></div>
               <div>
                 <h2 className="text-base font-bold">Personalização</h2>
-                <p className="text-xs text-zinc-500">Ajuste o visual do seu ambiente de estudos.</p>
+                <p className="text-xs text-slate-500">Ajuste o visual do seu ambiente de estudos.</p>
               </div>
             </div>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h3 className="text-sm font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2"><Sun size={14} /> Tema do Sistema</h3>
+                <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Sun size={14} /> Tema do Sistema</h3>
                 <div className="flex gap-3">
-                  <button onClick={() => setThemeMode('light')} className={cn("flex-1 flex flex-col items-center justify-center gap-3 py-6 rounded-2xl border-2 transition-all", themeMode === 'light' ? "border-primary bg-primary/5 text-primary" : "border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 grayscale opacity-70")}>
+                  <button onClick={() => setThemeMode('light')} className={cn("flex-1 flex flex-col items-center justify-center gap-3 py-6 rounded-2xl border-2 transition-all", themeMode === 'light' ? "border-primary bg-primary/5 text-primary" : "border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 grayscale opacity-70")}>
                     <Sun size={24} /><span className="font-bold text-sm">Claro</span>
                   </button>
-                  <button onClick={() => setThemeMode('dark')} className={cn("flex-1 flex flex-col items-center justify-center gap-3 py-6 rounded-2xl border-2 transition-all", themeMode === 'dark' ? "border-primary bg-primary/5 text-primary" : "border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 grayscale opacity-70")}>
+                  <button onClick={() => setThemeMode('dark')} className={cn("flex-1 flex flex-col items-center justify-center gap-3 py-6 rounded-2xl border-2 transition-all", themeMode === 'dark' ? "border-primary bg-primary/5 text-primary" : "border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 grayscale opacity-70")}>
                     <Moon size={24} /><span className="font-bold text-sm">Escuro</span>
                   </button>
                 </div>
               </div>
               <div className="space-y-4">
-                <h3 className="text-sm font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2"><Palette size={14} /> Cor de Destaque</h3>
+                <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Palette size={14} /> Cor de Destaque</h3>
                 <div className="grid grid-cols-4 gap-3">
                   {Object.entries(ACCENT_COLORS).map(([name, hex]) => {
                     const colorNames: Record<string, string> = {
@@ -323,11 +323,11 @@ export default function Settings() {
         {activeTab === 'admin' && !!userData.isAdmin && (
           <div className="space-y-4">
             {/* Admin sub-tabs */}
-            <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800 w-fit">
-              <button onClick={() => setAdminTab('institutions')} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all", adminTab === 'institutions' ? "bg-white dark:bg-zinc-800 text-primary shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300")}>
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 w-fit">
+              <button onClick={() => setAdminTab('institutions')} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all", adminTab === 'institutions' ? "bg-white dark:bg-slate-800 text-primary shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300")}>
                 <Building2 size={14} /> Instituições
               </button>
-              <button onClick={() => setAdminTab('users')} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all", adminTab === 'users' ? "bg-white dark:bg-zinc-800 text-primary shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300")}>
+              <button onClick={() => setAdminTab('users')} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all", adminTab === 'users' ? "bg-white dark:bg-slate-800 text-primary shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300")}>
                 <Users size={14} /> Usuários
               </button>
             </div>
@@ -340,22 +340,22 @@ export default function Settings() {
             {adminTab === 'institutions' && !loadingAdmin && (
               selectedInst ? (
                 /* Detalhe da Instituição */
-                <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
                   {/* Header da instituição */}
-                  <div className="flex items-center gap-3 px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/50">
-                    <button onClick={() => setSelectedInst(null)} className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all">
+                  <div className="flex items-center gap-3 px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50">
+                    <button onClick={() => setSelectedInst(null)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
                       <ChevronLeft size={18} />
                     </button>
                     <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
                       <Building2 size={18} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-black text-zinc-900 dark:text-zinc-100">{selectedInst.name}</p>
-                      <p className="text-[11px] text-zinc-400 font-medium">{selectedInst.domain}</p>
+                      <p className="font-black text-slate-900 dark:text-slate-100">{selectedInst.name}</p>
+                      <p className="text-[11px] text-slate-400 font-medium">{selectedInst.domain}</p>
                     </div>
                     <button
                       onClick={() => setMembersOpen(o => !o)}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-black text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-black text-slate-505 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
                     >
                       {membersOpen ? <PanelRightClose size={15} /> : <PanelRightOpen size={15} />}
                       {membersOpen ? 'Esconder membros' : 'Gerenciar membros'}
@@ -545,23 +545,23 @@ export default function Settings() {
                           animate={{ width: 280, opacity: 1 }}
                           exit={{ width: 0, opacity: 0 }}
                           transition={{ duration: 0.2 }}
-                          className="border-l border-zinc-100 dark:border-zinc-800 overflow-hidden shrink-0"
+                          className="border-l border-slate-100 dark:border-slate-800 overflow-hidden shrink-0"
                         >
                           <div className="w-[280px] h-full flex flex-col">
-                            <div className="px-4 py-3 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/50">
-                              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Membros da Instituição</p>
+                            <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Membros da Instituição</p>
                             </div>
-                            <div className="flex-1 overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-800">
+                            <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
                               {users.map(u => {
                                 const isMember = u.institutions.includes(selectedInst.id);
                                 return (
-                                  <div key={u.id} className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-950/30 transition-colors">
+                                  <div key={u.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-950/30 transition-colors">
                                     <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-black text-xs shrink-0">
                                       {u.name.charAt(0)}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                      <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200 truncate">{u.name}</p>
-                                      <p className="text-[10px] text-zinc-400 truncate">{u.email}</p>
+                                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{u.name}</p>
+                                      <p className="text-[10px] text-slate-400 truncate">{u.email}</p>
                                     </div>
                                     <button
                                       onClick={() => handleToggleMembership(u.id, selectedInst.id, isMember)}
@@ -569,8 +569,8 @@ export default function Settings() {
                                       className={cn(
                                         'shrink-0 p-1.5 rounded-lg transition-all',
                                         isMember
-                                          ? 'text-primary bg-primary/10 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20'
-                                          : 'text-zinc-300 hover:text-primary hover:bg-primary/10'
+                                          ? 'text-primary bg-primary/10 hover:bg-red-50 hover:text-red-505 dark:hover:bg-red-900/20'
+                                          : 'text-slate-300 hover:text-primary hover:bg-primary/10'
                                       )}
                                     >
                                       {isMember ? <UserCheck size={14} /> : <UserX size={14} />}

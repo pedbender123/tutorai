@@ -10,7 +10,7 @@ const features = [
 
 export default function ClassPage() {
   return (
-    <div className="h-full flex flex-col items-center justify-center p-8 bg-white dark:bg-zinc-950 select-none">
+    <div className="h-full flex flex-col items-center justify-center p-8 bg-white dark:bg-slate-950 select-none">
       {/* Glow decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl" />
@@ -34,10 +34,10 @@ export default function ClassPage() {
 
         {/* Title */}
         <div className="space-y-3">
-          <h1 className="text-5xl font-black tracking-tight text-zinc-900 dark:text-white">
+          <h1 className="text-5xl font-black tracking-tight text-slate-900 dark:text-white">
             Class
           </h1>
-          <p className="text-lg text-zinc-500 dark:text-zinc-400 leading-relaxed max-w-md">
+          <p className="text-lg text-slate-500 dark:text-slate-400 leading-relaxed max-w-md">
             O ambiente de sala de aula virtual do SCAFI está chegando — projetado para tornar o aprendizado mais confortável, bonito e eficaz.
           </p>
         </div>
@@ -47,21 +47,21 @@ export default function ClassPage() {
           {features.map(({ icon: Icon, label, desc }) => (
             <div
               key={label}
-              className="relative flex flex-col gap-2 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-left overflow-hidden group"
+              className="relative flex flex-col gap-2 p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left overflow-hidden group"
             >
               <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/[0.03] transition-colors" />
               <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                 <Icon size={16} />
               </div>
               <div>
-                <p className="text-sm font-black text-zinc-800 dark:text-zinc-200">{label}</p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-500 leading-relaxed mt-0.5">{desc}</p>
+                <p className="text-sm font-black text-slate-800 dark:text-slate-200">{label}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-450 leading-relaxed mt-0.5">{desc}</p>
               </div>
             </div>
           ))}
         </div>
 
-        <p className="text-xs text-zinc-400 dark:text-zinc-600 mt-2">
+        <p className="text-xs text-slate-400 dark:text-slate-600 mt-2">
           Fique de olho — grandes novidades estão a caminho. 🚀
         </p>
       </div>

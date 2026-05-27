@@ -101,8 +101,8 @@ export default function DisciplinasPage() {
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">Gestão de Disciplinas</h1>
-          <p className="text-zinc-500 dark:text-zinc-400 mt-2 text-lg">Organize os conteúdos acadêmicos e vincule-os aos professores.</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Gestão de Disciplinas</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">Organize os conteúdos acadêmicos e vincule-os aos professores.</p>
         </div>
         {userData?.isAdmin && (
           <button
@@ -117,7 +117,7 @@ export default function DisciplinasPage() {
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map(i => <div key={i} className="h-48 bg-zinc-100 dark:bg-zinc-800 animate-pulse rounded-2xl" />)}
+          {[1, 2, 3].map(i => <div key={i} className="h-48 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-2xl" />)}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -127,18 +127,18 @@ export default function DisciplinasPage() {
               key={disc.id}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="group relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300"
+              className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
                   <BookOpen size={24} />
                 </div>
-                {userData?.isAdmin && (
+                {(userData?.isAdmin || disc.userId === userData?.id) && (
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => handleOpenModal(disc)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 hover:text-primary transition-colors">
+                    <button onClick={() => handleOpenModal(disc)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 hover:text-primary transition-colors">
                       <Edit2 size={18} />
                     </button>
-                    <button onClick={() => handleDelete(disc.id)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 hover:text-red-600 transition-colors">
+                    <button onClick={() => handleDelete(disc.id)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 hover:text-red-600 transition-colors">
                       <Trash2 size={18} />
                     </button>
                   </div>
@@ -146,9 +146,9 @@ export default function DisciplinasPage() {
               </div>
 
               <div className="flex items-center gap-2 mb-2">
-                <h3 className="text-xl font-bold text-zinc-900 dark:text-white truncate">{disc.nome}</h3>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white truncate">{disc.nome}</h3>
                 {disc.institutionName && (
-                  <span className="px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-[10px] font-black text-zinc-500 uppercase rounded-full border border-zinc-200 dark:border-zinc-700 flex items-center gap-1 shrink-0">
+                  <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-[10px] font-black text-slate-500 uppercase rounded-full border border-slate-200 dark:border-slate-700 flex items-center gap-1 shrink-0">
                     <Building2 size={10} />
                     {disc.institutionName}
                   </span>
@@ -156,7 +156,7 @@ export default function DisciplinasPage() {
               </div>
 
               <div className="space-y-3">
-                <p className="text-zinc-500 dark:text-zinc-400 text-sm line-clamp-2 leading-relaxed">
+                <p className="text-slate-500 dark:text-slate-400 text-sm line-clamp-2 leading-relaxed">
                   {disc.conteudo || 'Sem conteúdo cadastrado.'}
                 </p>
                 
@@ -165,14 +165,14 @@ export default function DisciplinasPage() {
                     disc.professores_vinculados.map(pId => {
                       const prof = personas.find(p => p.id === pId);
                       return prof ? (
-                        <span key={pId} className="px-2 py-1 bg-zinc-100 dark:bg-zinc-800/50 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 rounded-lg border border-zinc-200 dark:border-zinc-800 flex items-center gap-1">
+                        <span key={pId} className="px-2 py-1 bg-slate-100 dark:bg-slate-800/50 text-[10px] font-bold text-slate-600 dark:text-slate-400 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center gap-1">
                           <GraduationCap size={10} />
                           {prof.nome.split(' ').pop()}
                         </span>
                       ) : null;
                     })
                   ) : (
-                    <span className="text-[10px] text-zinc-400 italic">Nenhum professor vinculado</span>
+                    <span className="text-[10px] text-slate-400 italic">Nenhum professor vinculado</span>
                   )}
                 </div>
               </div>
@@ -196,19 +196,19 @@ export default function DisciplinasPage() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative bg-white dark:bg-zinc-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800"
+              className="relative bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800"
             >
               <form onSubmit={handleSubmit} className="p-6">
-                <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-6">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">
                   {editingDisciplina ? 'Editar Disciplina' : 'Criar Nova Disciplina'}
                 </h2>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">Instituição</label>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Instituição</label>
                     <select
                       required
-                      className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-primary appearance-none outline-none text-zinc-900 dark:text-white"
+                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary appearance-none outline-none text-slate-900 dark:text-white"
                       value={formData.institutionId}
                       onChange={e => setFormData({ ...formData, institutionId: e.target.value })}
                     >
@@ -220,11 +220,11 @@ export default function DisciplinasPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">Nome da Disciplina</label>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Nome da Disciplina</label>
                     <input
                       required
                       type="text"
-                      className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-primary outline-none text-zinc-900 dark:text-white"
+                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary outline-none text-slate-900 dark:text-white"
                       value={formData.nome}
                       onChange={e => setFormData({ ...formData, nome: e.target.value })}
                       placeholder="Ex: Física Mecânica I"
@@ -232,11 +232,11 @@ export default function DisciplinasPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">Conteúdo Base (Knowledge Base)</label>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Conteúdo Base (Knowledge Base)</label>
                     <textarea
                       required
                       rows={10}
-                      className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-primary outline-none text-zinc-900 dark:text-white text-sm leading-relaxed"
+                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary outline-none text-slate-900 dark:text-white text-sm leading-relaxed"
                       value={formData.conteudo}
                       onChange={e => setFormData({ ...formData, conteudo: e.target.value })}
                       placeholder="Cole aqui o conteúdo programático, textos, fórmulas ou lições que a IA deve saber..."
@@ -244,7 +244,7 @@ export default function DisciplinasPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3">Vincular Professores (Personas)</label>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Vincular Professores (Personas)</label>
                     <div className="grid grid-cols-2 gap-2">
                       {personas.map(p => (
                         <button
@@ -255,10 +255,10 @@ export default function DisciplinasPage() {
                             "flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all border",
                             formData.professores_vinculados.includes(p.id)
                               ? "bg-primary/10 border-primary text-primary"
-                              : "bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-zinc-500"
+                              : "bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-505"
                           )}
                         >
-                          <div className={clsx("w-2 h-2 rounded-full", formData.professores_vinculados.includes(p.id) ? "bg-primary" : "bg-zinc-300")} />
+                          <div className={clsx("w-2 h-2 rounded-full", formData.professores_vinculados.includes(p.id) ? "bg-primary" : "bg-slate-300")} />
                           {p.nome}
                         </button>
                       ))}
@@ -266,11 +266,11 @@ export default function DisciplinasPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-3 mt-8 pt-6 border-t border-zinc-100 dark:border-zinc-800">
+                <div className="flex gap-3 mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="flex-1 py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-xl font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                    className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                   >
                     Cancelar
                   </button>

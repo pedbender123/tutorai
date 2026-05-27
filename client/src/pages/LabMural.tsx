@@ -50,16 +50,16 @@ export default function LabMural() {
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+      <div className="h-full flex items-center justify-center bg-slate-50 dark:bg-slate-950">
         <Loader2 className="animate-spin text-primary" size={32} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-full bg-zinc-50 dark:bg-zinc-950 font-sans">
+    <div className="min-h-full bg-slate-50 dark:bg-slate-950 font-sans">
       {/* Header */}
-      <div className="bg-white dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800 px-8 py-5">
+      <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-8 py-5">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-4">
@@ -67,13 +67,13 @@ export default function LabMural() {
                 <FlaskConical size={24} />
               </div>
               <div>
-                <h1 className="text-xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">Lab</h1>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Simuladores e experiências pedagógicas interativas</p>
+                <h1 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Lab</h1>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Simuladores e experiências pedagógicas interativas</p>
               </div>
             </div>
             {tab === 'mine' && (
               <div className="flex items-center gap-3">
-                <span className="text-xs font-bold text-zinc-400">
+                <span className="text-xs font-bold text-slate-400">
                   {myProjects.length}/{projectLimit} projetos
                 </span>
                 <button
@@ -90,14 +90,14 @@ export default function LabMural() {
           </div>
 
           {/* Tabs */}
-          <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl w-fit">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-fit">
             <button
               onClick={() => setTab('mine')}
               className={cn(
                 'px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all',
                 tab === 'mine'
-                  ? 'bg-white dark:bg-zinc-700 text-primary shadow-sm'
-                  : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
+                  ? 'bg-white dark:bg-slate-700 text-primary shadow-sm'
+                  : 'text-slate-400 hover:text-slate-650 dark:hover:text-slate-300'
               )}
             >
               Meus Projetos
@@ -108,8 +108,8 @@ export default function LabMural() {
                 className={cn(
                   'flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all',
                   tab === 'institution'
-                    ? 'bg-white dark:bg-zinc-700 text-primary shadow-sm'
-                    : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
+                    ? 'bg-white dark:bg-slate-700 text-primary shadow-sm'
+                    : 'text-slate-400 hover:text-slate-650 dark:hover:text-slate-300'
                 )}
               >
                 <Building2 size={11} />
@@ -117,7 +117,7 @@ export default function LabMural() {
                 {othersProjects.length > 0 && (
                   <span className={cn(
                     'ml-1 px-1.5 py-0.5 rounded-md text-[9px] font-black',
-                    tab === 'institution' ? 'bg-primary/20 text-primary' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500'
+                    tab === 'institution' ? 'bg-primary/20 text-primary' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'
                   )}>
                     {othersProjects.length}
                   </span>
@@ -136,16 +136,16 @@ export default function LabMural() {
               <div
                 onClick={!atLimit ? handleCreate : undefined}
                 className={cn(
-                  'border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl p-16 flex flex-col items-center justify-center gap-4',
+                  'border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl p-16 flex flex-col items-center justify-center gap-4',
                   !atLimit && 'cursor-pointer hover:border-primary hover:bg-primary/5 transition-all group'
                 )}
               >
-                <div className="w-16 h-16 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 group-hover:bg-primary/10 group-hover:text-primary transition-all">
+                <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-all">
                   <FlaskConical size={32} />
                 </div>
                 <div className="text-center">
-                  <p className="font-black text-zinc-500 dark:text-zinc-400 group-hover:text-primary transition-colors">Nenhum projeto ainda</p>
-                  <p className="text-sm text-zinc-400 dark:text-zinc-500 mt-1">Clique para criar seu primeiro simulador</p>
+                  <p className="font-black text-slate-500 dark:text-slate-400 group-hover:text-primary transition-colors">Nenhum projeto ainda</p>
+                  <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">Clique para criar seu primeiro simulador</p>
                 </div>
               </div>
             ) : (
@@ -163,12 +163,12 @@ export default function LabMural() {
                   <button
                     onClick={handleCreate}
                     disabled={creating}
-                    className="border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 flex flex-col items-center justify-center gap-3 hover:border-primary hover:bg-primary/5 transition-all group disabled:opacity-40"
+                    className="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl p-8 flex flex-col items-center justify-center gap-3 hover:border-primary hover:bg-primary/5 transition-all group disabled:opacity-40"
                   >
-                    <div className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 group-hover:bg-primary/10 group-hover:text-primary transition-all">
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-all">
                       <Plus size={20} />
                     </div>
-                    <span className="text-sm font-black text-zinc-400 group-hover:text-primary transition-colors">Novo Projeto</span>
+                    <span className="text-sm font-black text-slate-400 group-hover:text-primary transition-colors">Novo Projeto</span>
                   </button>
                 )}
               </div>
@@ -180,13 +180,13 @@ export default function LabMural() {
         {tab === 'institution' && hasInstitution && (
           <div>
             {othersProjects.length === 0 ? (
-              <div className="border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl p-16 flex flex-col items-center justify-center gap-4 text-center">
-                <div className="w-16 h-16 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400">
+              <div className="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl p-16 flex flex-col items-center justify-center gap-4 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
                   <Building2 size={32} />
                 </div>
                 <div>
-                  <p className="font-black text-zinc-500 dark:text-zinc-400">Nenhum projeto compartilhado ainda</p>
-                  <p className="text-sm text-zinc-400 mt-1">Projetos criados por outros membros da instituição aparecerão aqui</p>
+                  <p className="font-black text-slate-500 dark:text-slate-400">Nenhum projeto compartilhado ainda</p>
+                  <p className="text-sm text-slate-400 mt-1">Projetos criados por outros membros da instituição aparecerão aqui</p>
                 </div>
               </div>
             ) : (
@@ -243,7 +243,7 @@ function StarRating({
               "transition-colors",
               (hover || value) >= star
                 ? "fill-amber-400 text-amber-400"
-                : "text-zinc-300 dark:text-zinc-700"
+                : "text-slate-300 dark:text-slate-700"
             )}
           />
         </button>
@@ -274,9 +274,9 @@ function ProjectCard({
   return (
     <div
       onClick={onClick}
-      className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-3xl overflow-hidden cursor-pointer hover:shadow-xl hover:shadow-zinc-200/50 dark:hover:shadow-zinc-900/50 hover:-translate-y-1 transition-all group"
+      className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl overflow-hidden cursor-pointer hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50 hover:-translate-y-1 transition-all group"
     >
-      <div className="h-36 bg-zinc-50 dark:bg-zinc-800 relative overflow-hidden border-b border-zinc-100 dark:border-zinc-800">
+      <div className="h-36 bg-slate-50 dark:bg-slate-800 relative overflow-hidden border-b border-slate-100 dark:border-slate-800">
         {hasPreview ? (
           <iframe
             srcDoc={project.htmlContent}
@@ -287,27 +287,27 @@ function ProjectCard({
           />
         ) : (
           <div className="h-full flex items-center justify-center">
-            <FlaskConical size={40} className="text-zinc-300 dark:text-zinc-600" />
+            <FlaskConical size={40} className="text-slate-300 dark:text-slate-600" />
           </div>
         )}
       </div>
 
       <div className="p-5">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-black text-zinc-900 dark:text-zinc-100 text-sm leading-tight truncate group-hover:text-primary transition-colors">
+          <h3 className="font-black text-slate-900 dark:text-slate-100 text-sm leading-tight truncate group-hover:text-primary transition-colors">
             {project.title}
           </h3>
           {isOwner && onDelete && (
             <button
               onClick={onDelete}
-              className="shrink-0 p-1 text-zinc-300 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+              className="shrink-0 p-1 text-slate-350 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
               title="Deletar projeto"
             >
               <Trash2 size={14} />
             </button>
           )}
         </div>
-        <div className="flex items-center gap-3 mt-3 text-[11px] text-zinc-400 font-medium">
+        <div className="flex items-center gap-3 mt-3 text-[11px] text-slate-400 font-medium">
           <span className="flex items-center gap-1">
             <User size={11} />
             {project.authorName}
@@ -319,7 +319,7 @@ function ProjectCard({
         </div>
         
         {/* Rating Section */}
-        <div className="mt-4 pt-3 border-t border-zinc-50 dark:border-zinc-800 flex items-center justify-between">
+        <div className="mt-4 pt-3 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between">
           <StarRating 
             value={project.avgStars || 0} 
             readonly={isOwner} 
