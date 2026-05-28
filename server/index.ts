@@ -633,17 +633,19 @@ app.post('/api/lab/projects/:id/messages', auth.authenticate, limiter, async (re
       JSON.stringify(agentResult.patchedFunctions),
     );
 
-    // Atualiza projeto com novo HTML, codeIndex e incrementa turnCount
+    // Atualiza projeto com novo HTML, codeIndex, project_context e incrementa turnCount
     db.prepare(`
       UPDATE lab_projects
       SET htmlContent = ?,
           code_index = ?,
+          project_context = ?,
           turn_count = turn_count + 1,
           updatedAt = CURRENT_TIMESTAMP
       WHERE id = ?
     `).run(
       agentResult.htmlContent,
       JSON.stringify(agentResult.codeIndex),
+      agentResult.projectContext,
       projectId,
     );
 

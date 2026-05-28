@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { buildCodeIndex } from './codeIndexer.js';
 import { LabProject } from './labAgent.types.js';
+import { compileBlocksToHtml, Block } from './labBlockCompiler.js';
 
 const MODEL = 'gemini-2.5-flash';
 const TIMEOUT_MS = 300_000;
@@ -9,56 +9,118 @@ const TIMEOUT_MS = 300_000;
 const CREDIT_RATE = { input: 1_650_000, input_cached: 165_000, output: 13_750_000 };
 
 const SYSTEM_PROMPT = `Você é o Mini-Agente de Código do laboratório de simulações físicas do SCAFFL.
-Sua missão é estritamente técnica: criar ou modificar o código de simuladores interativos em HTML/JS/CSS.
+Agora, os simuladores são construídos de forma modular, baseados em BLOCOS representados por um JSON.
 
-REGRAS DE CONDUTA E EXECUÇÃO RÍGIDAS (SEM EXCEÇÃO):
-1. SEM CRIATIVIDADE OU INOVAÇÃO NÃO SOLICITADA: Você é um executor técnico. Limite-se estritamente ao que foi pedido pelo usuário. Não adicione funcionalidades extras, recursos visuais decorativos supérfluos ou lógica secundária não requisitada explicitamente.
-2. SEM TEXTO OU TEORIA NO SIMULADOR: Não coloque explicações teóricas, blocos de texto explicativo sobre física/química ou documentação conceitual longa dentro da interface HTML da simulação. O simulador deve conter apenas os elementos visuais da simulação (Canvas, inputs, botões) e os scripts necessários para executá-lo.
-3. FLUXO OBRIGATÓRIO DE FERRAMENTAS: Você NUNCA deve responder com texto puro ou explicações conversacionais no primeiro turno. Ao receber o pedido do usuário, você deve IMEDIATAMENTE chamar uma ferramenta de escrita ('rewriteFullCode' para novos simuladores, ou 'patchCode' para edições cirúrgicas pontuais).
-4. RESPOSTA FINAL DE APENAS UMA FRASE: Quando as ferramentas terminarem e você for emitir sua resposta final (texto de conclusão da chamada), responda com no máximo UMA frase curta e extremamente objetiva (ex: "Simulador criado com sucesso." ou "Modificações de interface aplicadas."). É terminantemente proibido dar justificativas longas, explicações pedagógicas extensas ou tutoriais conceituais. Economize tokens de output ao máximo!
-5. EXPLICAÇÃO DAS FERRAMENTAS CURTA: O campo 'explanation' das ferramentas ('rewriteFullCode' ou 'patchCode') deve conter no máximo uma frase técnica curta e objetiva explicando a mudança.
-6. Quando usar 'patchCode', a string informada no campo 'find' deve existir EXATAMENTE no código atual, caractere por caractere (respeitando espaços e quebras de linha).`;
+Sua missão é criar ou modificar a estrutura de blocos do simulador chamando as ferramentas (tools) adequadas para gerenciar a lista de blocos do laboratório.
+
+BLOCOS DISPONÍVEIS E SEUS SCHEMAS DE DADOS:
+1. Bloco de Controles ('controls'):
+   - Cria controles interativos (sliders, botões, checkbox) que alimentam o estado reativo da simulação.
+   - O campo 'fields' é uma lista de objetos:
+     { "id": "gravity", "type": "slider", "label": "Gravidade", "min": 0, "max": 20, "step": 0.1, "value": 9.8 }
+     { "id": "angle", "type": "slider", "label": "Ângulo", "min": 0, "max": 90, "step": 1, "value": 45 }
+     { "id": "start-btn", "type": "button", "label": "Disparar", "value": "fire" }
+
+2. Bloco de Visualização Canvas ('canvas'):
+   - Renderiza um elemento Canvas HTML5 isolado.
+   - O campo 'jsCode' deve conter o código JavaScript que manipula o canvas.
+   - Regras do Canvas JS:
+     * O elemento canvas pode ser obtido via document.querySelector('canvas') ou criado localmente. No ambiente real, a plataforma injeta o canvas e expõe a variável 'canvas' e o seu contexto 'ctx' no escopo global.
+     * Para escutar mudanças nos controles, adicione um listener ao evento 'sim-state-change'. O detalhe do evento contém o estado atual dos sliders:
+       window.addEventListener('sim-state-change', (e) => {
+         const state = e.detail; // state.gravity, state.angle, etc.
+         // atualize variáveis locais e redesenhe
+       });
+     * Crie uma lógica de animação fluida usando requestAnimationFrame para atualizar a física e desenhar a animação.
+     * Mantenha o visual moderno e limpo, com cores harmoniosas e animações suaves a 60 FPS.
+
+3. Bloco de Gráficos ('chart'):
+   - Plota gráficos em tempo real da simulação.
+   - Você deve informar as variáveis de controle/física que deseja plotar:
+     * 'xAxisKey': A variável do estado da simulação correspondente ao Eixo X (ex: 'time').
+     * 'yAxisKey': A variável do estado correspondente ao Eixo Y (ex: 'positionY', 'velocity', 'energy').
+
+4. Bloco de Texto/Markdown ('markdown'):
+   - Blocos de texto rico explicando a física/química por trás da simulação, roteiros experimentais ou perguntas norteadoras.
+   - O campo 'content' suporta Markdown.
+
+DIRETRIZES DE ESTILO VISUAL:
+- A interface dos blocos (cards, sliders, gráficos) é renderizada de forma linda pelo React nativo da plataforma.
+- No bloco 'canvas', você deve desenhar elementos visualmente atraentes: use cores contrastantes, vetores de força suaves (flechas indicando velocidade/aceleração), rastros de trajetória com opacidade gradual (efeito rastro de projétil) e animações responsivas e fluidas.
+
+REGRAS DE CONDUTA RÍGIDAS:
+1. Use APENAS as ferramentas declaradas para criar/modificar blocos. Não responda com texto puro no primeiro turno.
+2. Você pode chamar múltiplas ferramentas consecutivamente se precisar adicionar ou modificar mais de um bloco.
+3. Não tente reescrever um bloco inteiro de controles se o usuário pediu apenas para adicionar um slider. Use as tools cirurgicamente.
+4. Responda apenas com UMA frase curta e técnica após executar as chamadas de ferramentas.`;
 
 const TOOLS_CONFIG = [{
   functionDeclarations: [
     {
-      name: "viewCode",
-      description: "Retorna o código HTML completo atual da simulação pedagógica.",
-      parameters: { type: "object", properties: {} }
-    },
-    {
-      name: "patchCode",
-      description: "Aplica uma ou mais substituições cirúrgicas de texto (find e replace) no código HTML atual. Use esta ferramenta preferencialmente para modificações específicas ou pontuais.",
+      name: "addBlock",
+      description: "Adiciona um novo bloco à simulação (controls, canvas, chart, markdown).",
       parameters: {
         type: "object",
         properties: {
-          replacements: {
-            type: "array",
-            description: "Lista de substituições. Cada item deve conter o texto exato a ser procurado e o novo texto.",
-            items: {
-              type: "object",
-              properties: {
-                find: { type: "string", description: "O trecho exato de código atualmente existente que você deseja substituir. Deve corresponder caractere por caractere (respeitando espaços e quebras de linha)." },
-                replace: { type: "string", description: "O novo trecho de código que substituirá o trecho 'find'." }
+          type: { type: "string", description: "O tipo do bloco: 'controls', 'canvas', 'chart', 'markdown'" },
+          title: { type: "string", description: "O título visível do bloco." },
+          config: {
+            type: "object",
+            description: "Campos de configuração do bloco dependendo do tipo (fields para 'controls', jsCode para 'canvas', xAxisKey e yAxisKey para 'chart', content para 'markdown').",
+            properties: {
+              fields: {
+                type: "array",
+                description: "Apenas para 'controls'. Lista de campos de controle.",
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "string", description: "ID único do parâmetro no estado da simulação (ex: gravity, angle)." },
+                    type: { type: "string", description: "Tipo do controle: 'slider', 'button', 'checkbox', 'select'" },
+                    label: { type: "string", description: "Rótulo amigável exibido ao aluno." },
+                    min: { type: "number", description: "Apenas para slider. Valor mínimo." },
+                    max: { type: "number", description: "Apenas para slider. Valor máximo." },
+                    step: { type: "number", description: "Apenas para slider. Incremento." },
+                    value: { type: "string", description: "Valor inicial ou valor do botão." },
+                    options: { type: "array", description: "Apenas para select. Lista de opções textuais.", items: { type: "string" } }
+                  },
+                  required: ["id", "type", "label", "value"]
+                }
               },
-              required: ["find", "replace"]
+              jsCode: { type: "string", description: "Apenas para 'canvas'. Código JS executável da simulação." },
+              xAxisKey: { type: "string", description: "Apenas para 'chart'. Eixo X." },
+              yAxisKey: { type: "string", description: "Apenas para 'chart'. Eixo Y." },
+              content: { type: "string", description: "Apenas para 'markdown'. Conteúdo textual." }
             }
-          },
-          explanation: { type: "string", description: "Breve explicação didática de quais mudanças estão sendo feitas e o porquê." }
+          }
         },
-        required: ["replacements", "explanation"]
+        required: ["type", "title", "config"]
       }
     },
     {
-      name: "rewriteFullCode",
-      description: "Reescreve o código HTML completo da simulação. Use apenas se for a primeira criação da simulação ou se as mudanças forem massivas.",
+      name: "updateBlockContent",
+      description: "Atualiza o conteúdo/configuração de um bloco existente.",
       parameters: {
         type: "object",
         properties: {
-          htmlContent: { type: "string", description: "O novo conteúdo HTML completo." },
-          explanation: { type: "string", description: "Breve explicação didática das mudanças estruturais realizadas." }
+          blockId: { type: "string", description: "O ID do bloco a ser atualizado." },
+          title: { type: "string", description: "Opcional. Novo título do bloco." },
+          config: {
+            type: "object",
+            description: "Campos atualizados do bloco. Envie apenas as chaves que deseja modificar."
+          }
         },
-        required: ["htmlContent", "explanation"]
+        required: ["blockId", "config"]
+      }
+    },
+    {
+      name: "deleteBlock",
+      description: "Remove um bloco da simulação.",
+      parameters: {
+        type: "object",
+        properties: {
+          blockId: { type: "string", description: "O ID do bloco a ser excluído." }
+        },
+        required: ["blockId"]
       }
     }
   ]
@@ -82,6 +144,7 @@ function calcCredits(inputTokens: number, cachedTokens: number, outputTokens: nu
 export interface SimAgentResult {
   explanation: string;
   htmlContent: string;
+  projectContext: string; // JSON de blocos atualizado
   codeIndex: Record<string, any>;
   editPlan: null;
   editScope: string;
@@ -99,11 +162,17 @@ export async function runSimAgent(params: {
 }): Promise<SimAgentResult> {
   const { project, userMessage, recentMessages, userImageUrl } = params;
 
-  const fnNames = Object.keys(project.codeIndex);
-  const infoParts: string[] = [];
+  // 1. Carregar ou inicializar a árvore de blocos a partir do projectContext
+  let activeBlocks: Block[] = [];
+  try {
+    activeBlocks = JSON.parse(project.projectContext || '[]');
+  } catch (e) {
+    activeBlocks = [];
+  }
 
-  if (project.projectContext) infoParts.push(`Contexto pedagógico do projeto:\n${project.projectContext}`);
-  if (fnNames.length > 0) infoParts.push(`Funções mapeadas no código atual: ${fnNames.join(', ')}`);
+  // 2. Mapear informações de contexto para a IA
+  const infoParts: string[] = [];
+  infoParts.push(`Os blocos atuais da simulação são:\n${JSON.stringify(activeBlocks, null, 2)}`);
   
   if (recentMessages.length > 0) {
     const history = recentMessages
@@ -122,10 +191,8 @@ export async function runSimAgent(params: {
     tools: TOOLS_CONFIG,
   }, { timeout: TIMEOUT_MS });
 
-  let currentHtml = project.htmlContent;
-  let explanation = 'Simulação updated.';
+  let explanation = 'Simulação atualizada.';
   let editScope = 'surgical';
-  let patchedFunctions: string[] = [];
   let totalInputTokens = 0;
   let totalCachedTokens = 0;
   let totalOutputTokens = 0;
@@ -164,16 +231,60 @@ export async function runSimAgent(params: {
   let loopCount = 0;
   const maxIterations = 5;
 
+  // Executor local das ferramentas dentro do loop do chat
+  const handleLocalToolExecution = (name: string, args: any) => {
+    console.log(`[Lab Agent] Executing tool locally: ${name}`, JSON.stringify(args, null, 2));
+
+    if (name === "addBlock") {
+      const newId = `${args.type}-${activeBlocks.length + 1}`;
+      const newBlock: Block = {
+        id: newId,
+        type: args.type,
+        title: args.title,
+        ...args.config
+      };
+      activeBlocks.push(newBlock);
+      editScope = 'full_rewrite'; // Trata como modificação estrutural
+      return { success: true, message: `Bloco '${args.title}' adicionado com ID: ${newId}` };
+    }
+
+    if (name === "updateBlockContent") {
+      const block = activeBlocks.find(b => b.id === args.blockId);
+      if (!block) {
+        return { success: false, error: `Bloco com ID ${args.blockId} não encontrado.` };
+      }
+      if (args.title) block.title = args.title;
+      if (args.config) {
+        Object.assign(block, args.config);
+      }
+      editScope = 'surgical'; // Trata como modificação pontual
+      return { success: true, message: `Bloco ${args.blockId} atualizado com sucesso.` };
+    }
+
+    if (name === "deleteBlock") {
+      const index = activeBlocks.findIndex(b => b.id === args.blockId);
+      if (index === -1) {
+        return { success: false, error: `Bloco com ID ${args.blockId} não encontrado.` };
+      }
+      const removed = activeBlocks.splice(index, 1);
+      editScope = 'full_rewrite';
+      return { success: true, message: `Bloco ${args.blockId} (${removed[0].title}) excluído.` };
+    }
+
+    return { error: `Ferramenta ${name} desconhecida.` };
+  };
+
   while (loopCount < maxIterations) {
     console.log(`[Lab Agent] Iteration ${loopCount + 1}/${maxIterations}...`);
     const functionCalls = typeof response.response.functionCalls === 'function'
       ? response.response.functionCalls()
       : (response.response as any).functionCalls;
+
     if (!functionCalls || functionCalls.length === 0) {
-      const hasCodeChanged = currentHtml !== project.htmlContent;
-      if (!hasCodeChanged) {
-        console.log(`[Lab Agent] No tool called and code hasn't changed. Prompting agent to write (mode ANY)...`);
-        response = await chat.sendMessage("Nenhuma ferramenta de escrita ('rewriteFullCode' ou 'patchCode') foi executada para modificar o simulador. Por favor, execute a ferramenta de escrita apropriada para aplicar as mudanças pedidas.", {
+      const hasBlocksChanged = activeBlocks.length > 0;
+      if (!hasBlocksChanged) {
+        console.log(`[Lab Agent] No tool called and blocks are empty. Prompting agent to call tools...`);
+        response = await chat.sendMessage("Nenhuma ferramenta foi executada para modificar os blocos do laboratório. Por favor, chame as ferramentas necessárias para compor o simulador.", {
           toolConfig: {
             functionCallingConfig: {
               mode: 'ANY'
@@ -189,63 +300,24 @@ export async function runSimAgent(params: {
         continue;
       }
       explanation = response.response.text();
-      console.log(`[Lab Agent] Execution completed successfully. Explanation: ${explanation}`);
+      console.log(`[Lab Agent] Execution completed successfully.`);
       break;
     }
 
-    const call = functionCalls[0];
-    let functionResponse: any;
-    console.log(`[Lab Agent] Agent requested tool call: ${call.name}`, call.args);
-
-    if (call.name === 'viewCode') {
-      functionResponse = { code: currentHtml };
-    } 
-    else if (call.name === 'patchCode') {
-      const args = call.args as any;
-      const replacements = args.replacements as Array<{ find: string, replace: string }>;
-      explanation = args.explanation || explanation;
-      
-      let tempHtml = currentHtml;
-      let allFound = true;
-      const failedFinds: string[] = [];
-
-      for (const rep of replacements) {
-        if (tempHtml.includes(rep.find)) {
-          tempHtml = tempHtml.replace(rep.find, rep.replace);
-        } else {
-          allFound = false;
-          failedFinds.push(rep.find);
+    // Executa todas as chamadas retornadas pelo Gemini em paralelo
+    console.log(`[Lab Agent] Agent requested ${functionCalls.length} tool calls.`);
+    const functionResponses = functionCalls.map((call: any) => {
+      const toolResult = handleLocalToolExecution(call.name, call.args);
+      return {
+        functionResponse: {
+          name: call.name,
+          response: toolResult
         }
-      }
+      };
+    });
 
-      if (allFound) {
-        currentHtml = tempHtml;
-        editScope = 'surgical';
-        functionResponse = { success: true, message: 'Substituições cirúrgicas aplicadas com sucesso.' };
-      } else {
-        functionResponse = { 
-          success: false, 
-          error: `As seguintes buscas 'find' não foram localizadas exatamente no código atual: ${JSON.stringify(failedFinds)}. Certifique-se de que a string de busca em 'find' é idêntica à do código atual.`
-        };
-      }
-    } 
-    else if (call.name === 'rewriteFullCode') {
-      const args = call.args as any;
-      currentHtml = args.htmlContent;
-      explanation = args.explanation || explanation;
-      editScope = 'full_rewrite';
-      functionResponse = { success: true, message: 'Código reescrito com sucesso.' };
-    }
-
-    console.log(`[Lab Agent] Tool Execution Result:`, functionResponse);
-
-    // Envia o feedback da execução da ferramenta de volta ao chat, permitindo AUTO nos turnos seguintes
-    response = await chat.sendMessage([{
-      functionResponse: {
-        name: call.name,
-        response: functionResponse
-      }
-    }], {
+    // Envia o feedback de todas as execuções juntas de volta ao chat
+    response = await chat.sendMessage(functionResponses, {
       toolConfig: {
         functionCallingConfig: {
           mode: 'AUTO'
@@ -260,19 +332,17 @@ export async function runSimAgent(params: {
     loopCount++;
   }
 
-  // Mapeamos as funções modificadas caso tenha sido cirúrgico
-  if (editScope === 'surgical') {
-    // Apenas listamos todas as chaves mapeadas no index atual
-    patchedFunctions = Object.keys(buildCodeIndex(currentHtml));
-  }
+  // 3. Compilar a árvore de blocos atualizada para HTML autocontido
+  const compiledHtml = compileBlocksToHtml(activeBlocks);
 
   return {
     explanation,
-    htmlContent: currentHtml,
-    codeIndex: buildCodeIndex(currentHtml),
+    htmlContent: compiledHtml,
+    projectContext: JSON.stringify(activeBlocks),
+    codeIndex: {}, // Mapeamento legado vazio para não quebrar rotas
     editPlan: null,
     editScope,
-    patchedFunctions,
+    patchedFunctions: [],
     tokensUsed: totalInputTokens + totalOutputTokens,
     creditsUsed: calcCredits(totalInputTokens, totalCachedTokens, totalOutputTokens),
   };
