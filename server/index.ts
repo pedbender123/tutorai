@@ -26,7 +26,8 @@ if (!fs.existsSync(uploadsDir)) {
 }
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use('/uploads', express.static(uploadsDir));
 
 // Global Rate Limiter: 10 requests per minute
@@ -38,7 +39,6 @@ const limiter = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req) => 'global_app_limiter', // Global limit for the whole app
 });
-// Middleware for Admin only
 const requireAdmin = (req: any, res: express.Response, next: express.NextFunction) => {
   if (!req.user?.isAdmin) {
     return res.status(403).json({ error: 'Acesso negado. Apenas administradores podem realizar esta ação.' });
@@ -162,7 +162,7 @@ app.get('/api/personas', auth.authenticate, (req: any, res) => {
   }
 
   const instIds = getUserInstitutionIds(req.user.id);
-  let where = 'p.institutionId IS NULL';
+  let where = "p.institutionId IS NULL OR p.isGenerico = 1 OR p.institutionId = 'scaffl' OR p.institutionId = 'global'";
   if (instIds.length > 0) {
     const placeholders = instIds.map(() => '?').join(',');
     where += ` OR p.institutionId IN (${placeholders})`;
@@ -213,7 +213,7 @@ app.delete('/api/personas/:id', auth.authenticate, (req: any, res) => {
 
   const persona = db.prepare('SELECT * FROM personas WHERE id = ?').get(id) as any;
   if (!persona) return res.status(404).json({ error: 'Persona não encontrada.' });
-  if (persona.userId !== req.user.id && req.user.isAdmin !== 1) {
+  if (persona.userId !== req.user.id && !req.user.isAdmin) {
     return res.status(403).json({ error: 'Não autorizado.' });
   }
 
@@ -250,16 +250,22 @@ app.get('/api/disciplinas', auth.authenticate, (req: any, res) => {
     `).all() as any[];
   } else {
     const instIds = getUserInstitutionIds(req.user.id);
-    if (instIds.length === 0) return res.json([]);
-
-    const placeholders = instIds.map(() => '?').join(',');
-    disciplinas = db.prepare(`
+    
+    let query = `
       SELECT d.*, i.name as institutionName
       FROM disciplinas d
       LEFT JOIN institutions i ON d.institutionId = i.id
-      WHERE d.institutionId IN (${placeholders})
-      ORDER BY d.createdAt DESC
-    `).all(...instIds) as any[];
+      WHERE d.institutionId = 'scaffl' OR d.institutionId = 'global'
+    `;
+    
+    if (instIds.length > 0) {
+      const placeholders = instIds.map(() => '?').join(',');
+      query += ` OR d.institutionId IN (${placeholders})`;
+    }
+    
+    query += ` ORDER BY d.createdAt DESC`;
+    
+    disciplinas = db.prepare(query).all(...instIds) as any[];
   }
 
   for (const d of disciplinas) {
@@ -321,7 +327,7 @@ app.delete('/api/disciplinas/:id', auth.authenticate, (req: any, res) => {
 
   const disciplina = db.prepare('SELECT * FROM disciplinas WHERE id = ?').get(id) as any;
   if (!disciplina) return res.status(404).json({ error: 'Disciplina não encontrada.' });
-  if (disciplina.userId !== req.user.id && req.user.isAdmin !== 1) {
+  if (disciplina.userId !== req.user.id && !req.user.isAdmin) {
     return res.status(403).json({ error: 'Não autorizado.' });
   }
 
@@ -363,13 +369,21 @@ app.post('/api/chats', auth.authenticate, (req: any, res) => {
     return res.status(404).json({ error: `Professor "${professorId}" não encontrado.` });
   }
 
+  let finalDisciplinaId = disciplinaId || null;
+  if (!finalDisciplinaId) {
+    const vinculo = db.prepare('SELECT disciplinaId FROM persona_disciplina WHERE personaId = ? LIMIT 1').get(professorId) as { disciplinaId: string } | undefined;
+    if (vinculo) {
+      finalDisciplinaId = vinculo.disciplinaId;
+    }
+  }
+
   const chatId = crypto.randomUUID();
   const title = `Conversa com ${persona.nome}`;
 
   db.prepare(`
     INSERT INTO chats (id, userId, title, persona, personaDbId, disciplinaId)
     VALUES (?, ?, ?, ?, ?, ?)
-  `).run(chatId, req.user.id, title, professorId, persona.id, disciplinaId || null);
+  `).run(chatId, req.user.id, title, professorId, persona.id, finalDisciplinaId);
 
   // Insert greeting
   const greetingId = crypto.randomUUID();
@@ -601,6 +615,23 @@ app.post('/api/lab/projects/:id/messages', auth.authenticate, limiter, async (re
     }
   }
 
+  // Verifica limite de créditos de IA mensal (soma chat + lab)
+  const monthlyChat = db.prepare(`
+    SELECT SUM(creditsUsed) as total FROM messages
+    WHERE userId = ? AND createdAt >= DATETIME('now', '-30 days')
+  `).get(userId) as { total: number };
+  const monthlyLab = db.prepare(`
+    SELECT SUM(creditsUsed) as total FROM lab_messages
+    WHERE userId = ? AND createdAt >= DATETIME('now', '-30 days')
+  `).get(userId) as { total: number };
+  const currentMonthlyTotal = (monthlyChat?.total || 0) + (monthlyLab?.total || 0);
+
+  const { creditLimit } = getUserCreditLimit(userId);
+  if (currentMonthlyTotal > creditLimit) {
+    const limitLabel = creditLimit >= 1_000_000 ? '1M' : '100k';
+    return res.status(402).json({ error: `Limite mensal de ${limitLabel} créditos de IA atingido.` });
+  }
+
   // Salva mensagem do usuário
   const userMsgId = crypto.randomUUID();
   db.prepare(
@@ -663,8 +694,24 @@ app.post('/api/lab/projects/:id/messages', auth.authenticate, limiter, async (re
 
   } catch (err: any) {
     console.error(err);
-    db.prepare(`DELETE FROM lab_messages WHERE id = ?`).run(userMsgId);
     const errorMessage = err.message?.includes('Limite') ? err.message : 'Falha ao gerar resposta do Lab Agent.';
+    
+    // Grava uma resposta de falha do assistente no banco de dados, para que a mensagem de input do aluno nunca seja descartada da pesquisa científica
+    const assistantErrorMsgId = crypto.randomUUID();
+    try {
+      db.prepare(`
+        INSERT INTO lab_messages (id, projectId, userId, role, content, tokensUsed, creditsUsed, edit_scope)
+        VALUES (?, ?, ?, 'assistant', ?, 0, 0, 'error')
+      `).run(
+        assistantErrorMsgId,
+        projectId,
+        userId,
+        `[FALHA DE PROCESSAMENTO DA IA]: ${errorMessage}`
+      );
+    } catch (dbErr) {
+      console.error('Erro ao gravar mensagem de erro do assistente no banco:', dbErr);
+    }
+
     res.status(500).json({ error: errorMessage });
   }
 });
@@ -725,6 +772,574 @@ app.get('/api/admin/security/runs/:runId', auth.authenticate, requireAdmin, (req
     'SELECT * FROM security_test_results WHERE runId = ? ORDER BY severity ASC'
   ).all(runId);
   res.json({ ...run as any, results });
+});
+
+// ==================== IA USAGE ROUTE (Admin only) ====================
+
+app.get('/api/admin/ia-usage', auth.authenticate, requireAdmin, (req: any, res) => {
+  try {
+    // 1. Custos Consolidados Gerais (Chat e Lab)
+    const chatSum = db.prepare(`SELECT SUM(creditsUsed) as total FROM messages`).get() as { total: number | null };
+    const labSum = db.prepare(`SELECT SUM(creditsUsed) as total FROM lab_messages`).get() as { total: number | null };
+    
+    const creditsChat = chatSum?.total || 0;
+    const creditsLab = labSum?.total || 0;
+    const creditsTotal = creditsChat + creditsLab;
+    
+    const reaisChat = creditsChat / 1_000_000;
+    const reaisLab = creditsLab / 1_000_000;
+    const reaisTotal = creditsTotal / 1_000_000;
+    
+    const spendCap = 110.00;
+    const externalInitialSpend = 27.51;
+    const grandTotalReais = reaisTotal + externalInitialSpend;
+
+    // 2. Custos por Instituição
+    const instChat = db.prepare(`
+      SELECT ui.institutionId, i.name, SUM(m.creditsUsed) as totalCredits
+      FROM messages m
+      JOIN user_institutions ui ON m.userId = ui.userId
+      JOIN institutions i ON ui.institutionId = i.id
+      GROUP BY ui.institutionId
+    `).all() as any[];
+
+    const instLab = db.prepare(`
+      SELECT ui.institutionId, i.name, SUM(lm.creditsUsed) as totalCredits
+      FROM lab_messages lm
+      JOIN user_institutions ui ON lm.userId = ui.userId
+      JOIN institutions i ON ui.institutionId = i.id
+      GROUP BY ui.institutionId
+    `).all() as any[];
+
+    const institutionsMap = new Map<string, { id: string, name: string, chatCredits: number, labCredits: number }>();
+    instChat.forEach(c => {
+      institutionsMap.set(c.institutionId, { id: c.institutionId, name: c.name, chatCredits: c.totalCredits, labCredits: 0 });
+    });
+    instLab.forEach(l => {
+      const existing = institutionsMap.get(l.institutionId);
+      if (existing) {
+        existing.labCredits = l.totalCredits;
+      } else {
+        institutionsMap.set(l.institutionId, { id: l.institutionId, name: l.name, chatCredits: 0, labCredits: l.totalCredits });
+      }
+    });
+
+    const institutions = Array.from(institutionsMap.values()).map(inst => {
+      const totalCredits = inst.chatCredits + inst.labCredits;
+      return {
+        id: inst.id,
+        name: inst.name,
+        chatCredits: inst.chatCredits,
+        labCredits: inst.labCredits,
+        totalCredits,
+        totalReais: totalCredits / 1_000_000
+      };
+    });
+
+    // 3. Custos por Sala de Aula
+    const classChat = db.prepare(`
+      SELECT uc.classroomId, c.name, SUM(m.creditsUsed) as totalCredits
+      FROM messages m
+      JOIN user_classrooms uc ON m.userId = uc.userId
+      JOIN classrooms c ON uc.classroomId = c.id
+      GROUP BY uc.classroomId
+    `).all() as any[];
+
+    const classLab = db.prepare(`
+      SELECT uc.classroomId, c.name, SUM(lm.creditsUsed) as totalCredits
+      FROM lab_messages lm
+      JOIN user_classrooms uc ON lm.userId = uc.userId
+      JOIN classrooms c ON uc.classroomId = c.id
+      GROUP BY uc.classroomId
+    `).all() as any[];
+
+    const classroomsMap = new Map<string, { id: string, name: string, chatCredits: number, labCredits: number }>();
+    classChat.forEach(c => {
+      classroomsMap.set(c.classroomId, { id: c.classroomId, name: c.name, chatCredits: c.totalCredits, labCredits: 0 });
+    });
+    classLab.forEach(l => {
+      const existing = classroomsMap.get(l.classroomId);
+      if (existing) {
+        existing.labCredits = l.totalCredits;
+      } else {
+        classroomsMap.set(l.classroomId, { id: l.classroomId, name: l.name, chatCredits: 0, labCredits: l.totalCredits });
+      }
+    });
+
+    const classrooms = Array.from(classroomsMap.values()).map(cls => {
+      const totalCredits = cls.chatCredits + cls.labCredits;
+      return {
+        id: cls.id,
+        name: cls.name,
+        chatCredits: cls.chatCredits,
+        labCredits: cls.labCredits,
+        totalCredits,
+        totalReais: totalCredits / 1_000_000
+      };
+    });
+
+    // 4. Maiores Consumidores
+    const userChat = db.prepare(`
+      SELECT m.userId, u.name, u.email, SUM(m.creditsUsed) as totalCredits
+      FROM messages m
+      JOIN users u ON m.userId = u.id
+      GROUP BY m.userId
+    `).all() as any[];
+
+    const userLab = db.prepare(`
+      SELECT lm.userId, u.name, u.email, SUM(lm.creditsUsed) as totalCredits
+      FROM lab_messages lm
+      JOIN users u ON lm.userId = u.id
+      GROUP BY lm.userId
+    `).all() as any[];
+
+    const usersMap = new Map<string, { id: string, name: string, email: string, chatCredits: number, labCredits: number }>();
+    userChat.forEach(u => {
+      usersMap.set(u.userId, { id: u.userId, name: u.name, email: u.email, chatCredits: u.totalCredits, labCredits: 0 });
+    });
+    userLab.forEach(l => {
+      const existing = usersMap.get(l.userId);
+      if (existing) {
+        existing.labCredits = l.totalCredits;
+      } else {
+        usersMap.set(l.userId, { id: l.userId, name: l.name, email: l.email, chatCredits: 0, labCredits: l.totalCredits });
+      }
+    });
+
+    const topUsers = Array.from(usersMap.values()).map(usr => {
+      const totalCredits = usr.chatCredits + usr.labCredits;
+      return {
+        id: usr.id,
+        name: usr.name,
+        email: usr.email,
+        chatCredits: usr.chatCredits,
+        labCredits: usr.labCredits,
+        totalCredits,
+        totalReais: totalCredits / 1_000_000
+      };
+    }).sort((a, b) => b.totalCredits - a.totalCredits).slice(0, 30);
+
+    // 5. Métricas Temporais: Gráficos de 24h, 7d e 30d
+    const chat24h = db.prepare(`
+      SELECT strftime('%Y-%m-%d %H:00:00', createdAt) as period, SUM(creditsUsed) as total
+      FROM messages
+      WHERE createdAt >= datetime('now', '-24 hours')
+      GROUP BY period
+    `).all() as any[];
+
+    const lab24h = db.prepare(`
+      SELECT strftime('%Y-%m-%d %H:00:00', createdAt) as period, SUM(creditsUsed) as total
+      FROM lab_messages
+      WHERE createdAt >= datetime('now', '-24 hours')
+      GROUP BY period
+    `).all() as any[];
+
+    const chat7d = db.prepare(`
+      SELECT strftime('%Y-%m-%d', createdAt) as period, SUM(creditsUsed) as total
+      FROM messages
+      WHERE createdAt >= datetime('now', '-7 days')
+      GROUP BY period
+    `).all() as any[];
+
+    const lab7d = db.prepare(`
+      SELECT strftime('%Y-%m-%d', createdAt) as period, SUM(creditsUsed) as total
+      FROM lab_messages
+      WHERE createdAt >= datetime('now', '-7 days')
+      GROUP BY period
+    `).all() as any[];
+
+    const chat30d = db.prepare(`
+      SELECT strftime('%Y-%m-%d', createdAt) as period, SUM(creditsUsed) as total
+      FROM messages
+      WHERE createdAt >= datetime('now', '-30 days')
+      GROUP BY period
+    `).all() as any[];
+
+    const lab30d = db.prepare(`
+      SELECT strftime('%Y-%m-%d', createdAt) as period, SUM(creditsUsed) as total
+      FROM lab_messages
+      WHERE createdAt >= datetime('now', '-30 days')
+      GROUP BY period
+    `).all() as any[];
+
+    const mergePeriods = (chatData: any[], labData: any[]) => {
+      const map = new Map<string, { period: string, chatCredits: number, labCredits: number }>();
+      chatData.forEach(d => {
+        map.set(d.period, { period: d.period, chatCredits: d.total || 0, labCredits: 0 });
+      });
+      labData.forEach(d => {
+        const existing = map.get(d.period);
+        if (existing) {
+          existing.labCredits = d.total || 0;
+        } else {
+          map.set(d.period, { period: d.period, chatCredits: 0, labCredits: d.total || 0 });
+        }
+      });
+      return Array.from(map.values()).map(p => {
+        const total = p.chatCredits + p.labCredits;
+        return {
+          period: p.period,
+          chatCredits: p.chatCredits,
+          labCredits: p.labCredits,
+          totalCredits: total,
+          totalReais: total / 1_000_000
+        };
+      }).sort((a, b) => a.period.localeCompare(b.period));
+    };
+
+    const history24h = mergePeriods(chat24h, lab24h);
+    const history7d = mergePeriods(chat7d, lab7d);
+    const history30d = mergePeriods(chat30d, lab30d);
+
+    res.json({
+      summary: {
+        creditsChat,
+        creditsLab,
+        creditsTotal,
+        reaisChat,
+        reaisLab,
+        reaisTotal,
+        spendCap,
+        externalInitialSpend,
+        grandTotalReais,
+      },
+      institutions,
+      classrooms,
+      topUsers,
+      history: {
+        h24: history24h,
+        d7: history7d,
+        d30: history30d,
+      }
+    });
+
+  } catch (err: any) {
+    console.error('Error computing IA usage:', err);
+    res.status(500).json({ error: 'Erro ao computar uso de IA.' });
+  }
+});
+
+// ==================== AVA & ACTIVITIES ROUTES ====================
+
+// GET /api/classrooms/my-classes — Obter todas as salas às quais o usuário tem acesso
+app.get('/api/classrooms/my-classes', auth.authenticate, (req: any, res) => {
+  const userId = req.user.id;
+
+  if (req.user.isAdmin) {
+    const classrooms = db.prepare(`
+      SELECT c.*, i.name as institutionName
+      FROM classrooms c
+      JOIN institutions i ON c.institutionId = i.id
+      ORDER BY i.name ASC, c.name ASC
+    `).all();
+    return res.json(classrooms);
+  }
+
+  const classrooms = db.prepare(`
+    SELECT c.*, i.name as institutionName, uc.role
+    FROM classrooms c
+    JOIN user_classrooms uc ON c.id = uc.classroomId
+    JOIN institutions i ON c.institutionId = i.id
+    WHERE uc.userId = ?
+    ORDER BY i.name ASC, c.name ASC
+  `).all(userId);
+
+  res.json(classrooms);
+});
+
+// GET /api/classrooms/my-class — Mural da sala de aula do aluno (com suporte a sala selecionada)
+app.get('/api/classrooms/my-class', auth.authenticate, (req: any, res) => {
+  const userId = req.user.id;
+  const queryClassroomId = req.query.classroomId as string | undefined;
+
+  let targetClassroomId = queryClassroomId;
+
+  if (!targetClassroomId) {
+    if (req.user.isAdmin) {
+      const firstClass = db.prepare('SELECT id FROM classrooms LIMIT 1').get() as { id: string } | undefined;
+      targetClassroomId = firstClass?.id;
+    } else {
+      const firstClass = db.prepare('SELECT classroomId FROM user_classrooms WHERE userId = ? LIMIT 1').get(userId) as { classroomId: string } | undefined;
+      targetClassroomId = firstClass?.classroomId;
+    }
+  }
+
+  if (!targetClassroomId) {
+    return res.json({ classroom: null, disciplinas: [], activities: [] });
+  }
+
+  // Verificar acesso se não for admin
+  if (!req.user.isAdmin) {
+    const hasAccess = db.prepare('SELECT 1 FROM user_classrooms WHERE userId = ? AND classroomId = ?').get(userId, targetClassroomId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Você não tem acesso a esta sala de aula.' });
+    }
+  }
+
+  const classroom = db.prepare(`
+    SELECT c.*, i.name as institutionName
+    FROM classrooms c
+    JOIN institutions i ON c.institutionId = i.id
+    WHERE c.id = ?
+  `).get(targetClassroomId);
+
+  if (!classroom) {
+    return res.json({ classroom: null, disciplinas: [], activities: [] });
+  }
+
+  // Disciplinas associadas a esta classe
+  const disciplinas = db.prepare(`
+    SELECT d.*, i.name as institutionName
+    FROM disciplinas d
+    LEFT JOIN institutions i ON d.institutionId = i.id
+    WHERE d.classroomId = ?
+    ORDER BY d.createdAt DESC
+  `).all(targetClassroomId);
+
+  // Atividades associadas a esta classe
+  const activities = db.prepare(`
+    SELECT a.*
+    FROM activities a
+    JOIN activity_classrooms ac ON a.id = ac.activityId
+    WHERE ac.classroomId = ?
+    ORDER BY a.dueDate ASC
+  `).all(targetClassroomId);
+
+  res.json({ classroom, disciplinas, activities });
+});
+
+// GET /api/classrooms/:classroomId/mural — Mural da sala de aula específica (Admin ou membro)
+app.get('/api/classrooms/:classroomId/mural', auth.authenticate, (req: any, res) => {
+  const { classroomId } = req.params;
+  const userId = req.user.id;
+
+  if (!req.user.isAdmin) {
+    const hasAccess = db.prepare('SELECT 1 FROM user_classrooms WHERE userId = ? AND classroomId = ?').get(userId, classroomId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Você não tem acesso a esta sala de aula.' });
+    }
+  }
+
+  const classroom = db.prepare(`
+    SELECT c.*, i.name as institutionName
+    FROM classrooms c
+    JOIN institutions i ON c.institutionId = i.id
+    WHERE c.id = ?
+  `).get(classroomId);
+
+  if (!classroom) return res.status(404).json({ error: 'Sala de aula não encontrada.' });
+
+  const disciplinas = db.prepare(`
+    SELECT d.*, i.name as institutionName
+    FROM disciplinas d
+    LEFT JOIN institutions i ON d.institutionId = i.id
+    WHERE d.classroomId = ?
+    ORDER BY d.createdAt DESC
+  `).all(classroomId);
+
+  const activities = db.prepare(`
+    SELECT a.*
+    FROM activities a
+    JOIN activity_classrooms ac ON a.id = ac.activityId
+    WHERE ac.classroomId = ?
+    ORDER BY a.dueDate ASC
+  `).all(classroomId);
+
+  res.json({ classroom, disciplinas, activities });
+});
+
+// GET /api/admin/classrooms/:classroomId/users — Listar usuários de uma sala e elegíveis
+app.get('/api/admin/classrooms/:classroomId/users', auth.authenticate, requireAdmin, (req, res) => {
+  const { classroomId } = req.params;
+
+  const classroom = db.prepare('SELECT * FROM classrooms WHERE id = ?').get(classroomId) as { id: string, institutionId: string } | undefined;
+  if (!classroom) return res.status(404).json({ error: 'Sala de aula não encontrada.' });
+
+  // Usuários na sala
+  const usersInClass = db.prepare(`
+    SELECT u.id, u.name, u.email, u.role, uc.role as classRole
+    FROM users u
+    JOIN user_classrooms uc ON u.id = uc.userId
+    WHERE uc.classroomId = ?
+  `).all(classroomId);
+
+  // Usuários na mesma instituição fora da sala
+  const availableUsers = db.prepare(`
+    SELECT u.id, u.name, u.email, u.role
+    FROM users u
+    JOIN user_institutions ui ON u.id = ui.userId
+    WHERE ui.institutionId = ?
+      AND u.id NOT IN (SELECT userId FROM user_classrooms WHERE classroomId = ?)
+      AND u.id != 'system'
+  `).all(classroom.institutionId, classroomId);
+
+  res.json({ usersInClass, availableUsers });
+});
+
+// POST /api/admin/classrooms/:classroomId/users — Vincular usuário à sala
+app.post('/api/admin/classrooms/:classroomId/users', auth.authenticate, requireAdmin, (req, res) => {
+  const { classroomId } = req.params;
+  const { userId, role } = req.body;
+
+  if (!userId) return res.status(400).json({ error: 'ID do usuário é obrigatório.' });
+
+  db.prepare(`
+    INSERT OR REPLACE INTO user_classrooms (userId, classroomId, role)
+    VALUES (?, ?, ?)
+  `).run(userId, classroomId, role || 'student');
+
+  res.json({ success: true });
+});
+
+// DELETE /api/admin/classrooms/:classroomId/users/:userId — Desvincular usuário da sala
+app.delete('/api/admin/classrooms/:classroomId/users/:userId', auth.authenticate, requireAdmin, (req, res) => {
+  const { classroomId, userId } = req.params;
+
+  db.prepare('DELETE FROM user_classrooms WHERE userId = ? AND classroomId = ?').run(userId, classroomId);
+  res.json({ success: true });
+});
+
+// POST /api/activities — Criar atividade (Admin apenas)
+app.post('/api/activities', auth.authenticate, requireAdmin, (req: any, res) => {
+  const { title, description, dueDate, institutionId, classroomIds } = req.body;
+
+  if (!title || !dueDate || !institutionId || !classroomIds || !Array.isArray(classroomIds)) {
+    return res.status(400).json({ error: 'Campos obrigatórios ausentes.' });
+  }
+
+  const activityId = crypto.randomUUID();
+
+  // Inserir atividade
+  db.prepare(`
+    INSERT INTO activities (id, title, description, dueDate, institutionId)
+    VALUES (?, ?, ?, ?, ?)
+  `).run(activityId, title, description || '', dueDate, institutionId);
+
+  // Inserir relacionamentos com salas e gerar notificações
+  const insertRelation = db.prepare(`
+    INSERT INTO activity_classrooms (activityId, classroomId)
+    VALUES (?, ?)
+  `);
+
+  const insertNotification = db.prepare(`
+    INSERT INTO notifications (id, title, content, type, targetClassroomId, referenceId)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `);
+
+  for (const cId of classroomIds) {
+    insertRelation.run(activityId, cId);
+    
+    // Gerar notificação
+    const notificationId = crypto.randomUUID();
+    const truncatedDesc = description && description.length > 80 ? description.substring(0, 80) + '...' : (description || '');
+    insertNotification.run(
+      notificationId,
+      `Nova atividade: ${title}`,
+      `Prazo de entrega: ${new Date(dueDate).toLocaleDateString('pt-BR')}. ${truncatedDesc}`,
+      'activity',
+      cId,
+      activityId
+    );
+  }
+
+  const activity = db.prepare('SELECT * FROM activities WHERE id = ?').get(activityId);
+  res.json(activity);
+});
+
+// GET /api/activities — Listar todas as atividades (Aluno vê da sua sala, Admin vê todas da instituição)
+app.get('/api/activities', auth.authenticate, (req: any, res) => {
+  if (req.user.isAdmin) {
+    const activities = db.prepare(`
+      SELECT a.*, i.name as institutionName,
+             (SELECT GROUP_CONCAT(c.name, ', ') 
+              FROM activity_classrooms ac
+              JOIN classrooms c ON ac.classroomId = c.id
+              WHERE ac.activityId = a.id) as classroomsList
+      FROM activities a
+      LEFT JOIN institutions i ON a.institutionId = i.id
+      ORDER BY a.createdAt DESC
+    `).all();
+    return res.json(activities);
+  }
+
+  const user = db.prepare('SELECT classroomId FROM users WHERE id = ?').get(req.user.id) as { classroomId: string } | undefined;
+  if (!user || !user.classroomId) {
+    return res.json([]);
+  }
+
+  const activities = db.prepare(`
+    SELECT a.*
+    FROM activities a
+    JOIN activity_classrooms ac ON a.id = ac.activityId
+    WHERE ac.classroomId = ?
+    ORDER BY a.dueDate ASC
+  `).all(user.classroomId);
+  
+  res.json(activities);
+});
+
+// DELETE /api/activities/:id — Remover atividade (Admin apenas)
+app.delete('/api/activities/:id', auth.authenticate, requireAdmin, (req: any, res) => {
+  const { id } = req.params;
+  db.prepare('DELETE FROM activities WHERE id = ?').run(id);
+  db.prepare('DELETE FROM activity_classrooms WHERE activityId = ?').run(id);
+  db.prepare('DELETE FROM notifications WHERE referenceId = ?').run(id);
+  res.json({ ok: true });
+});
+
+// ==================== NOTIFICATIONS ROUTES ====================
+
+// GET /api/notifications — Buscar notificações do aluno
+app.get('/api/notifications', auth.authenticate, (req: any, res) => {
+  const userId = req.user.id;
+  const user = db.prepare('SELECT classroomId FROM users WHERE id = ?').get(userId) as { classroomId: string } | undefined;
+
+  if (!user || !user.classroomId) {
+    return res.json([]);
+  }
+
+  // Notificações ativas (onde a atividade vinculada ainda não expirou ou o prazo é futuro)
+  const notifications = db.prepare(`
+    SELECT n.*, 
+           COALESCE(uns.seen, 0) as seen, 
+           COALESCE(uns.dismissed, 0) as dismissed,
+           a.dueDate
+    FROM notifications n
+    LEFT JOIN activities a ON n.referenceId = a.id
+    LEFT JOIN user_notifications_status uns ON n.id = uns.notificationId AND uns.userId = ?
+    WHERE n.targetClassroomId = ? AND (a.dueDate IS NULL OR date(a.dueDate) >= date('now'))
+    ORDER BY n.createdAt DESC
+  `).all(userId, user.classroomId);
+
+  res.json(notifications);
+});
+
+// POST /api/notifications/:id/seen — Marcar notificação como visualizada no pop-up invasivo
+app.post('/api/notifications/:id/seen', auth.authenticate, (req: any, res) => {
+  const userId = req.user.id;
+  const notificationId = req.params.id;
+
+  db.prepare(`
+    INSERT INTO user_notifications_status (userId, notificationId, seen)
+    VALUES (?, ?, 1)
+    ON CONFLICT(userId, notificationId) DO UPDATE SET seen = 1
+  `).run(userId, notificationId);
+
+  res.json({ ok: true });
+});
+
+// POST /api/notifications/:id/dismiss — Marcar notificação como descartada (some do menu lateral)
+app.post('/api/notifications/:id/dismiss', auth.authenticate, (req: any, res) => {
+  const userId = req.user.id;
+  const notificationId = req.params.id;
+
+  db.prepare(`
+    INSERT INTO user_notifications_status (userId, notificationId, dismissed)
+    VALUES (?, ?, 1)
+    ON CONFLICT(userId, notificationId) DO UPDATE SET dismissed = 1
+  `).run(userId, notificationId);
+
+  res.json({ ok: true });
 });
 
 // Serve static files in production

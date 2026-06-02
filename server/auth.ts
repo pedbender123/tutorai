@@ -20,7 +20,25 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
-    req.user = decoded;
+    
+    // Obter dados de permissão atualizados em tempo real do banco
+    const dbUser = db.prepare('SELECT id, email, role, isAdmin FROM users WHERE id = ?').get(decoded.id) as any;
+    if (!dbUser) {
+      return res.status(401).json({ error: 'Usuário não encontrado.' });
+    }
+
+    // Bloqueio de conta duplicada
+    if (dbUser.email === 'tfcurra@gmail.com') {
+      return res.status(403).json({ error: 'Acesso bloqueado: Esta conta foi detectada como uma duplicata de acesso do estudante Thales Fachin Curra.' });
+    }
+
+    req.user = {
+      id: dbUser.id,
+      email: dbUser.email,
+      role: dbUser.role,
+      isAdmin: !!dbUser.isAdmin
+    } as any;
+
     next();
   } catch (err) {
     res.status(401).json({ error: 'Invalid token' });
@@ -34,6 +52,11 @@ export const login = async (req: Request, res: Response) => {
   const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as any;
   if (!user || !(await bcrypt.compare(password, user.password))) {
     return res.status(401).json({ error: 'Invalid email or password' });
+  }
+
+  // Bloqueio de conta duplicada no login
+  if (user.email === 'tfcurra@gmail.com') {
+    return res.status(403).json({ error: 'Acesso bloqueado: Esta conta foi detectada como uma duplicata de acesso do estudante Thales Fachin Curra.' });
   }
 
   const token = jwt.sign({ id: user.id, email: user.email, role: user.role, isAdmin: !!user.isAdmin }, JWT_SECRET, { expiresIn: '7d' });
@@ -94,6 +117,9 @@ export const register = async (req: AuthRequest, res: Response) => {
       const classroom = db.prepare('SELECT * FROM classrooms WHERE id = ?').get(inviteCode) as any;
       if (classroom) {
         db.prepare('INSERT OR IGNORE INTO user_institutions (userId, institutionId) VALUES (?, ?)').run(userId, classroom.institutionId);
+        // Associar o aluno recém-cadastrado na tabela N:N de salas de aula
+        db.prepare('INSERT OR IGNORE INTO user_classrooms (userId, classroomId, role) VALUES (?, ?, ?)')
+          .run(userId, inviteCode, 'student');
       }
     } else {
       const domain = '@' + email.split('@')[1];

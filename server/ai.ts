@@ -24,8 +24,74 @@ const PRO_RATE  = { input: 6_875, output: 55_000 };
 export function getUserCreditLimit(userId: string): { creditLimit: number; projectLimit: number } {
   const rows = db.prepare('SELECT institutionId FROM user_institutions WHERE userId = ?').all(userId) as { institutionId: string }[];
   return rows.length > 0
-    ? { creditLimit: 1_000_000, projectLimit: 10 }
-    : { creditLimit: 100_000,   projectLimit: 5  };
+    ? { creditLimit: 20_000_000, projectLimit: 15 } // Cota estendida para garantir espaço de desenvolvimento aos alunos
+    : { creditLimit: 100_000,    projectLimit: 5  };
+}
+
+const toolDeclarations = [
+  {
+    functionDeclarations: [
+      {
+        name: 'listar_disciplinas',
+        description: 'Lista as disciplinas disponíveis para o estudante no AVA.',
+        parameters: { type: 'OBJECT', properties: {} }
+      },
+      {
+        name: 'ler_conteudo_disciplina',
+        description: 'Lê o conteúdo programático completo de uma disciplina específica pelo seu ID. Use isso para buscar dados factuais sobre matérias didáticas e responder a perguntas do estudante com precisão.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            disciplinaId: { type: 'STRING', description: 'O ID da disciplina a ser lida.' }
+          },
+          required: ['disciplinaId']
+        }
+      },
+      {
+        name: 'listar_atividades',
+        description: 'Lista as atividades/tarefas registradas com título, descrição e prazo de entrega para a sala de aula do estudante.',
+        parameters: { type: 'OBJECT', properties: {} }
+      },
+      {
+        name: 'solicitar_contato_professor',
+        description: 'Gera e retorna o link de contato direto do WhatsApp do Professor Pedro, responsável pela plataforma. Chame esta ferramenta se o estudante expressar que precisa de ajuda direta de um humano, atendimento presencial, atendimento extra ou quiser o contato do professor Pedro.',
+        parameters: { type: 'OBJECT', properties: {} }
+      }
+    ]
+  }
+];
+
+function queryDisciplinas(userId: string) {
+  const classrooms = db.prepare('SELECT classroomId FROM user_classrooms WHERE userId = ?').all(userId) as { classroomId: string }[];
+  let query = `SELECT id, nome FROM disciplinas WHERE institutionId = 'scaffl' OR institutionId = 'global'`;
+  const params: any[] = [];
+  
+  if (classrooms.length > 0) {
+    const placeholders = classrooms.map(() => '?').join(', ');
+    query += ` OR classroomId IN (${placeholders})`;
+    params.push(...classrooms.map(c => c.classroomId));
+  }
+  return db.prepare(query).all(...params);
+}
+
+function queryDisciplinaConteudo(disciplinaId: string) {
+  const disc = db.prepare('SELECT nome, conteudo FROM disciplinas WHERE id = ?').get(disciplinaId) as any;
+  if (!disc) return { error: `Disciplina "${disciplinaId}" não encontrada.` };
+  return { nome: disc.nome, conteudo: disc.conteudo };
+}
+
+function queryAtividades(userId: string) {
+  const classrooms = db.prepare('SELECT classroomId FROM user_classrooms WHERE userId = ?').all(userId) as { classroomId: string }[];
+  if (classrooms.length === 0) return [];
+
+  const placeholders = classrooms.map(() => '?').join(', ');
+  return db.prepare(`
+    SELECT a.id, a.title, a.description, a.dueDate
+    FROM activities a
+    JOIN activity_classrooms ac ON a.id = ac.activityId
+    WHERE ac.classroomId IN (${placeholders})
+    ORDER BY a.dueDate ASC
+  `).all(...classrooms.map(c => c.classroomId));
 }
 
 /**
@@ -93,11 +159,15 @@ async function _generateChatResponse(
       disciplina = db.prepare('SELECT * FROM disciplinas WHERE id = ?').get(chat.disciplinaId) as any;
     }
 
+    const user = db.prepare('SELECT name FROM users WHERE id = ?').get(userId) as { name: string } | undefined;
+    const studentName = user ? user.name : 'Estudante';
+
     systemInstruction = buildSystemPromptV3(
       persona.nome,
       persona.documentoPedagogico,
       persona.isGenerico === 1,
-      disciplina ? { nome: disciplina.nome, conteudo: disciplina.conteudo } : undefined
+      disciplina ? { nome: disciplina.nome, conteudo: disciplina.conteudo } : undefined,
+      studentName
     );
   }
 
@@ -135,17 +205,78 @@ async function _generateChatResponse(
       lastRequestTime = Date.now();
 
       const model = genAI.getGenerativeModel(
-        { model: 'gemini-2.5-flash', systemInstruction },
+        { 
+          model: 'gemini-2.5-flash', 
+          systemInstruction,
+          tools: toolDeclarations
+        },
         { timeout: 60_000 } // 60s for standard chat
       );
-      const contents = history.map(msg => ({
+      const contents: any[] = history.map(msg => ({
         role: msg.role === 'user' ? 'user' : 'model',
         parts: [{ text: msg.content }]
       }));
       contents.push({ role: 'user', parts: [{ text: newMessage }] });
 
-      const result = await model.generateContent({ contents });
-      const response = await result.response;
+      let result = await model.generateContent({ contents });
+      let response = await result.response;
+      
+      let functionCalls = response.functionCalls();
+      let limitCount = 0;
+      
+      while (functionCalls && functionCalls.length > 0 && limitCount < 5) {
+        limitCount++;
+        const toolResponseParts = [];
+        
+        for (const call of functionCalls) {
+          const { name, args } = call;
+          let toolResult;
+          
+          try {
+            if (name === 'listar_disciplinas') {
+              toolResult = queryDisciplinas(userId);
+            } else if (name === 'ler_conteudo_disciplina') {
+              toolResult = queryDisciplinaConteudo((args as any).disciplinaId);
+            } else if (name === 'listar_atividades') {
+              toolResult = queryAtividades(userId);
+            } else if (name === 'solicitar_contato_professor') {
+              const user = db.prepare('SELECT name FROM users WHERE id = ?').get(userId) as { name: string } | undefined;
+              const studentName = user ? user.name : 'Estudante';
+              const textMessage = `Olá, sou o ${studentName} e preciso de ajuda com as atividades no Scaffl!`;
+              const encodedText = encodeURIComponent(textMessage);
+              toolResult = {
+                whatsappUrl: `https://wa.me/5511914389212?text=${encodedText}`,
+                message: 'Link de contato direto do WhatsApp do Professor Pedro gerado. Você DEVE exibir este link no formato Markdown: [Clique aqui para falar com o Professor Pedro no WhatsApp](URL_WHATSAPP), onde URL_WHATSAPP é o link exato gerado no campo whatsappUrl.'
+              };
+            } else {
+              toolResult = { error: 'Ferramenta desconhecida.' };
+            }
+          } catch (err: any) {
+            toolResult = { error: err.message || 'Erro ao executar ferramenta.' };
+          }
+          
+          toolResponseParts.push({
+            functionResponse: {
+              name,
+              response: { result: toolResult }
+            }
+          });
+        }
+        
+        contents.push({
+          role: 'model',
+          parts: response.candidates?.[0]?.content?.parts || []
+        });
+        contents.push({
+          role: 'user',
+          parts: toolResponseParts
+        });
+        
+        result = await model.generateContent({ contents });
+        response = await result.response;
+        functionCalls = response.functionCalls();
+      }
+
       text = response.text();
       inputTokFinal  = response.usageMetadata?.promptTokenCount    ?? Math.ceil((historyText.length + newMessage.length) / 4);
       outputTokFinal = response.usageMetadata?.candidatesTokenCount ?? Math.ceil(text.length / 4);

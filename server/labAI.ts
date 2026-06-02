@@ -153,7 +153,7 @@ export interface SimAgentResult {
   creditsUsed: number;
 }
 
-export async function runSimAgent(params: {
+async function _runSimAgentInternal(params: {
   project: LabProject;
   userMessage: string;
   recentMessages: Array<{ role: string; content: string }>;
@@ -162,51 +162,40 @@ export async function runSimAgent(params: {
 }): Promise<SimAgentResult> {
   const { project, userMessage, recentMessages, userImageUrl } = params;
 
-  // 1. Carregar ou inicializar a árvore de blocos a partir do projectContext
-  let activeBlocks: Block[] = [];
-  try {
-    activeBlocks = JSON.parse(project.projectContext || '[]');
-  } catch (e) {
-    activeBlocks = [];
+  const currentHtml = project.htmlContent || '';
+
+  // Constrói o histórico curto de mensagens para contextualizar as edições
+  const historyParts: string[] = [];
+  if (recentMessages && recentMessages.length > 0) {
+    const recent = recentMessages.slice(-4);
+    for (const m of recent) {
+      historyParts.push(`${m.role === 'user' ? 'Usuário' : 'IA'}: ${m.content.slice(0, 500)}`);
+    }
   }
 
-  // 2. Mapear informações de contexto para a IA
-  const infoParts: string[] = [];
-  infoParts.push(`Os blocos atuais da simulação são:\n${JSON.stringify(activeBlocks, null, 2)}`);
-  
-  if (recentMessages.length > 0) {
-    const history = recentMessages
-      .slice(-6)
-      .map(m => `${m.role === 'user' ? 'Usuário' : 'Assistente'}: ${m.content.slice(0, 300)}`)
-      .join('\n');
-    infoParts.push(`Histórico recente do Lab:\n${history}`);
+  // Prepara o prompt de input do escritor
+  let userPrompt = '';
+  if (currentHtml) {
+    userPrompt += `Código HTML atual do simulador:\n\`\`\`html\n${currentHtml}\n\`\`\`\n\n`;
   }
+  if (historyParts.length > 0) {
+    userPrompt += `Histórico recente do Lab:\n${historyParts.join('\n')}\n\n`;
+  }
+  userPrompt += `Modificação solicitada pelo aluno: "${userMessage}"`;
 
-  const systemInstruction = SYSTEM_PROMPT;
   const genAI = getGenAI();
-
   const model = genAI.getGenerativeModel({
     model: MODEL,
-    systemInstruction,
-    tools: TOOLS_CONFIG,
+    systemInstruction: `Você é a IA Escritora de Simuladores Científicos do Scaffl.
+Sua missão é gerar um código HTML5 autocontido (incluindo HTML, Tailwind CSS para estilos e JavaScript para física/lógica no Canvas) com base nas ideias dos estudantes.
+
+DIRETRIZES DE DESIGN E QUALIDADE (MANDATÓRIAS):
+1. Visual Moderno e Premium: Use um tema escuro (background: #0b0f19), com cores vibrantes em gradientes de neon (azul ciano, esmeralda, violeta, rosa quente, âmbar).
+2. Canvas Dinâmico: Desenhe elementos de física ou química usando HTML5 Canvas. A animação deve ser a 60 FPS com requestAnimationFrame.
+3. Interatividade e Controles: Forneça controles claros em Tailwind (como sliders deslizantes, botões de ação e cards translúcidos de glassmorphism). O estado da simulação deve mudar instantaneamente conforme o usuário mexe nos controles.
+4. Partículas e Efeitos Visuais: Adicione efeitos como rastro nas partículas (motion trail) com opacidade gradual, brilhos nas colisões e vetores simples de força se aplicável.
+5. Código Seguro e Autocontido: Responda APENAS com o código HTML completo e válido dentro de um bloco de código markdown. Não inclua conversas ou textos explicativos fora do código.`
   }, { timeout: TIMEOUT_MS });
-
-  let explanation = 'Simulação atualizada.';
-  let editScope = 'surgical';
-  let totalInputTokens = 0;
-  let totalCachedTokens = 0;
-  let totalOutputTokens = 0;
-
-  const userPrompt = `${infoParts.join('\n\n')}\n\nInstrução do Usuário: "${userMessage}"`;
-
-  const chat = model.startChat({
-    tools: TOOLS_CONFIG,
-    toolConfig: {
-      functionCallingConfig: {
-        mode: 'ANY'
-      }
-    } as any
-  });
 
   const promptParts: any[] = [];
   if (userImageUrl) {
@@ -222,128 +211,57 @@ export async function runSimAgent(params: {
   }
   promptParts.push(userPrompt);
 
-  let response = await chat.sendMessage(promptParts);
+  console.log(`[Lab Agent - Nova Versão] Chamando ${MODEL} de forma direta e otimizada...`);
+  const response = await model.generateContent(promptParts);
+  const rawText = response.response.text();
 
-  totalInputTokens += response.response.usageMetadata?.promptTokenCount ?? 0;
-  totalCachedTokens += (response.response.usageMetadata as any)?.cachedContentTokenCount ?? 0;
-  totalOutputTokens += response.response.usageMetadata?.candidatesTokenCount ?? 0;
-
-  let loopCount = 0;
-  const maxIterations = 5;
-
-  // Executor local das ferramentas dentro do loop do chat
-  const handleLocalToolExecution = (name: string, args: any) => {
-    console.log(`[Lab Agent] Executing tool locally: ${name}`, JSON.stringify(args, null, 2));
-
-    if (name === "addBlock") {
-      const newId = `${args.type}-${activeBlocks.length + 1}`;
-      const newBlock: Block = {
-        id: newId,
-        type: args.type,
-        title: args.title,
-        ...args.config
-      };
-      activeBlocks.push(newBlock);
-      editScope = 'full_rewrite'; // Trata como modificação estrutural
-      return { success: true, message: `Bloco '${args.title}' adicionado com ID: ${newId}` };
-    }
-
-    if (name === "updateBlockContent") {
-      const block = activeBlocks.find(b => b.id === args.blockId);
-      if (!block) {
-        return { success: false, error: `Bloco com ID ${args.blockId} não encontrado.` };
-      }
-      if (args.title) block.title = args.title;
-      if (args.config) {
-        Object.assign(block, args.config);
-      }
-      editScope = 'surgical'; // Trata como modificação pontual
-      return { success: true, message: `Bloco ${args.blockId} atualizado com sucesso.` };
-    }
-
-    if (name === "deleteBlock") {
-      const index = activeBlocks.findIndex(b => b.id === args.blockId);
-      if (index === -1) {
-        return { success: false, error: `Bloco com ID ${args.blockId} não encontrado.` };
-      }
-      const removed = activeBlocks.splice(index, 1);
-      editScope = 'full_rewrite';
-      return { success: true, message: `Bloco ${args.blockId} (${removed[0].title}) excluído.` };
-    }
-
-    return { error: `Ferramenta ${name} desconhecida.` };
-  };
-
-  while (loopCount < maxIterations) {
-    console.log(`[Lab Agent] Iteration ${loopCount + 1}/${maxIterations}...`);
-    const functionCalls = typeof response.response.functionCalls === 'function'
-      ? response.response.functionCalls()
-      : (response.response as any).functionCalls;
-
-    if (!functionCalls || functionCalls.length === 0) {
-      const hasBlocksChanged = activeBlocks.length > 0;
-      if (!hasBlocksChanged) {
-        console.log(`[Lab Agent] No tool called and blocks are empty. Prompting agent to call tools...`);
-        response = await chat.sendMessage("Nenhuma ferramenta foi executada para modificar os blocos do laboratório. Por favor, chame as ferramentas necessárias para compor o simulador.", {
-          toolConfig: {
-            functionCallingConfig: {
-              mode: 'ANY'
-            }
-          }
-        } as any);
-        
-        totalInputTokens += response.response.usageMetadata?.promptTokenCount ?? 0;
-        totalCachedTokens += (response.response.usageMetadata as any)?.cachedContentTokenCount ?? 0;
-        totalOutputTokens += response.response.usageMetadata?.candidatesTokenCount ?? 0;
-        
-        loopCount++;
-        continue;
-      }
-      explanation = response.response.text();
-      console.log(`[Lab Agent] Execution completed successfully.`);
-      break;
-    }
-
-    // Executa todas as chamadas retornadas pelo Gemini em paralelo
-    console.log(`[Lab Agent] Agent requested ${functionCalls.length} tool calls.`);
-    const functionResponses = functionCalls.map((call: any) => {
-      const toolResult = handleLocalToolExecution(call.name, call.args);
-      return {
-        functionResponse: {
-          name: call.name,
-          response: toolResult
-        }
-      };
-    });
-
-    // Envia o feedback de todas as execuções juntas de volta ao chat
-    response = await chat.sendMessage(functionResponses, {
-      toolConfig: {
-        functionCallingConfig: {
-          mode: 'AUTO'
-        }
-      }
-    } as any);
-
-    totalInputTokens += response.response.usageMetadata?.promptTokenCount ?? 0;
-    totalCachedTokens += (response.response.usageMetadata as any)?.cachedContentTokenCount ?? 0;
-    totalOutputTokens += response.response.usageMetadata?.candidatesTokenCount ?? 0;
-
-    loopCount++;
+  // Limpeza de marcações markdown da resposta
+  let cleanedHtml = rawText;
+  const htmlMatch = rawText.match(/```html([\s\S]*?)```/);
+  if (htmlMatch) {
+    cleanedHtml = htmlMatch[1].trim();
+  } else if (rawText.includes('<html')) {
+    cleanedHtml = rawText.trim();
   }
 
-  // 3. Compilar a árvore de blocos atualizada para HTML autocontido
-  const compiledHtml = compileBlocksToHtml(activeBlocks);
+  const inputTokens = response.response.usageMetadata?.promptTokenCount ?? 0;
+  const cachedTokens = (response.response.usageMetadata as any)?.cachedContentTokenCount ?? 0;
+  const outputTokens = response.response.usageMetadata?.candidatesTokenCount ?? 0;
+
+  // Cálculo real dos créditos do Gemini 2.5 Flash
+  const normalInput = Math.max(0, inputTokens - cachedTokens);
+  const creditsUsed = Math.ceil(
+    (normalInput  * CREDIT_RATE.input  / 1_000_000) +
+    (cachedTokens * CREDIT_RATE.input_cached / 1_000_000) +
+    (outputTokens * CREDIT_RATE.output / 1_000_000)
+  );
+
+  console.log(`[Lab Agent - Nova Versão] Sucesso! Tokens: In=${inputTokens}, Out=${outputTokens} | Créditos: ${creditsUsed}`);
 
   return {
-    explanation,
-    htmlContent: compiledHtml,
-    projectContext: JSON.stringify(activeBlocks),
-    codeIndex: {}, // Mapeamento legado vazio para não quebrar rotas
+    explanation: 'Simulador atualizado com sucesso.',
+    htmlContent: cleanedHtml,
+    projectContext: '[]',
+    codeIndex: {},
     editPlan: null,
-    editScope,
+    editScope: 'surgical',
     patchedFunctions: [],
-    tokensUsed: totalInputTokens + totalOutputTokens,
-    creditsUsed: calcCredits(totalInputTokens, totalCachedTokens, totalOutputTokens),
+    tokensUsed: inputTokens + outputTokens,
+    creditsUsed,
   };
+}
+
+let labAgentQueue: Promise<any> = Promise.resolve();
+
+export async function runSimAgent(params: {
+  project: LabProject;
+  userMessage: string;
+  recentMessages: Array<{ role: string; content: string }>;
+  modelToUse?: string;
+  userImageUrl?: string;
+}): Promise<SimAgentResult> {
+  const result = await (labAgentQueue = labAgentQueue
+    .catch(() => {})
+    .then(() => _runSimAgentInternal(params)));
+  return result;
 }
