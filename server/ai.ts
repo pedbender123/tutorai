@@ -24,8 +24,8 @@ const PRO_RATE  = { input: 6_875, output: 55_000 };
 export function getUserCreditLimit(userId: string): { creditLimit: number; projectLimit: number } {
   const rows = db.prepare('SELECT institutionId FROM user_institutions WHERE userId = ?').all(userId) as { institutionId: string }[];
   return rows.length > 0
-    ? { creditLimit: 20_000_000, projectLimit: 15 } // Cota estendida para garantir espaço de desenvolvimento aos alunos
-    : { creditLimit: 100_000,    projectLimit: 5  };
+    ? { creditLimit: 1_000_000, projectLimit: 10 }
+    : { creditLimit: 100_000,   projectLimit: 5  };
 }
 
 const toolDeclarations = [
