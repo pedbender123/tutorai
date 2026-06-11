@@ -20,7 +20,25 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
-    req.user = decoded;
+    
+    // Obter dados de permissão atualizados em tempo real do banco
+    const dbUser = db.prepare('SELECT id, email, role, isAdmin FROM users WHERE id = ?').get(decoded.id) as any;
+    if (!dbUser) {
+      return res.status(401).json({ error: 'Usuário não encontrado.' });
+    }
+
+    // Bloqueio de conta duplicada
+    if (dbUser.email === 'tfcurra@gmail.com') {
+      return res.status(403).json({ error: 'Acesso bloqueado: Esta conta foi detectada como uma duplicata de acesso do estudante Thales Fachin Curra.' });
+    }
+
+    req.user = {
+      id: dbUser.id,
+      email: dbUser.email,
+      role: dbUser.role,
+      isAdmin: !!dbUser.isAdmin
+    } as any;
+
     next();
   } catch (err) {
     res.status(401).json({ error: 'Invalid token' });
@@ -36,6 +54,11 @@ export const login = async (req: Request, res: Response) => {
     return res.status(401).json({ error: 'Invalid email or password' });
   }
 
+  // Bloqueio de conta duplicada no login
+  if (user.email === 'tfcurra@gmail.com') {
+    return res.status(403).json({ error: 'Acesso bloqueado: Esta conta foi detectada como uma duplicata de acesso do estudante Thales Fachin Curra.' });
+  }
+
   const token = jwt.sign({ id: user.id, email: user.email, role: user.role, isAdmin: !!user.isAdmin }, JWT_SECRET, { expiresIn: '7d' });
   
   // Calculate credits (chat + lab)
@@ -48,9 +71,22 @@ export const login = async (req: Request, res: Response) => {
   res.json({ user, token });
 };
 
-export const register = async (req: Request, res: Response) => {
-  const { name, email, password } = req.body;
+export const register = async (req: AuthRequest, res: Response) => {
+  const { name, email, password, inviteCode } = req.body;
   if (!name || !email || !password) return res.status(400).json({ error: 'Missing fields' });
+
+  const isAdminCreation = req.user && (req.user.role === 'admin' || (req.user as any).isAdmin);
+
+  if (!isAdminCreation) {
+    if (!inviteCode) {
+      return res.status(403).json({ error: 'O cadastro só é permitido através de um convite/QR code de sala de aula.' });
+    }
+    // Verificar se a sala existe
+    const classroom = db.prepare('SELECT * FROM classrooms WHERE id = ?').get(inviteCode) as any;
+    if (!classroom) {
+      return res.status(400).json({ error: 'Código de convite inválido ou sala não encontrada.' });
+    }
+  }
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -61,8 +97,8 @@ export const register = async (req: Request, res: Response) => {
     const role = isAdmin ? 'admin' : 'user';
 
     db.prepare(`
-      INSERT INTO users (id, name, email, password, role, isAdmin, lastResetProfessor, lastResetTutor, lastResetColega)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO users (id, name, email, password, role, isAdmin, lastResetProfessor, lastResetTutor, lastResetColega, classroomId)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       userId, 
       name, 
@@ -72,15 +108,25 @@ export const register = async (req: Request, res: Response) => {
       isAdmin,
       new Date().toISOString(), 
       new Date().toISOString(), 
-      new Date().toISOString()
+      new Date().toISOString(),
+      inviteCode || null
     );
 
-    // Automatic Provisioning by Domain
-    const domain = '@' + email.split('@')[1];
-    const institution = db.prepare('SELECT id FROM institutions WHERE domain = ?').get(domain) as { id: string };
-    
-    if (institution) {
-      db.prepare('INSERT INTO user_institutions (userId, institutionId) VALUES (?, ?)').run(userId, institution.id);
+    // Automatic Provisioning by Classroom or Domain fallback
+    if (inviteCode) {
+      const classroom = db.prepare('SELECT * FROM classrooms WHERE id = ?').get(inviteCode) as any;
+      if (classroom) {
+        db.prepare('INSERT OR IGNORE INTO user_institutions (userId, institutionId) VALUES (?, ?)').run(userId, classroom.institutionId);
+        // Associar o aluno recém-cadastrado na tabela N:N de salas de aula
+        db.prepare('INSERT OR IGNORE INTO user_classrooms (userId, classroomId, role) VALUES (?, ?, ?)')
+          .run(userId, inviteCode, 'student');
+      }
+    } else {
+      const domain = '@' + email.split('@')[1];
+      const institution = db.prepare('SELECT id FROM institutions WHERE domain = ?').get(domain) as { id: string };
+      if (institution) {
+        db.prepare('INSERT OR IGNORE INTO user_institutions (userId, institutionId) VALUES (?, ?)').run(userId, institution.id);
+      }
     }
 
     const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId) as any;

@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { api, Persona, Institution } from '../lib/api';
-import { Plus, Edit2, Trash2, Copy, Check, Info, Bot, Building2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Copy, Check, Info, Building2, Camera } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx } from 'clsx';
 import { useAuth } from '../contexts/AuthContext';
@@ -82,8 +82,10 @@ export default function PersonasPage() {
     saudacao: '',
     documentoPedagogico: '',
     isGenerico: false,
-    institutionId: ''
+    institutionId: '',
+    imageUrl: '',
   });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadData();
@@ -104,6 +106,15 @@ export default function PersonasPage() {
     }
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) { alert('Imagem muito grande. Máximo 3MB.'); return; }
+    const reader = new FileReader();
+    reader.onload = ev => setFormData(prev => ({ ...prev, imageUrl: ev.target?.result as string }));
+    reader.readAsDataURL(file);
+  };
+
   const handleOpenModal = (persona?: Persona) => {
     if (persona) {
       setEditingPersona(persona);
@@ -113,24 +124,19 @@ export default function PersonasPage() {
         saudacao: persona.saudacao,
         documentoPedagogico: persona.documentoPedagogico,
         isGenerico: !!persona.isGenerico,
-        institutionId: persona.institutionId || ''
+        institutionId: persona.institutionId || '',
+        imageUrl: persona.imageUrl || '',
       });
     } else {
       setEditingPersona(null);
-      setFormData({
-        nome: '',
-        descricao: '',
-        saudacao: '',
-        documentoPedagogico: '',
-        isGenerico: false,
-        institutionId: institutions[0]?.id || ''
-      });
+      setFormData({ nome: '', descricao: '', saudacao: '', documentoPedagogico: '', isGenerico: false, institutionId: institutions[0]?.id || '', imageUrl: '' });
     }
     setIsModalOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.imageUrl) { alert('Por favor, adicione uma foto para o professor.'); return; }
     try {
       if (editingPersona) {
         await api.put(`/api/personas/${editingPersona.id}`, formData);
@@ -164,8 +170,8 @@ export default function PersonasPage() {
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">Mural de Personas</h1>
-          <p className="text-zinc-500 dark:text-zinc-400 mt-2 text-lg">Gerencie os perfis didáticos dos seus tutores virtuais.</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Mural de Personas</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">Gerencie os perfis didáticos dos seus professores virtuais.</p>
         </div>
         {userData?.isAdmin && (
           <button
@@ -180,7 +186,7 @@ export default function PersonasPage() {
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map(i => <div key={i} className="h-64 bg-zinc-100 dark:bg-zinc-800 animate-pulse rounded-2xl" />)}
+          {[1, 2, 3].map(i => <div key={i} className="h-64 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-2xl" />)}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -190,12 +196,15 @@ export default function PersonasPage() {
               key={persona.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="group relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300"
+              className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="relative">
-                  <div className="w-16 h-16 rounded-2xl bg-primary/10 dark:bg-primary/10 flex items-center justify-center text-primary dark:text-primary overflow-hidden">
-                    <Bot size={32} />
+                  <div className="w-16 h-16 rounded-2xl bg-primary/10 overflow-hidden flex items-center justify-center text-primary">
+                    {persona.imageUrl
+                      ? <img src={persona.imageUrl} alt={persona.nome} className="w-full h-full object-cover" />
+                      : <span className="text-2xl font-black">{persona.nome.charAt(0)}</span>
+                    }
                   </div>
                   {persona.isGenerico ? (
                     <span className="absolute -top-1 -right-1 flex h-4 w-4">
@@ -204,36 +213,34 @@ export default function PersonasPage() {
                     </span>
                   ) : null}
                 </div>
-                {userData?.isAdmin && (
+                {(userData?.isAdmin || persona.userId === userData?.id) && (
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => handleOpenModal(persona)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 hover:text-primary transition-colors">
+                    <button onClick={() => handleOpenModal(persona)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 hover:text-primary transition-colors">
                       <Edit2 size={18} />
                     </button>
-                    {persona.userId !== 'system' && (
-                      <button onClick={() => handleDelete(persona.id)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 hover:text-red-600 transition-colors">
-                        <Trash2 size={18} />
-                      </button>
-                    )}
+                    <button onClick={() => handleDelete(persona.id)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-505 hover:text-red-650 transition-colors">
+                      <Trash2 size={18} />
+                    </button>
                   </div>
                 )}
               </div>
 
               <div className="flex items-center gap-2 mb-2">
-                <h3 className="text-xl font-bold text-zinc-900 dark:text-white truncate">{persona.nome}</h3>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white truncate">{persona.nome}</h3>
                 {persona.institutionName && (
-                  <span className="px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-[10px] font-black text-zinc-500 uppercase rounded-full border border-zinc-200 dark:border-zinc-700 flex items-center gap-1 shrink-0">
+                  <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-[10px] font-black text-slate-500 uppercase rounded-full border border-slate-200 dark:border-slate-700 flex items-center gap-1 shrink-0">
                     <Building2 size={10} />
                     {persona.institutionName}
                   </span>
                 )}
               </div>
 
-              <p className="text-zinc-500 dark:text-zinc-400 text-sm line-clamp-2 mb-4 leading-relaxed">
+              <p className="text-slate-550 dark:text-slate-400 text-sm line-clamp-2 mb-4 leading-relaxed">
                 {persona.descricao || 'Sem descrição.'}
               </p>
 
-              <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs font-medium uppercase tracking-wider text-zinc-400">
-                <span>{persona.isGenerico ? 'Tutor Generalista' : 'Tutor Especialista'}</span>
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-medium uppercase tracking-wider text-slate-400">
+                <span>{persona.isGenerico ? 'Professor Generalista' : 'Professor Especialista'}</span>
                 <span>{new Date(persona.createdAt).toLocaleDateString()}</span>
               </div>
             </motion.div>
@@ -256,32 +263,58 @@ export default function PersonasPage() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative bg-white dark:bg-zinc-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800"
+              className="relative bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800"
             >
               <form onSubmit={handleSubmit} className="p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-bold text-zinc-900 dark:text-white">
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                     {editingPersona ? 'Editar Persona' : 'Criar Nova Persona'}
                   </h2>
-                  <div className="flex items-center gap-2 px-3 py-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
+                  <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
                     <input
                       type="checkbox"
                       id="isGenerico"
                       checked={formData.isGenerico}
                       onChange={e => setFormData({ ...formData, isGenerico: e.target.checked })}
-                      className="rounded border-zinc-300 text-primary focus:ring-primary"
+                      className="rounded border-slate-300 text-primary focus:ring-primary"
                     />
-                    <label htmlFor="isGenerico" className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Genérico</label>
+                    <label htmlFor="isGenerico" className="text-sm font-medium text-slate-650 dark:text-slate-400">Genérico</label>
                   </div>
                 </div>
 
                 <div className="space-y-4">
+                  {/* Image upload — obrigatório */}
+                  <div className="flex flex-col items-center gap-3">
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="relative w-24 h-24 rounded-3xl bg-slate-100 dark:bg-slate-800 border-2 border-dashed border-slate-300 dark:border-slate-700 overflow-hidden cursor-pointer hover:border-primary transition-all group"
+                    >
+                      {formData.imageUrl ? (
+                        <img src={formData.imageUrl} alt="preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-slate-400 group-hover:text-primary transition-colors">
+                          <Camera size={24} />
+                          <span className="text-[9px] font-black uppercase tracking-wider">Foto</span>
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all" />
+                    </div>
+                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+                    <div className="text-center">
+                      <p className="text-xs font-bold text-slate-500">Foto do Professor <span className="text-red-500">*</span></p>
+                      <p className="text-[10px] text-slate-400">JPG, PNG · máx 3MB</p>
+                    </div>
+                    {!formData.imageUrl && (
+                      <p className="text-[10px] text-red-400 font-bold">Imagem obrigatória para criar um professor.</p>
+                    )}
+                  </div>
+
                   {!formData.isGenerico && (
                     <div>
-                      <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">Instituição</label>
+                      <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Instituição</label>
                       <select
                         required
-                        className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-zinc-900 dark:text-white appearance-none"
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-slate-900 dark:text-white appearance-none"
                         value={formData.institutionId}
                         onChange={e => setFormData({ ...formData, institutionId: e.target.value })}
                       >
@@ -294,11 +327,11 @@ export default function PersonasPage() {
                   )}
 
                   <div>
-                    <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">Nome do Professor</label>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Nome do Professor</label>
                     <input
                       required
                       type="text"
-                      className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-zinc-900 dark:text-white"
+                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-slate-900 dark:text-white"
                       value={formData.nome}
                       onChange={e => setFormData({ ...formData, nome: e.target.value })}
                       placeholder="Ex: Professor Agostinho Serrano"
@@ -306,10 +339,10 @@ export default function PersonasPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">Descrição Curta</label>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Descrição Curta</label>
                     <input
                       type="text"
-                      className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-zinc-900 dark:text-white"
+                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-slate-900 dark:text-white"
                       value={formData.descricao}
                       onChange={e => setFormData({ ...formData, descricao: e.target.value })}
                       placeholder="Breve resumo para o card do mural"
@@ -317,11 +350,11 @@ export default function PersonasPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">Saudação Inicial</label>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Saudação Inicial</label>
                     <input
                       required
                       type="text"
-                      className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-zinc-900 dark:text-white"
+                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-slate-900 dark:text-white"
                       value={formData.saudacao}
                       onChange={e => setFormData({ ...formData, saudacao: e.target.value })}
                       placeholder="Olá! Eu sou o assistente do..."
@@ -329,11 +362,11 @@ export default function PersonasPage() {
                   </div>
 
                   <div className="space-y-4">
-                    <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300">Documento Didático-Pedagógico</label>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Documento Didático-Pedagógico</label>
                     <textarea
                       required
                       rows={8}
-                      className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-zinc-900 dark:text-white font-mono text-sm"
+                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-slate-900 dark:text-white font-mono text-sm"
                       value={formData.documentoPedagogico}
                       onChange={e => setFormData({ ...formData, documentoPedagogico: e.target.value })}
                       placeholder="Descreva o MÉTODO de ensino: tom, ritmo, analogias, bordões..."
@@ -347,7 +380,7 @@ export default function PersonasPage() {
                         <div>
                           <h4 className="font-bold text-primary mb-1">Não sabe como preencher?</h4>
                           <p className="text-sm text-primary/70 leading-relaxed mb-4">
-                            Use o Prompt de Extração! Copie o prompt abaixo e cole no Gemini junto com a transcrição de uma aula do professor.
+                            Use o Prompt de Extração! Copie o prompt abaixo e cole em qualquer IA junto com a transcrição de uma aula do professor.
                           </p>
                           <button
                             type="button"
@@ -368,11 +401,11 @@ export default function PersonasPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-3 mt-10 pt-6 border-t border-zinc-100 dark:border-zinc-800">
+                <div className="flex gap-3 mt-10 pt-6 border-t border-slate-100 dark:border-slate-800">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="flex-1 py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-xl font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                    className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                   >
                     Cancelar
                   </button>

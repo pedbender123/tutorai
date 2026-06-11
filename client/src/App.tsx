@@ -10,6 +10,10 @@ import PersonasPage from './pages/PersonasPage';
 import DisciplinasPage from './pages/DisciplinasPage';
 import LabMural from './pages/LabMural';
 import LabEditor from './pages/LabEditor';
+import ClassPage from './pages/ClassPage';
+import ActivitiesAdminPage from './pages/ActivitiesAdminPage';
+import ClassroomsAdminPage from './pages/ClassroomsAdminPage';
+import IaUsageAdminPage from './pages/IaUsageAdminPage';
 import { Loader2 } from 'lucide-react';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -52,6 +56,10 @@ export default function App() {
                 <Route path="chat/:chatId" element={<Chat />} />
                 <Route path="lab" element={<LabMural />} />
                 <Route path="lab/:projectId" element={<LabEditor />} />
+                <Route path="class" element={<ClassPage />} />
+                <Route path="activities-admin" element={<ActivitiesAdminPage />} />
+                <Route path="classrooms-admin" element={<ClassroomsAdminPage />} />
+                <Route path="ia-usage-admin" element={<IaUsageAdminPage />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
           </Routes>

@@ -111,8 +111,11 @@ export default function NewChatDialog({ isOpen, onClose, onStartChat }: NewChatD
  onClick={() => handleSelectPersona(persona)}
  className="group flex flex-col p-6 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-[2rem] hover:border-primary/50 hover:bg-white dark:hover:bg-zinc-900 transition-all text-left"
  >
- <div className="w-12 h-12 rounded-2xl bg-primary/10 dark:bg-primary/10 flex items-center justify-center text-primary dark:text-primary mb-4 group-hover:scale-110 transition-transform">
- <Bot size={24} />
+ <div className="w-12 h-12 rounded-2xl bg-primary/10 overflow-hidden flex items-center justify-center text-primary mb-4 group-hover:scale-110 transition-transform shrink-0">
+ {persona.imageUrl
+   ? <img src={persona.imageUrl} alt={persona.nome} className="w-full h-full object-cover" />
+   : <span className="text-lg font-black">{persona.nome.charAt(0)}</span>
+ }
  </div>
  <h4 className="font-black text-lg text-zinc-900 dark:text-zinc-100 leading-tight mb-1">{persona.nome}</h4>
  <p className="text-xs text-zinc-500 dark:text-zinc-500 font-medium line-clamp-2">{persona.descricao}</p>

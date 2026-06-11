@@ -1,15 +1,13 @@
 # Stage 1: Build Frontend
-FROM node:20-alpine AS frontend-build
+FROM node:20-slim AS frontend-build
 WORKDIR /app/client
 COPY client/package*.json ./
 RUN npm install
 COPY client/ ./
-# Inject API URL for build time if needed, or use relative paths if proxied
-ENV VITE_API_URL=/api
 RUN npm run build
 
 # Stage 2: Backend & Runner
-FROM node:20-alpine
+FROM node:20-slim
 WORKDIR /app
 COPY server/package*.json ./server/
 RUN cd server && npm install
