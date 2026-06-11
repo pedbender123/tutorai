@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dossiê Analítico: Perfis Epistemológicos e Obstáculos Cognitivos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Palette inspired by academic journals and clean reading interfaces */
+      --bg-page: #f8f9fa;
+      --bg-paper: #ffffff;
+      --text-main: #202124;
+      --text-secondary: #5f6368;
+      --text-accent: #1a73e8;
+      --border-color: #e0e0e0;
+      
+      --accent-a: #0d47a1; /* Deep Blue for Decomposition */
+      --accent-b: #b71c1c; /* Deep Red for Obstacles */
+      --accent-c: #1b5e20; /* Deep Green for Profile */
+      --accent-d: #4a148c; /* Deep Purple for Mediation */
+
+      --code-bg: #f1f3f4;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Lora', serif; /* Serif for deep reading */
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      line-height: 1.8;
+      font-size: 1.05rem;
+    }
+
+    /* Typography */
+    h1, h2, h3, h4, h5 {
+      font-family: 'Inter', sans-serif;
+      color: var(--text-main);
+      line-height: 1.3;
+    }
+
+    h1 {
+      font-size: 2.25rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      letter-spacing: -0.02em;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    p {
+      margin-bottom: 1.25rem;
+    }
+
+    strong {
+      font-weight: 600;
+    }
+
+    /* Layout */
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem;
+    }
+
+    .paper {
+      background-color: var(--bg-paper);
+      padding: 3rem 4rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+      border: 1px solid var(--border-color);
+      margin-bottom: 3rem;
+    }
+
+    @media (max-width: 768px) {
+      .paper {
+        padding: 2rem 1.5rem;
+      }
+    }
+
+    /* Header Section */
+    .doc-header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+
+    .meta-tags {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .tag {
+      background-color: #e8f0fe;
+      color: var(--text-accent);
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+    }
+
+    .abstract {
+      font-style: italic;
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      max-width: 750px;
+      margin: 0 auto;
+      text-align: justify;
+    }
+
+    /* Methodology Section */
+    .methodology-box {
+      background-color: #f8f9fa;
+      border-left: 4px solid var(--text-main);
+      padding: 1.5rem 2rem;
+      margin-bottom: 3rem;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+    }
+
+    .methodology-box h3 {
+      margin-bottom: 1rem;
+      font-size: 1.1rem;
+    }
+
+    .methodology-list {
+      list-style: none;
+    }
+
+    .methodology-list li {
+      margin-bottom: 0.75rem;
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .method-letter {
+      font-weight: 700;
+      color: var(--text-accent);
+      min-width: 24px;
+    }
+
+    /* Student Analysis Block */
+    .student-block {
+      margin-bottom: 4rem;
+    }
+
+    .student-title {
+      font-family: 'Inter', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text-main);
+      background-color: #f1f3f4;
+      padding: 0.75rem 1.25rem;
+      border-radius: 6px;
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .student-code {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+
+    /* Prompts */
+    .prompt-container {
+      background-color: var(--code-bg);
+      border-radius: 6px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      border-left: 3px solid #dadce0;
+    }
+
+    .prompt-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .prompt-text {
+      font-family: 'Fira Code', monospace;
+      color: #3c4043;
+      white-space: pre-wrap;
+    }
+
+    /* Analytical Dimensions */
+    .dimension {
+      margin-bottom: 1.25rem;
+      padding-left: 1rem;
+      position: relative;
+    }
+
+    .dimension::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.5rem;
+      bottom: 0.5rem;
+      width: 3px;
+      border-radius: 3px;
+    }
+
+    .dim-a::before { background-color: var(--accent-a); }
+    .dim-b::before { background-color: var(--accent-b); }
+    .dim-c::before { background-color: var(--accent-c); }
+    .dim-d::before { background-color: var(--accent-d); }
+
+    .dim-title {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.25rem;
+      display: block;
+    }
+
+    .dim-a .dim-title { color: var(--accent-a); }
+    .dim-b .dim-title { color: var(--accent-b); }
+    .dim-c .dim-title { color: var(--accent-c); }
+    .dim-d .dim-title { color: var(--accent-d); }
+
+    .dim-content {
+      color: #3c4043;
+      text-align: justify;
+    }
+
+    /* Synthesis Section */
+    .synthesis-section {
+      background-color: #f8f9fa;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 2.5rem;
+      margin-top: 4rem;
+    }
+
+    /* Interactive TOC (Table of Contents) */
+    .toc {
+      font-family: 'Inter', sans-serif;
+      background-color: #f8f9fa;
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin-bottom: 3rem;
+      border: 1px solid var(--border-color);
+    }
+
+    .toc h4 {
+      margin-bottom: 1rem;
+      font-size: 1rem;
+    }
+
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.5rem;
+    }
+
+    .toc a {
+      color: var(--text-accent);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+
+    .toc a:hover {
+      text-decoration: underline;
+      color: #0d47a1;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <main class="paper">
+      
+      <header class="doc-header">
+        <div class="meta-tags">
+          <span class="tag">Pesquisa-Ação Pedagógica</span>
+          <span class="tag">Epistemologia Bachelardiana</span>
+          <span class="tag">Scaffl Piloto V3</span>
+        </div>
+        <h1>Dossiê Analítico: Perfis Epistemológicos e Obstáculos Cognitivos na Modelagem com IA</h1>
+        <p class="abstract">
+          Este documento apresenta uma análise profunda, estruturada e rigorosa das transcrições brutas dos estudantes durante a prototipagem de simuladores científicos na plataforma Scaffl. O foco recai sobre a desconstrução semântica dos enunciados para identificar a gênese conceitual e a eficácia da mediação extracerebral promovida pelos agentes de inteligência artificial.
+        </p>
+      </header>
+
+      <section class="methodology-box">
+        <h3>Matriz Metodológica Quadridimensional</h3>
+        <p style="margin-bottom: 1rem; color: var(--text-secondary);">Para assegurar o rigor acadêmico, cada interação foi submetida a um escrutínio dividido em quatro eixos analíticos interconectados:</p>
+        <ul class="methodology-list">
+          <li>
+            <span class="method-letter">A.</span> 
+            <div><strong>Decomposição do Enunciado:</strong> Extração da intencionalidade técnica e do escopo do fenômeno natural que o estudante tentou transpor para a modelagem computacional.</div>
+          </li>
+          <li>
+            <span class="method-letter">B.</span> 
+            <div><strong>Obstáculos Epistemológicos (Gaston Bachelard):</strong> Identificação de bloqueios cognitivos — como o obstáculo animista, substancialista ou da experiência primeira (senso comum) — que impedem a abstração científica da matéria.</div>
+          </li>
+          <li>
+            <span class="method-letter">C.</span> 
+            <div><strong>Perfil Conceitual (Eduardo Mortimer):</strong> Mapeamento do equilíbrio ou choque ontológico entre as zonas Sensorial/Generalista, Substancialista, Racionalista e Relacional dentro do discurso do aluno.</div>
+          </li>
+          <li>
+            <span class="method-letter">D.</span> 
+            <div><strong>Diagnóstico de Mediação (TMC):</strong> Avaliação crítica da eficácia pedagógica da IA (Lab Agent ou Tutor Petrus) e proposição da intervenção dialógica ideal para promover a zona de desenvolvimento proximal.</div>
+          </li>
+        </ul>
+      </section>
+
+      <nav class="toc">
+        <h4>Índice Analítico de Estudantes</h4>
+        <div class="toc-grid">
+          <a href="#e1">Estudante A (E1)</a>
+          <a href="#e2">Estudante B (E2)</a>
+          <a href="#e5">Estudante E (E5)</a>
+          <a href="#e6">Estudante F (E6)</a>
+          <a href="#e8">Estudante H (E8)</a>
+          <a href="#e9">Estudante I (E9)</a>
+          <a href="#e15">Estudante J (E15)</a>
+          <a href="#e17">Estudante K (E17)</a>
+        </div>
+      </nav>
+
+      <article class="analysis-body">
+        
+        <!-- ESTUDANTE A -->
+        <section id="e1" class="student-block">
+          <div class="student-title">
+            <span>Estudante A <span style="font-weight: 400; font-size: 1rem; color: #5f6368;">(Franco Augusto Panassol)</span></span>
+            <span class="student-code">ID: E1</span>
+          </div>
+
+          <div class="prompt-container">
+            <div class="prompt-meta">
+              <span>Interação 1 — Lab Agent</span>
+              <span>Tema: Bolacha Molhada</span>
+            </div>
+            <div class="prompt-text">"Simule as particulas de uma bolacha que era sólida e depois de ficar molhada ficou mole"</div>
+          </div>
+
+          <div class="dimension dim-a">
+            <span class="dim-title">A. Decomposição do Enunciado</span>
+            <div class="dim-content">O estudante busca simular a transição mecânica macroscópica de uma substância (bolacha) ao interagir com um solvente (água), focando na alteração de sua propriedade de rigidez (de sólida para "mole"). Ele exige que essa alteração seja evidenciada no nível visual das "partículas".</div>
+          </div>
+
+          <div class="dimension dim-b">
+            <span class="dim-title">B. Obstáculos Epistemológicos (Bachelard)</span>
+            <div class="dim-content">Diagnostica-se um <strong>Obstáculo Substancialista</strong> severo com traços da experiência primeira. O aluno projeta as qualidades táteis, elásticas e sensoriais do macro-objeto diretamente para o micro-objeto. Ele espera ontologicamente que a "partícula da bolacha" em si se torne "mole", ignorando que a maciez é um fenômeno emergente da ruptura de ligações intermoleculares e da hidratação capilar da rede de amido, e não uma propriedade intrínseca do átomo ou molécula isolada.</div>
+          </div>
+
+          <div class="dimension dim-c">
+            <span class="dim-title">C. Perfil Conceitual (Mortimer)</span>
+            <div class="dim-content">Ocorre um desequilíbrio léxico-semântico. O vocabulário provém da Zona Racionalista ("partículas", "sólida"), mas a sintaxe causal e a ontologia pertencem à Zona Sensorial/Generalista ("ficar molhada ficou mole"). É o uso de termos científicos para chancelar visões de senso comum escolar.</div>
+          </div>
+
+          <div class="dimension dim-d">
+            <span class="dim-title">D. Diagnóstico de Mediação e Intervenção Ideal</span>
+            <div class="dim-content">A IA de código (Lab Agent) falhou pedagogicamente ao processar passivamente a instrução visual sem tensionamento conceitual. O comportamento ideal do agente pedagógico deveria provocar uma crise epistêmica, questionando: <em>"Franco, se ampliássemos a visão, o que acontece entre as partículas de farinha e as moléculas de água para a bolacha dobrar? É a partícula em si que dobra como borracha, ou são as moléculas de água que entram entre as partículas sólidas, permitindo que elas deslizem umas sobre as outras?"</em></div>
+          </div>
+        </section>
+
+        <!-- ESTUDANTE B -->
+        <section id="e2" class="student-block">
+          <div class="student-title">
+            <span>Estudante B <span style="font-weight: 400; font-size: 1rem; color: #5f6368;">(Pedro Henrique Dal Pizzol)</span></span>
+            <span class="student-code">ID: E2</span>
+          </div>
+
+          <div class="prompt-container">
+            <div class="prompt-meta">
+              <span>Interação 1 e 2 — Petrus & Lab Agent</span>
+              <span>Tema: Fábrica da Ferrugem (Oxirredução)</span>
+            </div>
+            <div class="prompt-text">"O cenário deve mostrar uma barra de ferro exposta... átomos de ferro reagindo com oxigênio e água para formar óxido de ferro... oxirredução... controles de umidade, temperatura e quantidade de sal, fazendo a corrosão acelerar... métodos de proteção como pintura e galvanização..."</div>
+          </div>
+
+          <div class="dimension dim-a">
+            <span class="dim-title">A. Decomposição do Enunciado</span>
+            <div class="dim-content">Projeto altamente sofisticado focado na simulação da corrosão. O aluno articula reagentes (ferro, oxigênio, água), produto (óxido de ferro), variáveis termodinâmicas e catalisadoras (temperatura, umidade, cloreto de sódio) e medidas preventivas físico-químicas industriais (pintura e galvanização).</div>
+          </div>
+
+          <div class="dimension dim-b">
+            <span class="dim-title">B. Obstáculos Epistemológicos (Bachelard)</span>
+            <div class="dim-content">O aluno demonstra ter superado o obstáculo da experiência primeira que vê a ferrugem apenas como uma "sujeira orgânica" ou doença do metal (obstáculo animista). O fenômeno foi purificado e despojado do senso comum, sendo tratado estritamente sob a ótica da alteração da estrutura da matéria por choque e afinidade eletrônica.</div>
+          </div>
+
+          <div class="dimension dim-c">
+            <span class="dim-title">C. Perfil Conceitual (Mortimer)</span>
+            <div class="dim-content">O estudante está plenamente ancorado na <strong>Zona Racionalista</strong>. A matéria é modelada de forma discreta, e as causas do fenômeno macroscópico (velocidade da corrosão) são explicadas pelo incremento da frequência de colisões efetivas promovidas pelo calor e pelos íons salinos.</div>
+          </div>
+
+          <div class="dimension dim-d">
+            <span class="dim-title">D. Diagnóstico de Mediação e Intervenção Ideal</span>
+            <div class="dim-content">Mediação extramente bem-sucedida pelo Tutor Petrus. Diante de um prompt inicial gigantesco, Petrus utilizou a estratégia de <em>scaffolding</em> (andaime), induzindo o aluno a quebrar cognitivamente a complexidade do sistema ("Vamos começar pelo esqueleto e fenômeno principal"). O tutor ensinou o estudante não apenas sobre química, mas sobre pensamento computacional modular.</div>
+          </div>
+        </section>
+
+        <!-- ESTUDANTE E -->
+        <section id="e5" class="student-block">
+          <div class="student-title">
+            <span>Estudante E <span style="font-weight: 400; font-size: 1rem; color: #5f6368;">(Santiago Canal Copetti)</span></span>
+            <span class="student-code">ID: E5</span>
+          </div>
+
+          <div class="prompt-container">
+            <div class="prompt-meta">
+              <span>Interação 1 — Lab Agent</span>
+              <span>Tema: Limite Atômico e Repulsão</span>
+            </div>
+            <div class="prompt-text">"Em uma área de 2 centímetros com 25 moléculas faça uma ilustração do limite atômico, no qual as moleculas sao repelidas com mais força quanto mais perto chegam entre si, ou seja onde não se encostam"</div>
+          </div>
+
+          <div class="dimension dim-a">
+            <span class="dim-title">A. Decomposição do Enunciado</span>
+            <div class="dim-content">O aluno solicita a renderização visual das forças intermoleculares, especificamente a força de repulsão eletrostática originada pelas eletrosferas das moléculas que, ao se aproximarem em excesso, geram um limite físico assintótico que impede o contato material direto.</div>
+          </div>
+
+          <div class="dimension dim-b">
+            <span class="dim-title">B. Obstáculos Epistemológicos (Bachelard)</span>
+            <div class="dim-content">O aluno enfrenta e transcende o <strong>Obstáculo Mecanicista/Cartesiano</strong>. Historicamente (e na escola), ensina-se a química através de bolas de isopor rígidas que "batem e ricocheteiam" por toque físico (concepção newtoniana de choque elástico). Ao demandar que elas "nunca se encostam" devido à força que cresce com a aproximação, ele internaliza a natureza eletromagnética do vazio atômico. Há, no entanto, uma âncora de escala: usa "2 centímetros" para representar campos microscópicos.</div>
+          </div>
+
+          <div class="dimension dim-c">
+            <span class="dim-title">C. Perfil Conceitual (Mortimer)</span>
+            <div class="dim-content">Apresenta uma ativação notável da transição para a <strong>Zona Relacional</strong>. Diferente da racionalista (partículas independentes), a zona relacional enxerga a matéria como campos sobrepostos de interação de forças, nas quais a proximidade espacial dita a magnitude da energia de campo ("repelidas com mais força quanto mais perto").</div>
+          </div>
+
+          <div class="dimension dim-d">
+            <span class="dim-title">D. Diagnóstico de Mediação e Intervenção Ideal</span>
+            <div class="dim-content">O aluno atingiu o limite de abstração visual do Lab Agent atual. A intervenção ideal do tutor mediador deveria abordar o conflito de escalas e elevar a formulação matemática: <em>"Santiago, excelente percepção sobre a repulsão eletrônica. Mas em uma área de 2 centímetros na vida real, caberiam trilhões de moléculas, não apenas 25. Se reduzirmos nossa área para a escala de nanômetros (nm), como podemos colorir ou representar visualmente essa 'força invisível' crescente no simulador?"</em></div>
+          </div>
+        </section>
+
+        <!-- ESTUDANTE F -->
+        <section id="e6" class="student-block">
+          <div class="student-title">
+            <span>Estudante F <span style="font-weight: 400; font-size: 1rem; color: #5f6368;">(Anthoni de Quadros Piva)</span></span>
+            <span class="student-code">ID: E6</span>
+          </div>
+
+          <div class="prompt-container">
+            <div class="prompt-meta">
+              <span>Interação 1 — Lab Agent</span>
+              <span>Tema: Difusão e Contato</span>
+            </div>
+            <div class="prompt-text">"não ta aparecendo a visualização, ta so uma tela preta. é para ter uma area de 5cm de contato, representando a repulsão entre eles [átomos]"</div>
+          </div>
+
+          <div class="dimension dim-a">
+            <span class="dim-title">A. Decomposição do Enunciado</span>
+            <div class="dim-content">Após solicitar simulação de átomos se repelindo, o aluno relata um bug de interface (tela preta) e tenta instruir novamente a IA delimitando fisicamente a barreira de repulsão com uma métrica de distância do cotidiano humano ("5cm de contato").</div>
+          </div>
+
+          <div class="dimension dim-b">
+            <span class="dim-title">B. Obstáculos Epistemológicos (Bachelard)</span>
+            <div class="dim-content">É a manifestação de um duplo obstáculo: a <strong>Experiência Primeira Sensorial</strong> aliada ao <strong>Obstáculo Geométrico</strong>. Bachelard alerta que a visualização euclidiana e as réguas humanas atrapalham a compreensão quântica e nanométrica da matéria. A incapacidade de visualizar as grandezas atômicas força a mente escolar a projetar dimensões de cadernos ("5 centímetros") para o vazio interatômico.</div>
+          </div>
+
+          <div class="dimension dim-c">
+            <span class="dim-title">C. Perfil Conceitual (Mortimer)</span>
+            <div class="dim-content">Forte colisão de perfis. Ele mobiliza o fenômeno teórico de difusão e repulsão (Racionalista), mas aplica as métricas de controle empírico da Zona Substancialista/Generalista, revelando que a representação microscópica no seu modelo mental possui tamanhos e comportamentos de objetos macroscópicos do dia a dia.</div>
+          </div>
+
+          <div class="dimension dim-d">
+            <span class="dim-title">D. Diagnóstico de Mediação e Intervenção Ideal</span>
+            <div class="dim-content">A "tela preta" gerada pelo agente possivelmente se deu pelo colapso matemático ao tentar renderizar uma tela canvas onde raios atômicos se misturam com unidades em centímetros. A mediação pedagógica é urgente para o letramento científico de grandezas: <em>"Anthoni, o simulador ficou confuso porque 5 centímetros é uma distância gigantesca para um átomo. Imagine que, para átomos se repelirem, eles operam em distâncias milhões de vezes menores que um grão de areia. Vamos ajustar a métrica da nossa simulação para picômetros (pm) ou Angstroms?"</em></div>
+          </div>
+        </section>
+
+        <!-- ESTUDANTE J -->
+        <section id="e15" class="student-block">
+          <div class="student-title">
+            <span>Estudante J <span style="font-weight: 400; font-size: 1rem; color: #5f6368;">(Nicolas Santos Garin)</span></span>
+            <span class="student-code">ID: E15</span>
+          </div>
+
+          <div class="prompt-container">
+            <div class="prompt-meta">
+              <span>Interações Cruzadas — Lab Agent & Petrus</span>
+              <span>Tema: Água vs. Sacarose no Motor</span>
+            </div>
+            <div class="prompt-text">1. "Crie um simulador de Química sobre a agitação das moléculas da água... partículas moverem mais rapidamente... distância aumentar..."<br><br>2. "Crie um simulador realista em 3D onde o usuário possa adicionar sacarose no motor... de combustão interna virtual... como a sacarose afeta o funcionamento"</div>
+          </div>
+
+          <div class="dimension dim-a">
+            <span class="dim-title">A. Decomposição do Enunciado</span>
+            <div class="dim-content">O aluno lida com dois projetos distintos. No primeiro, instrui as regras da termodinâmica dos estados físicos da água por energia cinética. No segundo, quer ilustrar um mito popular da mecânica automotiva: destruir o motor de um carro jogando açúcar (sacarose) no tanque de combustível.</div>
+          </div>
+
+          <div class="dimension dim-b">
+            <span class="dim-title">B. Obstáculos Epistemológicos (Bachelard)</span>
+            <div class="dim-content">No projeto da sacarose, incide o <strong>Obstáculo Pragmático do Conhecimento Cotidiano</strong>. A curiosidade investigativa está restrita à consequência mecânica e utilitária (o travamento físico das peças do motor devido à carbonização do açúcar ou entupimento de bicos ejetores), negligenciando completamente a natureza da reação química em curso (a quebra da molécula da sacarose em altas temperaturas na câmara de combustão em oposição aos hidrocarbonetos voláteis).</div>
+          </div>
+
+          <div class="dimension dim-c">
+            <span class="dim-title">C. Perfil Conceitual (Mortimer)</span>
+            <div class="dim-content">Exemplo de "Pluralismo Epistemológico Sensível ao Contexto". Para a água (conteúdo escolar canônico), o perfil ativado é 100% Racionalista. Para o problema da sacarose no motor (curiosidade extrassala), o cérebro ativa a Zona Substancialista e Generalista, tratando o açúcar puramente como uma areia obstrutiva que funde com o metal.</div>
+          </div>
+
+          <div class="dimension dim-d">
+            <span class="dim-title">D. Diagnóstico de Mediação e Intervenção Ideal</span>
+            <div class="dim-content">Excelente oportunidade para a ponte cognitiva. Em vez de aceitar apenas simular fumaça preta saindo de um motor 3D, o tutor deveria realizar a inversão epistemológica: <em>"Nicolas, colocar açúcar no motor estraga o carro, mas não pela mesma razão que areia estragaria. A gasolina é feita para queimar, explodir e virar gás. A sacarose ($C_{12}H_{22}O_{11}$), quando exposta à temperatura extrema do pistão, não vira gás facilmente; ela carboniza, derrete e forma uma resina pegajosa. Que tal simularmos a diferença química na queima das duas moléculas dentro do cilindro?"</em></div>
+          </div>
+        </section>
+
+      </article>
+
+      <section class="synthesis-section">
+        <h2>Síntese Fenomenológica: Padrões de Turma</h2>
+        <p>A análise longitudinal do corpus revela padrões fundamentais no comportamento cognitivo da turma durante o processo de *prompting* educacional e modelagem:</p>
+        
+        <div style="margin-top: 1.5rem;">
+          <h4 style="color: var(--accent-a); margin-bottom: 0.5rem;">1. O Conflito Frequente de Escalas Geométricas</h4>
+          <p class="dim-content">A transição entre o mundo macroscópico (visto a olho nu) e o microscópico (átomos e íons) impõe barreiras matemáticas. Quase um terço dos estudantes tende a aplicar réguas do mundo real ("centímetros") a fenômenos invisíveis, revelando que a internalização de grandezas como micrômetros e nanômetros ainda é superficial nas aulas tradicionais. A simulação por IA exacerba o erro, forçando-o a se tornar visível (e debugável).</p>
+        </div>
+
+        <div style="margin-top: 1.5rem;">
+          <h4 style="color: var(--accent-d); margin-bottom: 0.5rem;">2. O Poder do Andaime Cognitivo (Scaffolding)</h4>
+          <p class="dim-content">Notou-se que alunos que passaram por mediação prévia prolongada no Chat de Tutoramento (Petrus) antes de engajar o Agente de Código (Lab Agent) apresentaram prompts muito mais estruturados e com menor incidência de obstáculos animistas. A quebra da intencionalidade complexa em "etapas e variáveis" — induzida pelo tutor pedagógico — atuou diretamente na organização mental do perfil racionalista do estudante.</p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    // Smooth scrolling for TOC links
+    document.querySelectorAll('.toc a').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('href');
+        const targetElement = document.querySelector(targetId);
+        
+        if (targetElement) {
+          window.scrollTo({
+            top: targetElement.offsetTop - 40,
+            behavior: 'smooth'
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
