@@ -486,6 +486,9 @@ app.get('/api/lab/projects', auth.authenticate, (req: any, res) => {
 
 // POST /api/lab/projects — Criar novo projeto
 app.post('/api/lab/projects', auth.authenticate, (req: any, res) => {
+  if (!req.user.isAdmin) {
+    return res.status(403).json({ error: 'A plataforma de simuladores foi finalizada e novas criações estão bloqueadas.' });
+  }
   const userId = req.user.id;
   const { title } = req.body;
   if (!title) return res.status(400).json({ error: 'title é obrigatório.' });
@@ -544,6 +547,9 @@ app.get('/api/lab/projects/:id', auth.authenticate, (req: any, res) => {
 
 // PUT /api/lab/projects/:id/title — Renomear projeto
 app.put('/api/lab/projects/:id/title', auth.authenticate, (req: any, res) => {
+  if (!req.user.isAdmin) {
+    return res.status(403).json({ error: 'A plataforma de simuladores foi finalizada e edições estão bloqueadas.' });
+  }
   const userId = req.user.id;
   const { id } = req.params;
   const { title } = req.body;
@@ -559,6 +565,9 @@ app.put('/api/lab/projects/:id/title', auth.authenticate, (req: any, res) => {
 
 // DELETE /api/lab/projects/:id — Deletar projeto
 app.delete('/api/lab/projects/:id', auth.authenticate, (req: any, res) => {
+  if (!req.user.isAdmin) {
+    return res.status(403).json({ error: 'A plataforma de simuladores foi finalizada e edições estão bloqueadas.' });
+  }
   const userId = req.user.id;
   const { id } = req.params;
 
@@ -571,6 +580,9 @@ app.delete('/api/lab/projects/:id', auth.authenticate, (req: any, res) => {
 });
 
 app.post('/api/lab/projects/:id/messages', auth.authenticate, limiter, async (req: any, res) => {
+  if (!req.user.isAdmin) {
+    return res.status(403).json({ error: 'A plataforma de simuladores foi finalizada e novas edições estão bloqueadas.' });
+  }
   const userId = req.user.id;
   const { id: projectId } = req.params;
   const { content, modelToUse, userImageUrl } = req.body;
