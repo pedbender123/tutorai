@@ -1,0 +1,252 @@
+# Plano Estratégico — Scaffl Self-Hosted (Protótipo) + Pesquisa
+
+> Documento de estratégia para levar ao Claude Code (executor).
+> Você é o estrategista; este arquivo é o mapa. Não é código — é o "porquê" e o "o quê", em ordem.
+> Stack confirmada: React (Vite) + Tailwind no front; Node/Express + SQLite (`better-sqlite3`) + JWT no back; Gemini como provider principal (OpenAI opcional). Docker como fonte de verdade do deploy.
+
+---
+
+## 0. Decisões já tomadas (não reabrir)
+
+1. **Modelo B de chave (BYOK server-side).** A chave de API vive no servidor self-hosted, é configurada **pela interface** (não editando `.env` na mão), e é guardada **criptografada em repouso**. Todas as chamadas de IA continuam server-side. Inspiração de produto: n8n, WAHA, OpenCRAW — aberto, você-hospeda-você-gerencia, mas **sem pontas soltas de segurança**.
+2. **Dois públicos, um código.** Mesmo repositório serve (a) o protótipo self-hosted grátis e (b) a futura Scaffl Cloud. A diferença é resolvida por **configuração/feature-flags**, não por fork.
+3. **Os logs da díade aluno–IA são o ativo de pesquisa.** Qualquer decisão técnica que comprometa a integridade/centralização desses logs está vetada.
+4. **Dois artigos distintos** (ver seção 6): um de prática aplicada (recomendação), outro da plataforma (instrumento + análise discursiva).
+
+---
+
+## 1. Visão de produto em uma frase
+
+> Scaffl é um ambiente educacional auto-hospedável onde estudantes constroem simuladores de fenômenos científicos conversando com uma IA, e cada interação fica registrada de forma íntegra para uso pedagógico e de pesquisa.
+
+Três beneficiários no protótipo:
+- **Professor:** monta personas/disciplinas, acompanha o que os alunos produzem e como interagem com a IA.
+- **Aluno:** constrói simuladores e conversa com tutores, externalizando seu modelo mental.
+- **Escola:** roda no próprio servidor, com a própria chave, sem custo de licença e sem mandar dado de aluno para terceiros que ela não controle.
+
+Caminho futuro (Cloud, pago) — não é escopo do protótipo, mas as decisões de hoje não podem fechar essa porta:
+- adoção sem dor (sem precisar de servidor próprio),
+- features de análise para professor/escola,
+- **modo pesquisador** (assinatura mensal para coletar/analisar dados de um período e fechar artigos).
+
+---
+
+## 2. O grande filtro: Cloud vs Self-Hosted (o que é "lixo" no protótipo)
+
+O código atual carrega muita lógica que só faz sentido na Cloud. No self-hosted ela é peso morto ou risco. A regra é **não apagar — isolar atrás de flag** (`DEPLOYMENT_MODE = 'selfhosted' | 'cloud'`), para a Cloud reaproveitar depois.
+
+### 2.1 Sistema de créditos / cobrança — DESLIGAR no self-hosted
+Evidência no código: `CREDIT_RATE`, `calcCredits()`, `getUserCreditLimit()`, checagem de "Limite mensal de 1M/100k créditos", `creditsUsed`, dashboards de "Maiores Consumidores", `totalReais`.
+
+- **No self-hosted:** a escola paga o Gemini direto pela própria chave. Contabilizar crédito interno e bloquear por limite é **errado e confuso**. Desligar a checagem de limite; manter o *registro de tokens* só como telemetria opcional (útil pra escola saber o gasto, nunca como bloqueio).
+- **Ação:** atrás da flag, o caminho de cobrança/limite vira no-op no self-hosted. Não remover as colunas (Cloud usa), apenas não bloquear.
+
+### 2.2 Multi-tenant / institutions — SIMPLIFICAR no self-hosted
+Evidência: `institutionId = 'scaffl' | 'global'`, `SUPER_ADMIN_EMAIL`, `tutorai_admin_secret`, lógica de classrooms espalhada.
+
+- **No self-hosted:** uma instalação = uma instituição. O "super admin global" vira simplesmente "o admin desta instância". Não precisa de hierarquia de instituições.
+- **Ação:** `institutionId` pode existir mas default fixo por instância; nada de UI de gestão multi-instituição no self-hosted.
+
+### 2.3 Segredos hardcoded / fallbacks inseguros — CORRIGIR sempre (vale Cloud também)
+Evidência: o próprio `securityTests.ts` já caça `JWT_SECRET = 'fallback_secret_change_me'` e `X-Admin-Secret`. Isso **não pode** existir num produto "self-hosted que você confia". Ver seção 4.
+
+### 2.4 O que é "lixo para a análise" (dados)
+Não confundir com lixo de produto. Ver seção 5 (mapa de dados). Resumo: telemetria de UI, métricas de performance de modelo Qwen (isso é pesquisa do **Petrus**, outro trabalho — não entra nos logs desta plataforma), cliques de navegação → **não são dado de pesquisa** desta linha. O dado de ouro é o turno discursivo aluno–IA.
+
+### 2.5 Nomenclatura
+O código mistura **TutorAI / Scafi / Scaffl**. Decidir **um nome público** (parece ser **Scaffl**) e padronizar. Isso evita confusão na documentação e na futura Cloud. Tarefa de baixo risco, alto retorno de clareza.
+
+---
+
+## 3. BYOK Modelo B — desenho do fluxo (o coração do protótipo)
+
+Objetivo: o operador (admin da escola) cola a chave do Gemini numa tela de configuração, ela é validada, guardada criptografada, e usada server-side em todas as chamadas. Estilo n8n: "credentials" gerenciadas pela própria UI.
+
+### 3.1 Princípios
+- A chave **nunca** retorna ao front depois de salva (nem mascarada além de "•••• últimos 4").
+- A chave fica **criptografada em repouso** (AES-256-GCM). A *master key* da criptografia vem do ambiente (`SCAFFL_MASTER_KEY` no `.env`), gerada na instalação. Sem ela, o banco roubado não revela a chave.
+- Trocar a chave é uma operação de admin, auditada (quem trocou, quando — sem registrar o valor).
+- Se a chave não está configurada, a plataforma funciona em "modo limitado" e mostra um onboarding claro: "Configure sua chave Gemini para ativar a IA".
+
+### 3.2 Camadas (o que o Claude Code vai construir)
+1. **Tabela de configuração de instância** (ex.: `instance_settings` ou `credentials`): guarda `provider`, `encrypted_key`, `iv`, `auth_tag`, `key_last4`, `updated_by`, `updated_at`.
+2. **Módulo de cripto** (`crypto/secrets.ts`): `encryptSecret(plaintext)` / `decryptSecret(record)` usando `SCAFFL_MASTER_KEY`. Falhar ruidosamente se a master key estiver ausente/curta.
+3. **Endpoints admin** (protegidos por auth + role admin):
+   - `POST /api/admin/credentials` — recebe chave em texto, **valida fazendo um ping real no Gemini**, criptografa, salva, responde só com `key_last4`.
+   - `GET /api/admin/credentials` — responde status (`configured: true/false`, `provider`, `key_last4`, `updated_at`). **Nunca** o valor.
+   - `DELETE /api/admin/credentials` — remove (volta ao modo limitado).
+4. **Resolução da chave no caminho de IA:** hoje o código lê `process.env.GEMINI_API_KEY`. Trocar por um `getActiveKey()` que: 1º tenta a chave do banco (descriptografada em memória, com cache curto), 2º cai para `process.env` como fallback de dev. Isso centraliza e mantém compatibilidade.
+5. **Tela de configuração no front** (área admin): campo de chave (write-only), botão "Testar e salvar", status atual, botão "Remover". Onboarding quando vazio.
+
+### 3.3 Guard-rails de segurança específicos do BYOK (entram na suíte de testes)
+- Teste: a chave **nunca** aparece em nenhuma resposta de API (varrer respostas atrás do valor salvo).
+- Teste: endpoint de credentials exige role admin (401/403 para user comum).
+- Teste: master key ausente → app recusa salvar chave (não salva em texto puro "por desencargo").
+- Teste: chave inválida no `POST` → erro claro, nada salvo.
+
+### 3.4 Variante "trazer chave por sessão" (opcional, fica para a Cloud)
+No protótipo, **não** implementar chave por-usuário no navegador. Adiciona superfície de ataque e quebra a centralização dos logs. Anotar como item de roadmap da Cloud.
+
+---
+
+## 4. Segurança "sem pontas soltas" (o que torna o self-hosted confiável)
+
+Você já tem uma suíte (`securityTests.ts` + `runner.ts`) cobrindo SQLi, XSS, JWT forjado, CORS, rate limit. Excelente base. O que falta para o padrão "n8n/WAHA-grade":
+
+### 4.1 Correções obrigatórias antes de liberar
+- **JWT_SECRET sem fallback.** App deve **recusar iniciar** se `JWT_SECRET` não estiver setado e forte. (O teste CORS-002 já denuncia o fallback — agora é eliminar a causa.)
+- **X-Admin-Secret** repensado. "Admin secret" em header é frágil. Admin deve ser **role no JWT**, não um segredo compartilhado. Migrar para role-based e remover o header secret.
+- **CORS restrito por config.** Default fechado; o operador define `ALLOWED_ORIGINS` na instalação. Nada de `*` em produção.
+- **Rate limit por rota sensível** (login, credenciais), não só global.
+
+### 4.2 Setup seguro por padrão (a parte "você gerencia, mas o software te protege")
+- **Script de instalação que gera segredos** (`JWT_SECRET`, `SCAFFL_MASTER_KEY`, senha do admin inicial) automaticamente — o operador nunca precisa inventar segredo fraco.
+- **Checagem de saúde de segurança no boot:** se algum segredo está fraco/default, o app loga um aviso gritante (ou recusa subir em modo produção).
+- **`.env.example` honesto** com comentários do que é obrigatório e como gerar.
+
+### 4.3 Privacidade dos dados de aluno (alinhado à regra de ouro do projeto e ao CEP)
+- **Anonimização na exportação.** Quando o pesquisador exporta para análise, dados identificáveis (nome, email) saem ou viram pseudônimos estáveis (hash). Isso atende o que o `.agents/rules` já exige e o que o Comitê de Ética vai cobrar.
+- **Sem vazar dado de aluno para terceiros não-controlados.** No self-hosted isso é natural (tudo no servidor da escola), mas a doc precisa deixar explícito que a única saída externa é a API do Gemini (e o que vai pra lá são os prompts — avisar isso no termo de uso/onboarding).
+
+---
+
+## 5. Dados: o que registrar, o que descartar, e como (ponte com os artigos)
+
+A plataforma é, ao mesmo tempo, produto e **instrumento de coleta**. O schema atual já persiste o essencial (`messages`, `lab_messages` com `role`, `content`, timestamps, `projectId`, código gerado). O trabalho aqui é **garantir completude e recuperabilidade**, não reinventar.
+
+### 5.1 Dado de OURO (preservar com integridade total)
+Tudo que constitui o **turno discursivo da díade aluno–IA**:
+- prompt do aluno (texto exato, timestamp),
+- resposta da IA (texto exato, timestamp, modelo usado),
+- código/simulador produzido em cada turno (versões — não só a final),
+- reformulações (quando o aluno reescreve o pedido após o feedback da IA),
+- vínculo claro: sessão → projeto → aluno (pseudonimizável) → disciplina/atividade.
+
+Por que ouro: é exatamente o corpus da análise discursiva (Mortimer & Scott / Bakhtin-Vygotsky) e da leitura por perfil conceitual (Bachelard/Mortimer). Sem versões intermediárias, perde-se a **emergência na interação**.
+
+### 5.2 Dado ÚTIL (registrar, secundário)
+- contagem de tokens/turnos (telemetria de custo, não de pesquisa),
+- imagem/desenho que o aluno anexa (já é salvo em `/uploads`),
+- metadados de sessão (duração, nº de turnos).
+
+### 5.3 Dado LIXO para esta pesquisa (não poluir o corpus)
+- telemetria de UI / cliques de navegação,
+- métricas de performance de modelos Qwen (`relatorio.md`, `relatorio2.md`) — **isso é Petrus**, outra linha, não entra no corpus da plataforma educacional,
+- logs de sistema/infra (ficam em log de servidor, não no dado de pesquisa).
+
+### 5.4 Integridade dos dados (o "sistema de verificação de integridade" que você mencionou — vertente DADOS)
+- **Completude de sessão:** um verificador que detecta sessões truncadas (prompt sem resposta, turno sem código quando deveria ter) e marca para revisão antes da análise.
+- **Hash/checksum dos exports** para garantir que o dataset analisado é o mesmo do banco (rastreabilidade científica).
+- **Snapshot/backup** do SQLite com timestamp antes de cada export ou migração.
+- Caminho de portabilidade **SQLite → PostgreSQL** já previsto na regra de ouro: manter o schema portável (sem features SQLite-only no caminho crítico).
+
+---
+
+## 6. Os dois artigos (terreno organizado)
+
+Não empilhar todos os referenciais num texto só. Dividir limpo:
+
+### Artigo 1 — Prática Aplicada (recomendação de prática) — base QNEsc
+- **O que é:** relato de experiência da sequência didática (experimento → demonstração → modelagem autônoma) + recomendação para professores.
+- **Referencial:** Ausubel (organizador prévio), Papert (construcionismo), Johnstone (três níveis). Já é o eixo do draft atual.
+- **Alimentado por:** os retornos das aulas práticas e o relatório da aula de apresentação (que você vai enviar).
+
+### Artigo 2 — A Plataforma como Instrumento + Análise Discursiva (este eixo)
+- **O que é:** apresenta o Scaffl como ambiente de pesquisa e analisa **a construção conceitual na interação aluno–IA** a partir dos logs.
+- **Arquitetura teórica (a lista do professor encaixa aqui):**
+  - **Bachelard (perfil epistemológico + obstáculos):** base epistemológica; obstáculos (substancialismo, realismo) viram categorias para ler prompts (ex.: solubilidade/dissolução).
+  - **Mortimer (perfil conceitual):** lente principal — quais zonas do perfil o aluno mobiliza ao descrever o fenômeno para a IA, e se há deslocamento de zona ao longo da interação.
+  - **TMC (Teoria da Mediação Cognitiva — paper do orientador):** justifica *por que* a IA é um mediador cognitivo especial; a plataforma como mecanismo extracerebral e o "driver" que o aluno desenvolve. **Pendência: confirmar com o professor o paper exato (idealmente o PDF).**
+  - **Bakhtin/Vygotsky → via Mortimer & Scott:** metodologia de análise discursiva dos logs (abordagens comunicativas, padrões de interação I-R-A/I-R-F, enunciado e responsividade) aplicada à díade aluno–IA.
+  - **Emergência na interação:** categoria de resultado — episódios em que um conceito se constitui no diálogo (não estava no prompt inicial nem foi só entregue pela IA).
+- **Fonte de dados:** os logs de ouro da seção 5.
+- **Revista alvo provável:** IENCI / Ciência & Educação / RBPEC (mais teórico que QNEsc).
+
+### Tensões a resolver com o professor (antes de redigir a fundamentação do Artigo 2)
+1. Trocar o eixo Bardin+ASC (Moreira) do draft atual pelo eixo Mortimer-Scott + perfil conceitual? (recomendo: Artigo 1 fica Ausubel/Papert/Johnstone; Artigo 2 fica Bachelard→Mortimer + TMC + Bakhtin/Vygotsky; Johnstone atravessa os dois como objeto químico).
+2. Díade = aluno–IA (logs) ou aluno–aluno (duplas)? (apostando em aluno–IA pelo design de logs individuais — confirmar).
+3. Unidade de análise = episódio discursivo (sequência de turnos em torno de um conceito); definir critério de recorte e triangulação com o simulador produzido.
+4. Qual paper de TMC exatamente.
+
+---
+
+## 7. Documentação a produzir (entregáveis de texto — posso escrever)
+
+Para o protótipo ser adotável por escola/professor sem fricção:
+1. **README de instalação** (Docker compose, gerar segredos, subir, primeiro acesso admin).
+2. **Guia "Configure sua chave Gemini"** (como obter a chave no Google AI Studio, onde colar na UI, o que acontece com ela).
+3. **Guia do Professor** (criar persona/disciplina, acompanhar alunos, exportar).
+4. **Guia do Aluno** (construir simulador, conversar com tutor).
+5. **Doc de Arquitetura** (visão técnica para colaboradores e para a seção de metodologia do Artigo 2 — "detalhes técnicos da plataforma" que o draft deixou em [ ]).
+6. **Política de Privacidade / Termo** (o que é registrado, o que vai pro Gemini, anonimização — base para o CEP).
+
+---
+
+## 8. Scripts e verificação de integridade (as duas vertentes)
+
+Você mencionou "sistema de scripts e verificação de integridade". São **duas** coisas distintas:
+
+### 8.1 Integridade de SEGURANÇA/SAÚDE do deploy (operador roda e confia)
+- `scaffl doctor` (um script): checa segredos fortes, CORS fechado, chave configurada, banco acessível, versão, e roda a `securityTests` contra a instância. Saída verde/vermelha clara.
+- Reaproveita `runner.ts` + `securityTests.ts` que já existem.
+
+### 8.2 Integridade dos DADOS de pesquisa (seção 5.4)
+- `scaffl verify-data`: completude de sessões, sessões órfãs, contagem por aluno/atividade, gera relatório de qualidade do dataset antes da análise.
+- `scaffl export --anonymize`: export com pseudonimização + checksum + snapshot.
+
+Ambos com **feedback de progresso** (a regra de ouro do projeto exige isso para qualquer rotina longa).
+
+---
+
+## 9. Ordem de execução sugerida (roadmap para o Claude Code)
+
+Fases pensadas para "liberar um protótipo seguro e útil" o quanto antes, sem retrabalho.
+
+**Fase 0 — Higiene e flags (base de tudo)**
+- Padronizar nome (Scaffl).
+- Introduzir `DEPLOYMENT_MODE` flag.
+- Eliminar `JWT_SECRET` fallback; app recusa subir sem segredo forte.
+- Trocar `X-Admin-Secret` por role no JWT.
+
+**Fase 1 — BYOK Modelo B (destrava o self-hosted gratuito)**
+- Módulo de cripto + master key.
+- Tabela de credenciais + endpoints admin (com validação por ping real).
+- `getActiveKey()` substituindo leitura direta de `process.env`.
+- Tela de config + onboarding "modo limitado".
+- Novos testes de segurança do BYOK (3.3).
+
+**Fase 2 — Desligar Cloud-only no self-hosted**
+- Créditos/limite viram no-op atrás da flag (mantendo telemetria opcional).
+- Multi-tenant simplificado para single-instance.
+
+**Fase 3 — Integridade de dados + exports**
+- Verificador de completude de sessão.
+- Export anonimizado + checksum + snapshot.
+- Garantir versões intermediárias de simulador são persistidas (ouro da pesquisa).
+
+**Fase 4 — Endurecimento + `scaffl doctor`**
+- CORS por config, rate limit por rota, script de install que gera segredos.
+- `scaffl doctor` consolidando a suíte de segurança.
+
+**Fase 5 — Documentação e liberação**
+- README, guias, doc de arquitetura, política de privacidade.
+- Tag de versão "protótipo público".
+
+**Cloud (depois, fora do protótipo):** reativar créditos/cobrança, multi-tenant real, modo pesquisador (assinatura mensal), chave por-usuário opcional, hospedagem gerenciada.
+
+---
+
+## 10. Pendências que dependem de você / do professor
+
+- [ ] Confirmar nome público definitivo (Scaffl?).
+- [ ] Paper exato da TMC (de preferência o PDF) para o Artigo 2.
+- [ ] Díade = aluno–IA ou aluno–aluno?
+- [ ] Trocar eixo analítico do draft (Bardin/Moreira → Mortimer-Scott)? — decisão do orientador.
+- [ ] Revista alvo do Artigo 2.
+- [ ] Enviar o relatório da aula de apresentação (alimenta Artigo 1 e mostra o dado real disponível).
+- [ ] Subir os arquivos-chave do repo (server/, client/src/, package.json, .env.example) se quiser auditoria linha-a-linha — hoje só vejo trechos.
+
+---
+
+### Nota sobre o que vê este plano
+Este documento foi montado a partir dos materiais do projeto (relatórios da bolsa, draft QNEsc, plano de renovação PROBIC, e os trechos de código colados: index.ts, ai.ts, labAI.ts, api.ts, securityTests.ts, runner.ts, Dockerfile, .agents/rules). Onde digo "evidência no código", é trecho que apareceu nesses arquivos. Para precisão total de auditoria, falta o repositório completo.
