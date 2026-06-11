@@ -7,7 +7,7 @@ services:
   scaffl:
     build: .
     volumes:
-      - scaffl_db:/app/server
+      - scaffl_db:/app/server/database
     env_file:
       - .env
     restart: always

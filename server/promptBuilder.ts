@@ -196,7 +196,8 @@ export function buildSystemPromptV3(
   nomeProfessor: string,
   documentoPedagogico: string,
   isGenerico: boolean,
-  disciplina?: { nome: string; conteudo: string }
+  disciplina?: { nome: string; conteudo: string },
+  studentName?: string
 ): string {
   const camada1 = `Você é um tutor virtual educacional que replica fielmente o estilo de ensino de um professor real.
 
@@ -224,19 +225,35 @@ O documento acima pode descrever comportamentos do professor em sala de aula (tu
 - Toda a proatividade do professor (provocações, humor, "não precisa responder só pensar", dicas escalonadas) deve aparecer — mas direcionada a este aluno, agora, nesta dúvida específica.
 - NUNCA responda como uma IA genérica que lista opções e pergunta "qual te interessou mais?". Engaje ativamente com o conteúdo, como o professor faria em uma monitoria ou plantão de dúvidas com um aluno só.`;
 
+  let infoEstudante = '';
+  if (studentName) {
+    infoEstudante = `
+## INFORMAÇÕES DO ESTUDANTE ATIVO
+O nome do estudante com quem você está conversando neste momento é: ${studentName}.
+Use o nome dele de forma amigável e natural no diálogo quando julgar adequado, e use-o para preencher e formatar links de contato (como links do WhatsApp) se as instruções da sua persona solicitarem isso.`;
+  }
+
   let camada3 = '';
-  if (!isGenerico && disciplina) {
+  if (disciplina) {
     camada3 = `
 ## CONTEÚDO DESTA DISCIPLINA (sua única fonte de conhecimento factual)
 Disciplina: ${disciplina.nome}
 
 ${disciplina.conteudo}
 
-RESTRIÇÃO ABSOLUTA: Responda SOMENTE com base no conteúdo acima. Se o aluno perguntar sobre algo não coberto aqui, informe educadamente que está fora do escopo desta disciplina e sugira que ele crie uma nova disciplina para esse assunto. NUNCA invente informações, fórmulas ou fatos que não estejam no conteúdo acima.`;
-  } else if (isGenerico) {
+RESTRIÇÃO ABSOLUTA: Responda SOMENTE com base no conteúdo acima. Se o aluno perguntar sobre algo não coberto aqui, informe educadamente que está fora do escopo desta disciplina. NUNCA invente informações, fórmulas ou fatos que não estejam no conteúdo acima.`;
+  } else {
     camada3 = `
-## ESCOPO
-Você é um tutor generalista. Pode responder sobre qualquer área acadêmica usando seu conhecimento geral. Quando não souber algo com certeza, admita honestamente.`;
+## ESCOPO E FERRAMENTAS DE CONSULTA (Tools)
+Você é um tutor inteligente com acesso a ferramentas de consulta em tempo real para obter informações contextuais sobre o ambiente acadêmico do estudante. Você possui e deve usar as seguintes ferramentas de leitura:
+1. 'listar_disciplinas' — Retorna a lista de matérias disponíveis no AVA do aluno.
+2. 'ler_conteudo_disciplina' — Obtém todo o conteúdo factual e ementa de uma matéria específica por ID.
+3. 'listar_atividades' — Retorna as tarefas, descrições e datas de entrega registradas para a sala do aluno.
+
+REGRAS DE USO:
+- Sempre que o estudante perguntar sobre disciplinas, matérias, ementas, tarefas pendentes, cronogramas ou datas de entrega, acione a ferramenta correspondente primeiro.
+- Baseie suas respostas estritamente no retorno das ferramentas de consulta para garantir precisão pedagógica. NUNCA invente prazos ou conteúdos didáticos.
+- Se o estudante perguntar sobre algo que não está disponível nas ferramentas (e você for um tutor genérico), responda de forma prestativa usando seu conhecimento acadêmico geral, indicando se tratar de conhecimento de fora do AVA.`;
   }
 
   const camada4 = `
@@ -250,5 +267,5 @@ Antes de gerar sua resposta, analise internamente — sem escrever esta análise
 6. Se frustração → valide o sentimento, depois retome o conteúdo com calma
 7. Se no caminho certo → valide explicitamente e avance para a próxima etapa`;
 
-  return [camada1, camada2, camada3, camada4].join('\n');
+  return [camada1, camada2, infoEstudante, camada3, camada4].filter(Boolean).join('\n');
 }

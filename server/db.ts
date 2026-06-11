@@ -3,8 +3,16 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import bcrypt from 'bcryptjs';
 
+import fs from 'fs';
+import path from 'path';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const dbPath = join(__dirname, 'tutorai.db');
+const dbPath = process.env.DATABASE_PATH || join(__dirname, 'tutorai.db');
+
+const dbDir = path.dirname(dbPath);
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
 
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
@@ -205,6 +213,78 @@ db.exec(`
   );
 `);
 
+// AVA, Activities and Notifications tables
+db.exec(`
+  CREATE TABLE IF NOT EXISTS activities (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    dueDate TEXT NOT NULL,
+    institutionId TEXT NOT NULL,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (institutionId) REFERENCES institutions(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS activity_classrooms (
+    activityId TEXT NOT NULL,
+    classroomId TEXT NOT NULL,
+    PRIMARY KEY (activityId, classroomId),
+    FOREIGN KEY (activityId) REFERENCES activities(id) ON DELETE CASCADE,
+    FOREIGN KEY (classroomId) REFERENCES classrooms(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS notifications (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    type TEXT DEFAULT 'activity',
+    targetClassroomId TEXT,
+    referenceId TEXT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (targetClassroomId) REFERENCES classrooms(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS user_notifications_status (
+    userId TEXT NOT NULL,
+    notificationId TEXT NOT NULL,
+    seen INTEGER DEFAULT 0,
+    dismissed INTEGER DEFAULT 0,
+    PRIMARY KEY (userId, notificationId),
+    FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (notificationId) REFERENCES notifications(id) ON DELETE CASCADE
+  );
+`);
+
+// Migration: create user_classrooms table and migrate legacy data
+db.exec(`
+  CREATE TABLE IF NOT EXISTS user_classrooms (
+    userId TEXT NOT NULL,
+    classroomId TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'student',
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (userId, classroomId),
+    FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (classroomId) REFERENCES classrooms(id) ON DELETE CASCADE
+  );
+`);
+
+// Migrar dados legados de users.classroomId para a nova tabela user_classrooms
+const legacyUsersWithClass = db.prepare("SELECT id, classroomId, role FROM users WHERE classroomId IS NOT NULL").all() as { id: string, classroomId: string, role: string }[];
+for (const u of legacyUsersWithClass) {
+  const isTeacher = u.role === 'admin' ? 'teacher' : 'student';
+  db.prepare(`
+    INSERT OR IGNORE INTO user_classrooms (userId, classroomId, role)
+    VALUES (?, ?, ?)
+  `).run(u.id, u.classroomId, isTeacher);
+}
+
+
+// Migration: add classroomId to disciplinas table if not exists
+const discCols = db.prepare("PRAGMA table_info(disciplinas)").all() as any[];
+if (!discCols.find((c: any) => c.name === 'classroomId')) {
+  db.exec("ALTER TABLE disciplinas ADD COLUMN classroomId TEXT REFERENCES classrooms(id) ON DELETE CASCADE");
+}
+
 // SimAgent migration: add new columns idempotently
 import { runSimAgentMigration } from './migrations/add_simagent_columns.js';
 runSimAgentMigration(db);
@@ -239,5 +319,12 @@ if (superEmail && superPassword) {
     new Date().toISOString()
   );
 }
+
+// Update Petrus instructions with Tool WhatsApp Redirection & Lab Simulators Guidelines
+db.prepare(`
+  UPDATE personas
+  SET documentoPedagogico = 'Você é o Petrus, um tutor de IA amigável e direto da plataforma Scaffl. Seu objetivo principal é guiar o aprendizado de forma ativa: nunca dê a resposta pronta ao aluno. Em vez disso, valide brevemente a iniciativa dele, explique conceitos complexos usando analogias simples do cotidiano e termine sempre com uma pergunta socrática que o estimule a dar o próximo passo sozinho. Se o aluno errar, não o corrija de forma seca; use o erro como oportunidade de reflexão, sugerindo uma nova perspectiva. Mantenha suas interações extremamente concisas, respondendo em no máximo dois ou três parágrafos curtos e objetivos. Se o aluno estiver precisando de suporte humano, travado nas tarefas, solicitar contato direto com o professor ou ajuda extra, acione a ferramenta "solicitar_contato_professor" para obter o link do WhatsApp do Professor Pedro e exiba o link retornado em formato Markdown para o estudante na conversa. Além disso, você tem conhecimento de que os alunos constroem simuladores interativos de ciências na aba Laboratório através da IA escritora de código do Scaffl. Quando um aluno pedir ajuda sobre como projetar, estruturar ou formular prompts para criar bons simuladores, oriente-o a fazer pedidos curtos e em etapas incrementais no chat do lab (por exemplo, pedir para criar o esqueleto básico, depois adicionar a animação física e por fim aplicar os estilos). Guie-o a especificar claramente: 1) O fenômeno físico ou químico exato (ex: termodinâmica, combustão); 2) Controles que deseja (sliders para alterar variáveis, botões de disparar/reiniciar, checkboxes); 3) Como deve ser a visualização gráfica no canvas (movimento fluido de partículas, vetores de força e rastros de trajetórias coloridas); e 4) Pedir um visual moderno com fundo escuro elegante.'
+  WHERE id = 'petrus'
+`).run();
 
 export default db;

@@ -393,13 +393,50 @@ function MessageBubble({ msg, persona }: { msg: Message; persona: Persona | null
           <p className="whitespace-pre-wrap font-medium">{msg.content}</p>
         ) : (
           <div className="markdown-body prose dark:prose-invert prose-primary max-w-none text-sm leading-relaxed">
-            <Markdown>{msg.content}</Markdown>
+            <Markdown
+              components={{
+                a: ({ href, children }) => {
+                  const isWhatsApp = href?.includes('wa.me');
+                  if (isWhatsApp) {
+                    return (
+                      <span className="block my-2">
+                        <a
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#25D366] hover:bg-[#20ba59] active:bg-[#1caa4e] text-white font-semibold text-xs rounded-xl shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] no-underline focus:outline-none focus:ring-2 focus:ring-[#25D366]/50"
+                        >
+                          <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">
+                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.513 2.262 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436.002 9.858-4.419 9.86-9.86.001-2.636-1.024-5.113-2.887-6.978C16.578 1.898 14.1 .874 11.465.874 6.03.874 1.61 5.293 1.607 10.733c-.001 1.705.447 3.371 1.298 4.843l-.926 3.382 3.471-.91c1.47.8 3.125 1.22 4.793 1.22a9.78 9.78 0 0 0 4.822-1.228zm10.966-7.633c-.301-.15-1.781-.879-2.056-.979-.275-.1-.475-.15-.675.15-.2.3-.775.979-.95 1.178-.175.2-.35.225-.65.075-.3-.15-1.265-.467-2.41-1.485-.89-.795-1.49-1.777-1.665-2.077-.175-.3-.018-.462.13-.61.135-.133.301-.35.451-.524.15-.174.2-.3.3-.5.1-.2.05-.375-.025-.526-.075-.15-.675-1.625-.925-2.225-.244-.588-.493-.507-.675-.516-.175-.008-.375-.01-.575-.01-.2 0-.525.075-.8.376-.275.301-1.05 1.027-1.05 2.505 0 1.477 1.075 2.903 1.225 3.102.15.2 2.11 3.224 5.117 4.522.715.31 1.273.495 1.71.635.717.227 1.369.195 1.884.118.574-.085 1.781-.727 2.031-1.43.25-.702.25-1.303.175-1.43-.075-.125-.275-.2-.575-.35z"/>
+                          </svg>
+                          {children}
+                        </a>
+                      </span>
+                    );
+                  }
+                  return (
+                    <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                      {children}
+                    </a>
+                  );
+                }
+              }}
+            >
+              {msg.content}
+            </Markdown>
           </div>
         )}
         {!isUser && (
-          <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 mt-2 uppercase tracking-widest">
-            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </p>
+          <div className="flex items-center justify-between gap-4 mt-2">
+            <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+              {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+            {msg.creditsUsed > 0 && (
+              <span className="text-[9px] font-semibold text-slate-400/85 dark:text-slate-500/80 tracking-wide">
+                Custo: {msg.creditsUsed.toLocaleString('pt-BR')} créditos
+              </span>
+            )}
+          </div>
         )}
       </div>
     </div>
