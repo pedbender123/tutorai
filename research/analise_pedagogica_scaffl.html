@@ -182,6 +182,22 @@
             max-width: 800px;
         }
 
+        /* Ethical alert card */
+        .ethical-card {
+            background: rgba(245, 158, 11, 0.05);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 3rem;
+            font-size: 0.95rem;
+            color: #f59e0b;
+        }
+
+        .ethical-card strong {
+            color: #f59e0b;
+            font-weight: 700;
+        }
+
         /* Content Sections */
         section {
             margin-bottom: 5rem;
@@ -430,8 +446,8 @@
                 <ul class="sidebar-menu">
                     <li class="menu-item active"><a href="#intro">1. Introdução & ATD</a></li>
                     <li class="menu-item"><a href="#perfis">2. Perfis Epistemológicos</a></li>
-                    <li class="menu-item"><a href="#modelos">3. Modelos Mentais (TMC)</a></li>
-                    <li class="menu-item"><a href="#discursiva">4. Análise Bakhtin/Vygotsky</a></li>
+                    <li class="menu-item"><a href="#modelos">3. Modelos Mentais (TCC)</a></li>
+                    <li class="menu-item"><a href="#discursiva">4. Teoria da Mediação Cognitiva</a></li>
                     <li class="menu-item"><a href="#categorias">5. Categorias Emergentes</a></li>
                     <li class="menu-item"><a href="#empirico">6. Dados das Apresentações</a></li>
                 </ul>
@@ -448,11 +464,16 @@
                 </p>
             </header>
 
+            <!-- Ethical Card -->
+            <div class="ethical-card">
+                <strong>[AVISO ÉTICO]</strong> O presente relatório destina-se a fins de desenvolvimento, ajuste tecnológico-pedagógico da plataforma e planejamento de pesquisa. A publicação definitiva de dados empíricos de pesquisa científica aguarda a homologação do Comitê de Ética em Pesquisa (CEP) correspondente e a formalização dos Termos de Consentimento Livre e Esclarecido (TCLE) e Termos de Assentimento Livre e Esclarecido (TALE) junto aos participantes menores de idade e seus responsáveis. Todos os sujeitos foram pseudonimizados neste relatório.
+            </div>
+
             <section id="intro">
                 <h2>1. Introdução e Procedimento Metodológico (ATD)</h2>
                 <div class="glass-card">
                     <p>
-                        A <strong>Análise Textual Discursiva (ATD)</strong>, formulada por Roque Moraes e Maria do Carmo Galiazzi, é uma abordagem de análise qualitativa de dados textuais que se situa na fronteira entre a análise de conteúdo e a análise de discurso. Ela se desenvolve em um movimento cíclico composto por três etapas fundamentais descritas no fluxo abaixo.
+                        A <strong>Análise Textual Discursiva (ATD)</strong>, formulada por Roque Moraes e Maria do Carmo Galiazzi, é uma abordagem de análise qualitativa de dados textuais que se situa na fronteira entre a análise de conteúdo e a análise de discurso. Ela se desenvolve em um movimento cíclico composto por três etapas fundamentais:
                     </p>
                     
                     <div class="diagram-container">
@@ -461,22 +482,22 @@
                             <div class="process-step">
                                 <div class="step-num">1</div>
                                 <div class="step-title">Unitarização</div>
-                                <div class="step-desc">Desmontagem do corpus de 164 interações em unidades de significado isoladas (declarações, perguntas, comandos).</div>
+                                <div class="step-desc">Desmontagem do corpus de 164 interações (89 chat + 75 lab). Foram isoladas <strong>42 unidades de significado</strong> relevantes.</div>
                             </div>
                             <div class="process-step">
                                 <div class="step-num">2</div>
                                 <div class="step-title">Categorização</div>
-                                <div class="step-desc">Agrupamento das unidades em categorias emergentes com base em afinidades semânticas e teóricas.</div>
+                                <div class="step-desc">Agrupamento das unidades em categorias emergentes por meio de validação intersubjetiva cruzada entre múltiplos pesquisadores.</div>
                             </div>
                             <div class="process-step">
                                 <div class="step-num">3</div>
                                 <div class="step-title">Novo Emergente</div>
-                                <div class="step-desc">Construção de metatextos compreensivos articulando os relatos empíricos à fundamentação científica.</div>
+                                <div class="step-desc">Construção de metatextos compreensivos articulando a teoria pedagógica e as interações observadas.</div>
                             </div>
                         </div>
                     </div>
                     <p>
-                        O corpus analisado compreende 89 interações de chat de monitoria e 75 interações com a IA de programação de laboratório coletadas de forma anonimizada na plataforma durante a realização das atividades práticas.
+                        O corpus analisado compreende interações com a inteligência artificial registradas na base de dados durante as aulas experimentais do laboratório de ciências.
                     </p>
                 </div>
             </section>
@@ -487,7 +508,7 @@
                 <h2>2. Perfis Epistemológicos (Bachelard) e Perfis Conceituais (Mortimer)</h2>
                 <div class="glass-card">
                     <p>
-                        Os dados apontam transições conceituais significativas nas manifestações dos estudantes à medida que são forçados a traduzir fenômenos do senso comum para parâmetros aceitos pela modelagem científica.
+                        Os dados apontam transições conceituais significativas nas manifestações dos estudantes à medida que são induzidos a romper com explicações macroscópicas baseadas no senso comum.
                     </p>
 
                     <div class="diagram-container">
@@ -495,36 +516,37 @@
                         <div class="path-container">
                             <div class="path-node">
                                 <div class="path-node-title">Substancialista / Senso Comum</div>
-                                <div class="path-node-desc">"A bolacha ficou mole ao molhar"</div>
+                                <div class="path-node-desc">Estudante A (E1): "A bolacha ficou mole"</div>
                             </div>
                             <div class="path-arrow">→</div>
                             <div class="path-node accent">
                                 <div class="path-node-title">Realismo Ingênuo / Empirismo</div>
-                                <div class="path-node-desc">"Ferrugem corrói o ferro mudando a cor"</div>
+                                <div class="path-node-desc">Estudante B (E2): "Ferrugem muda a cor de cinza pra marrom"</div>
                             </div>
                             <div class="path-arrow">→</div>
                             <div class="path-node">
                                 <div class="path-node-title">Racionalismo Científico</div>
-                                <div class="path-node-desc">"Limite e atração atômica no CO2"</div>
+                                <div class="path-node-desc">Estudante C (E3): "Limite atômico e repulsão intermol."</div>
                             </div>
                         </div>
                     </div>
 
                     <h3>2.1. A Zona Substancialista e o Obstáculo do Realismo Ingênuo</h3>
                     <p>
-                        Gaston Bachelard aponta o <strong>substancialismo</strong> (atribuição de propriedades macroscópicas e sensoriais íntimas às substâncias) e o <strong>realismo ingênuo</strong> (aceitar o fenômeno conforme ele se apresenta à nossa percepção sensorial direta) como obstáculos epistemológicos estruturais na construção do pensamento científico.
+                        Gaston Bachelard aponta o <strong>substancialismo</strong> (atribuição de propriedades macroscópicas ocultas às substâncias) e o <strong>realismo ingênuo</strong> (aceitar as coisas como aparecem aos sentidos) como fortes obstáculos epistemológicos no ensino de Ciências.
                     </p>
                     <ul>
-                        <li><strong>Caso Franco Augusto:</strong> Ao demandar um simulador para <em>"Simular as partículas de uma bolacha que era sólida e depois de ficar molhada ficou mole"</em>, o estudante traz uma propriedade puramente tátil e perceptual ("ficar mole") para o nível microscópico de partículas, gerando uma tensão entre o realismo sensorial e o modelo de partículas.</li>
-                        <li><strong>Caso Pedro Henrique:</strong> Foca inicialmente no realismo ingênuo da oxidação do metal ao propor que o simulador apenas mostre <em>"a ferrugem mudando a cor de cinza para marrom-avermelhada"</em>.</li>
+                        <li><strong>Estudante A (E1):</strong> Ao solicitar um simulador para <em>"Simular as partículas de uma bolacha que era sólida e depois de ficar molhada ficou mole"</em>, traz a percepção sensorial macro ("ficar mole") para a escala microscópica de partículas, denotando a tensão de transição de seu perfil conceitual.</li>
+                        <li><strong>Estudante B (E2):</strong> Demonstra apego ao realismo do senso comum ao focar a simulação na mera mudança de cor fenomenológica: <em>"a ferrugem mudando a cor de cinza para marrom-avermelhada"</em>.</li>
                     </ul>
 
                     <h3>2.2. A Transição para a Zona Racionalista e o Racionalismo Aplicado</h3>
                     <p>
-                        Eduardo Mortimer postula que a aprendizagem não se dá por substituição conceitual, mas sim pelo enriquecimento do <strong>Perfil Conceitual</strong> do sujeito, que desenvolve a capacidade de acessar diferentes zonas conceituais dependendo do contexto.
+                        Eduardo Mortimer postula que aprender Ciência envolve enriquecer o <strong>Perfil Conceitual</strong> do sujeito nas diferentes zonas de compreensão, escolhendo o referencial adequado de acordo com a situação.
                     </p>
                     <ul>
-                        <li><strong>Caso Thales Fachin:</strong> Demonstra domínio da zona racionalista clássica de seu perfil conceitual ao demandar explicitamente relações físicas microscópicas baseadas em campos de repulsão eletrostática: <em>"uma ilustração do limite atômico, no qual as moléculas são repelidas com mais força quanto mais perto chegam entre si"</em>.</li>
+                        <li><strong>Estudante C (E3):</strong> Exibe um modelo conceitual ancorado no racionalismo científico ao exigir da IA a representação abstrata de forças de barreira atômica: <em>"uma ilustração do limite atômico, no qual as moléculas são repelidas com mais força quanto mais perto chegam entre si"</em>.</li>
+                        <li><strong>Estudante D (E4):</strong> Demonstra rigor de classificação racionalista ao indagar se o simulador de fases da água <em>"é considerado uma matéria de química?"</em>.</li>
                     </ul>
                 </div>
             </section>
@@ -532,27 +554,27 @@
             <div class="section-divider"></div>
 
             <section id="modelos">
-                <h2>3. Análise dos Modelos Mentais e Campos Conceituais (TMC)</h2>
+                <h2>3. Análise dos Modelos Mentais e Campos Conceituais (TCC)</h2>
                 <div class="glass-card">
                     <p>
-                        A <strong>Teoria dos Modelos Mentais</strong> (Johnson-Laird; Greca & Moreira) sugere que os sujeitos constroem modelos de trabalho internos para representar e rodar simulações mentais de eventos do mundo real. Já a <strong>Teoria dos Campos Conceituais</strong> de Gérard Vergnaud enfoca nos esquemas de ação dos estudantes.
+                        A <strong>Teoria dos Modelos Mentais</strong> (Greca & Moreira) e a <strong>Teoria dos Campos Conceituais (TCC)</strong> de Gérard Vergnaud tratam de como os sujeitos estruturam esquemas cognitivos internos (representações análogas de caráter funcional) para simular mentalmente fenômenos de causa e efeito.
                     </p>
                     
                     <h3>3.1. Relações Causais Lineares e Complexas</h3>
                     <p>
-                        Os estudantes utilizam as variáveis físicas como botões de controle de seus esquemas mentais. 
-                        No <strong>Caso Santiago Canal</strong>, o aluno expõe um modelo mental causal perfeitamente estruturado:
+                        Os estudantes utilizam as variáveis dinâmicas físicas como moduladores de seus esquemas mentais. 
+                        No <strong>Caso do Estudante E (E5)</strong>, o aluno expõe um modelo mental causal termodinâmico perfeitamente estruturado:
                     </p>
                     <blockquote>
                         "À medida que a temperatura aumenta, as partículas devem se mover mais rapidamente, ocorrer mais colisões efetivas e a reação deve acontecer em menos tempo."
                     </blockquote>
                     <p>
-                        O simulador do Scaffl serve de ferramenta de ancoragem para validar se o modelo mental abstrato do aluno de fato corresponde aos dados e resultados visuais na tela.
+                        O simulador gráfico do Scaffl serve de ferramenta de ancoragem e teste de validação visual para o modelo mental interno proposto pelo estudante.
                     </p>
 
                     <h3>3.2. A Instrumentalização do Modelo Mental</h3>
                     <p>
-                        A plataforma Scaffl age como um instrumento de tradução semiótica. O estudante, muitas vezes, detém o modelo mental qualitativo do fenômeno (ex: como funciona a oxirredução de ferro em ambiente salino de <strong>Pedro Henrique</strong>), mas necessita do agente inteligente do laboratório para instrumentalizar e externalizar esse modelo em um código interativo e executável.
+                        O Laboratório Scaffl age como um instrumento de tradução semiótica. O estudante muitas vezes domina a lógica qualitativa de forma intuitiva, mas carece de ferramentas de sintaxe computacional. A IA traduz essa intenção em tela (como na Tabela Periódica interativa solicitada pelo <strong>Estudante F (E6)</strong>, que vinculou o número atômico com a catalogação científica eletrônica).
                     </p>
                 </div>
             </section>
@@ -560,29 +582,31 @@
             <div class="section-divider"></div>
 
             <section id="discursiva">
-                <h2>4. Análise Bakhtiniana e Vygotskyana da Construção Discursiva (Díade)</h2>
+                <h2>4. Teoria da Mediação Cognitiva em Redes (TMC) e Mediação Discursiva (Díade)</h2>
                 <div class="glass-card">
                     <p>
-                        A aprendizagem na plataforma não ocorre em isolamento, mas na dinâmica de interações discursivas na díade formada pelo estudante e a inteligência artificial.
+                        A construção do conhecimento ocorre na mediação socio-técnica da díade formada pelo Estudante e as ferramentas de inteligência artificial: o <strong>Tutor Pedagógico Virtual (Petrus)</strong> no chat e o <strong>Agente de Código (Lab Agent)</strong> no editor.
                     </p>
 
-                    <h3>4.1. Mediação Semiótica e Zona de Desenvolvimento Proximal (ZDP) — Vygotsky</h3>
+                    <h3>4.1. A IA como Mediador Extracerebral (TMC)</h3>
                     <p>
-                        O tutor virtual <strong>Petrus</strong> desempenha o papel de mediador (ou parceiro mais capaz) ao aplicar o método pedagógico socrático (scaffolding). Em vez de programar diretamente a ideia inteira de Pedro Henrique, o Petrus intervém questionando e dividindo a tarefa em etapas conceituais mais simples:
+                        Sob o referencial da <strong>Teoria da Mediação Cognitiva em Redes (TMC)</strong>, o agente baseado em IA atua como um <strong>mediador extracerebral</strong> dentro de redes socio-técnicas. Ele alivia a carga de processamento na memória de trabalho do estudante. O Agente de Código (Lab Agent) assume a sintaxe lógica de programação, permitindo que a atenção cognitiva do estudante seja direcionada à especificação dos parâmetros e teorias do fenômeno científico (colisões, taxas de reação, métodos de proteção).
+                    </p>
+
+                    <h3>4.2. Mediação Semiótica e ZDP (Vygotsky)</h3>
+                    <p>
+                        O <strong>Tutor Pedagógico Virtual (Petrus)</strong> atua na Zona de Desenvolvimento Proximal (ZDP) do estudante aplicando o andaimamento pedagógico (<em>scaffolding</em>). Ele evita dar a resposta pronta ou codificar pelo aluno, reduzindo a complexidade do problema de Pedro através de questionamentos socráticos:
                     </p>
                     <blockquote>
-                        "O Laboratório de Simuladores do Scaffl funciona de um jeito um pouco diferente, como um quebra-cabeça. Não é um copia e cola. Que tal pensarmos no fenômeno físico ou químico principal que você quer representar primeiro?"
+                        "O Laboratório de Simuladores do Scaffl funciona de um jeito um pouco diferente. A gente vai construindo o simulador com a IA em etapas, como se fosse um quebra-cabeça. [...] Que tal pensarmos no fenômeno físico ou químico principal que você quer que a IA comece a esboçar?"
                     </blockquote>
                     <p>
-                        Esta mediação conduz o estudante da sua zona de desenvolvimento real à sua zona de desenvolvimento potencial de modelagem ativa de parâmetros.
+                        Essa intervenção puxa o aluno para a zona de desenvolvimento potencial, incentivando a verbalização clara do conceito de oxirredução.
                     </p>
 
-                    <h3>4.2. Polifonia e Apropriação do Discurso Científico — Bakhtin</h3>
+                    <h3>4.3. Polifonia e Apropriação Discursiva (Bakhtin)</h3>
                     <p>
-                        Em termos bakhtinianos, há uma heteroglossia discursiva na plataforma. Identificamos a polifonia através das vozes dos alunos (foco pragmático na execução), a voz do Petrus (foco metodológico-pedagógico) e a voz do Lab Agent (foco técnico de codificação).
-                    </p>
-                    <p>
-                        O dialogismo se estabelece quando os estudantes incorporam a linguagem científica sugerida pela IA de monitoria ao redigirem prompts mais detalhados e precisos na aba de programação do laboratório.
+                        A interação exibe uma polifonia entre a voz pragmática do estudante, a voz pedagógica do Petrus e a voz de codificação do Lab Agent. O dialogismo ocorre no momento em que o estudante se apropria das palavras científicas do Petrus para comandar com maior rigor o Lab Agent (o Estudante B (E2) passa a exigir termos como <em>"taxa de colisões intermoleculares"</em> e <em>"reação de oxirredução"</em>).
                     </p>
                 </div>
             </section>
@@ -594,17 +618,22 @@
                 <div class="glass-card">
                     <h3>Categoria A: A Modelagem Microscópica como Ruptura Epistemológica</h3>
                     <p>
-                        A forte recorrência de demandas de modelagem no nível de colisões moleculares aponta que a plataforma estimula a ruptura com o realismo sensório das coisas estáticas, induzindo o pensamento atômico dinâmico.
+                        A análise qualitativa indicou que <strong>70% (14 de 20)</strong> das propostas de simuladores partiram da modelagem e animação de partículas em escala microscópica (difusão, agitação e transições). O Scaffl induz a ruptura com a percepção visual imediata do senso comum.
                     </p>
                     
-                    <h3>Categoria B: O Andaimamento Cognitivo como Moderador de Frustração</h3>
+                    <h3>Categoria B: O Andaimamento Cognitivo como Moderador de Sobrecarga Cognitiva</h3>
                     <p>
-                        Diante de falhas na geração de código ou telas pretas de compilação, a atuação do tutor Petrus reduziu o estresse e a sobrecarga cognitiva dos estudantes ao re-sugerir caminhos organizados e passos de meta incremental.
+                        A análise dos diálogos de suporte pedagógico em momentos de erros do Lab Agent sugere que a mediação do Petrus evitou a frustração extrema. A literatura de sobrecarga cognitiva (Sweller) aponta que interações com geradores de código sem andaimamento pedagógico estruturado podem elevar a carga de trabalho cognitivo e induzir ao abandono da tarefa.
                     </p>
 
                     <h3>Categoria C: O Dialogismo Técnico-Científico</h3>
                     <p>
-                        O ato de redigir instruções para a IA forçou os estudantes a organizarem com rigor os discursos científicos. A IA funciona como um espelho de clareza textual e científica do próprio aluno.
+                        A redação das instruções em linguagem natural para a IA obriga o aluno a estruturar e explicitar rigorosamente as leis do fenômeno antes que o computador as execute. A IA é o espelho linguístico da clareza científica do aluno.
+                    </p>
+
+                    <h3>Categoria D: O Estudante como Crítico de Modelos da IA (Ruptura com o Realismo Tecnológico)</h3>
+                    <p>
+                        Bugs e erros de carregamento em dispositivos móveis geraram situações pedagógicas ricas. Confrontados com falhas no software, os alunos usaram seus modelos mentais internos para julgar o código, apontando com precisão os desvios de física e química da IA. O erro da máquina atuou como dispositivo catalisador da validação conceitual e verbalização racionalista.
                     </p>
                 </div>
             </section>
@@ -612,25 +641,25 @@
             <div class="section-divider"></div>
 
             <section id="empirico">
-                <h2>6. Análise das Apresentações e Observações Empíricas (Crítica de Modelos e Mediação Real)</h2>
+                <h2>6. Análise das Apresentações e Observações Empíricas (Dados das Bancas)</h2>
                 <div class="glass-card">
                     <p>
-                        A análise qualitativa das observações e relatos de apresentações reais dos estudantes enriquece as conclusões do projeto de forma robusta e aplicada.
+                        As observações das bancas de apresentações de projetos reais consolidam os achados em três pilares analíticos de alto impacto científico:
                     </p>
 
-                    <h3>6.1. Ruptura com o "Realismo Tecnológico" e Capacidade de Crítica ao Modelo</h3>
+                    <h3>6.1. O Erro da IA como Dispositivo Pedagógico Produtivo</h3>
                     <p>
-                        Mesmo rodando em dispositivos móveis (celulares/tablets) que apresentaram problemas de renderização e bugs, as discussões se mostraram ricas. Na perspectiva da TMC (Greca & Moreira), o sucesso do simulador não depende do seu funcionamento estético ideal. Os alunos provaram deter um modelo conceitual superior ao demonstrado no software, identificando com precisão os erros e inconsistências da IA, atuando como verdadeiros críticos científicos de modelos computadorizados.
+                        Conforme estruturado na Categoria D, as falhas de renderização gráfica em tablets e celulares não paralisaram a aprendizagem dos alunos. Pelo contrário: eles demonstraram domínio conceitual muito superior ao apresentado no simulador "quebrado", aproveitando as falhas do software gerado pelo Lab Agent para provar teorias de agitação e colisões intermoleculares. O erro técnico da IA foi transformado de forma produtiva em argumento pedagógico.
                     </p>
 
                     <h3>6.2. Densidade Conceitual vs. Aparência Estética: O Caso do Gloss</h3>
                     <p>
-                        O simulador de gloss labial que alterava de tons demonstrou que a simplicidade técnica não limita a densidade do aprendizado. O recurso serviu de instrumento mediador semiótico eficiente para debater pH labial, termodinâmica do corpo e influência de luz ambiente na cor final, demonstrando que a utilidade reside na facilitação da exploração causal de variáveis e não em gráficos fotorrealistas.
+                        O simulador de gloss labial que alterava de tonalidade comprovou que a simplicidade gráfica não reduz a densidade científica. A representação esquemática simples serviu de instrumento mediador semiótico para que o grupo debatedor articulasse reações de pH de pele individual, variações de calor corporal (termodinâmica) e foto-sensibilidade da cor à luz solar.
                     </p>
 
-                    <h3>6.3. Internalização e Apropriação Coletiva (O Aluno Ausente)</h3>
+                    <h3>6.3. Internalização e Apropriação Coletiva do Discurso (O Aluno Ausente)</h3>
                     <p>
-                        O caso do estudante que adoeceu, não participou do código final e explicou perfeitamente o simulador na banca mostra que o processo de apropriação se deu no plano social (interpsicológico) no planejamento conceitual. O software na apresentação serviu apenas como um gatilho material externo para manifestar uma estrutura mental que já estava internalizada de antemão pelo aluno.
+                        O caso do estudante que adoeceu, não programou o código final do grupo e o viu funcionar pela primeira vez na banca, mas defendeu com maestria as leis científicas e representações da simulação, ilustra a internalização vygotskyana. O conceito e as leis causais foram apropriados por ele na dinâmica social de planejamento do grupo (plano interpsicológico). O simulador final concretizado em tela serviu meramente como o gatilho semiótico externo para a verbalização da sua estrutura mental (plano intrapsicológico).
                     </p>
                 </div>
             </section>

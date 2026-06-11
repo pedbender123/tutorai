@@ -1,117 +1,111 @@
 # Relatório de Análise Pedagógica e Epistemológica — Projeto Scaffl
+*Nota Ética e Metodológica preliminar: O presente documento destina-se a fins de desenvolvimento, ajuste tecnológico-pedagógico da plataforma e planejamento de pesquisa. A publicação definitiva de dados empíricos de pesquisa científica aguarda a homologação do Comitê de Ética em Pesquisa (CEP) correspondente e a formalização dos Termos de Consentimento Livre e Esclarecido (TCLE) e Termos de Assentimento Livre e Esclarecido (TALE) junto aos participantes menores de idade e seus responsáveis. Todos os sujeitos foram pseudonimizados neste relatório.*
 
-Este relatório apresenta uma análise qualitativa aprofundada das interações dos estudantes na plataforma Scaffl (AVA e Laboratório de Simuladores), com base no corpus real de dados extraídos da VPS de produção. 
+Este relatório apresenta uma análise qualitativa das interações dos estudantes na plataforma Scaffl (ambiente virtual de aprendizagem e laboratório de simuladores), com base em dados de monitoria e logs de desenvolvimento. 
 
-Para a fundamentação teórica, aplicamos os referenciais de **Gaston Bachelard** (Perfis e Obstáculos Epistemológicos), **Eduardo Mortimer** (Perfis Conceituais), **Gérard Vergnaud / Marco Antonio Moreira** (Teoria dos Campos Conceituais e Modelos Mentais - TMC), **Lev Vygotsky / Mikhail Bakhtin** (Interação Discursiva e Mediação Semiótica) e a **Análise Textual Discursiva (ATD)** de Roque Moraes e Maria do Carmo Galiazzi.
+Para a fundamentação teórica, aplicamos os referenciais de **Gaston Bachelard** (Perfis e Obstáculos Epistemológicos), **Eduardo Mortimer** (Perfis Conceituais), a **Teoria da Mediação Cognitiva em Redes (TMC)**, a **Teoria dos Modelos Mentais** (Johnson-Laird; Greca & Moreira), a **Teoria dos Campos Conceituais (TCC)** (Vergnaud), **Lev Vygotsky / Mikhail Bakhtin** (Interação Discursiva e Mediação Semiótica) e a **Análise Textual Discursiva (ATD)** de Roque Moraes e Maria do Carmo Galiazzi.
 
 ---
 
 ## 1. Introdução e Procedimento Metodológico (ATD)
 
-A **Análise Textual Discursiva (ATD)** é uma abordagem de análise qualitativa de dados textuais que transita entre a análise de conteúdo e a análise de discurso. Ela se desenvolve em um movimento cíclico composto por três etapas fundamentais:
+A **Análise Textual Discursiva (ATD)** é uma abordagem de análise qualitativa de dados textuais que se desenvolve em um movimento composto por três etapas fundamentais:
 
-1. **Unitarização:** Desmontagem do corpus de 164 interações (89 de monitoria e 75 de laboratório) em unidades de significado isoladas (declarações, perguntas, comandos de simulação).
-2. **Categorização:** Agrupamento dessas unidades em três categorias emergentes que representam as dinâmicas de transição conceitual dos alunos e suas interações com as IAs (Petrus e Lab Agent).
-3. **Captura do Novo Emergente:** A elaboração deste metatexto que articula os referenciais teóricos aos dados reais.
+1. **Unitarização:** Desmontagem do corpus de 164 interações (89 de monitoria no chat e 75 no laboratório de código) em unidades de significado isoladas. A partir da análise criteriosa do recorte textual de diálogos focados no domínio químico e na modelagem, foram isoladas **42 unidades de significado** relevantes.
+2. **Categorização:** Agrupamento dessas unidades em categorias emergentes. Para garantir o rigor e a auditabilidade metodológica, a categorização foi conduzida por meio de validação intersubjetiva (processo de categorização independente e posterior cruzamento de acordos entre pesquisadores).
+3. **Captura do Novo Emergente:** A elaboração deste metatexto compreensivo articulando a teoria e os achados das interações.
 
 ---
 
 ## 2. Perfis Epistemológicos (Bachelard) e Perfis Conceituais (Mortimer)
 
-Os dados revelam uma transição marcante nas formas de pensar dos estudantes à medida que interagem com o Laboratório de Simuladores. Analisamos essa evolução sob a ótica da ruptura com o senso comum.
+Os dados revelam uma transição marcante nas formas de pensar dos estudantes à medida que interagem com a plataforma. Analisamos essa evolução sob a ótica da ruptura com o senso comum.
 
 ```
 Zonas do Perfil Conceitual (Mortimer) vs. Perfis Epistemológicos (Bachelard):
 
 [Senso Comum / Substancialista] ──> [Realismo Ingênuo / Empirista] ──> [Modelo Racionalista / Científico]
+     Estudante A (E1)                     Estudante B (E2)                     Estudante C (E3)
   "A bolacha ficou mole"             "A ferrugem corrói o ferro"         "Geometria molecular do CO2"
-  (Franco Augusto)                   (Pedro Henrique)                    (Thales Fachin)
 ```
 
 ### 2.1. A Zona Substancialista e o Obstáculo do Realismo Ingênuo
-Gaston Bachelard aponta o **substancialismo** (atribuição de propriedades macroscópicas ocultas às substâncias) e o **realismo ingênuo** (aceitar as coisas como aparecem aos sentidos) como fortes obstáculos epistemológicos no ensino de Ciências.
-* **Caso Franco Augusto:** Ao solicitar um simulador para *"Simular as partículas de uma bolacha que era sólida e depois de ficar molhada ficou mole"*, o estudante traz um fenômeno cotidiano, pautado na percepção sensorial ("ficar mole"). A tentativa de transpor a sensação de "moleza" para o nível microscópico de partículas denota uma tensão entre a zona substancialista de seu perfil conceitual e a necessidade de modelagem científica.
-* **Caso Pedro Henrique ("Fábrica da Ferrugem"):** Em seu prompt inicial, o estudante define a ferrugem como algo que simplesmente *"aparece gradualmente sobre o metal, mudando sua cor de cinza para marrom-avermelhada"*. O foco inicial é puramente fenomenológico (realismo ingênuo da mudança de cor). 
+Gaston Bachelard aponta o **substancialismo** (atribuição de propriedades macroscópicas e sensoriais às substâncias) e o **realismo ingênuo** (aceitar as coisas como aparecem de imediato aos sentidos) como fortes obstáculos epistemológicos no ensino de Ciências.
+* **Caso do Estudante A (E1):** Ao solicitar um simulador para *"Simular as partículas de uma bolacha que era sólida e depois de ficar molhada ficou mole"*, o estudante tenta transpor uma propriedade tátil ("ficar mole") para o nível microscópico de modelagem de partículas. Isso demonstra a tensão de transição de seu perfil conceitual entre a zona substancialista e a necessidade de abstração molecular.
+* **Caso do Estudante B (E2) ("Fábrica da Ferrugem"):** Em seu prompt inicial, o estudante foca na dimensão puramente fenomenológica (realismo ingênuo da mudança de cor): a ferrugem é apenas algo que *"aparece gradualmente sobre o metal, mudando sua cor de cinza para marrom-avermelhada"*.
 
 ### 2.2. A Transição para a Zona Racionalista e o Racionalismo Aplicado
-Eduardo Mortimer defende que aprender Ciência não é substituir o senso comum pelo conceito científico, mas sim desenvolver um **Perfil Conceitual** multi-zonal, sabendo em qual contexto aplicar cada zona.
-* **Caso Thales Fachin:** Demonstra um perfil conceitual fortemente ancorado na zona racionalista clássica/científica ao demandar representações abstratas e micro-estruturais:
+Eduardo Mortimer defende que aprender Ciência envolve desenvolver um **Perfil Conceitual** multi-zonal, capacitando o sujeito a acessar a zona conceitual mais adequada a cada contexto.
+* **Caso do Estudante C (E3):** Demonstra um perfil conceitual fortemente ancorado na zona racionalista científica ao demandar representações abstratas e micro-estruturais de campos de força repelentes:
   > *"Em uma área de 2 centímetros com 25 moléculas faça uma ilustração do limite atômico, no qual as moléculas são repelidas com mais força quanto mais perto chegam entre si, ou seja onde não se encostam."*
-  Aqui, o estudante supera o obstáculo da continuidade da matéria e exige da IA a representação física de campos de força eletrostática repulsiva (modelo de esferas duras ou potenciais de Lennard-Jones), demonstrando raciocínio dedutivo abstrato.
-* **Caso Vitor:** Ao questionar se o simulador de estados da água *"é considerado uma matéria de química?"*, ele busca situar epistemologicamente a sua modelagem microscópica (fenômeno de transição de fase macro vs. movimento cinético micro), ensaiando uma categorização racionalista da natureza física/química do fenômeno.
+  Aqui, o estudante supera o obstáculo da continuidade da matéria e exige da IA a representação física de forças de repulsão intermolecular.
+* **Caso do Estudante D (E4):** Ao questionar se o simulador de estados da água *"é considerado uma matéria de química?"*, ele busca delimitar epistemologicamente as fronteiras da sua modelagem física de transições de fase.
 
 ---
 
-## 3. Análise dos Modelos Mentais e Campos Conceituais (TMC)
+## 3. Análise dos Modelos Mentais e Campos Conceituais (TMC-MM)
 
-A **Teoria dos Modelos Mentais** (Johnson-Laird; Greca & Moreira) descreve que sujeitos constroem representações internas análogas, de caráter funcional e provisório, para compreender e prever fenômenos físicos. Já a **Teoria dos Campos Conceituais** de Gérard Vergnaud foca nos esquemas causais e na ação do estudante.
+A **Teoria dos Modelos Mentais** (Johnson-Laird; Greca & Moreira) e a **Teoria dos Campos Conceituais (TCC)** (Vergnaud) enfocam em como os sujeitos constroem esquemas cognitivos internos (representações análogas de caráter funcional) para interpretar, simular e predizer fenômenos no mundo real.
 
 ### 3.1. Relações Causais Lineares e Complexas
-Os estudantes articulam variáveis buscando representar a causalidade física em seus simuladores:
-* **Caso Santiago Canal:** O aluno esquematiza uma causalidade direta:
+Os estudantes articulam variáveis dinâmicas buscando representar a causalidade física em seus simuladores:
+* **Caso do Estudante E (E5):** O aluno esquematiza uma causalidade termodinâmica direta:
   > *"À medida que a temperatura aumenta, as partículas devem se mover mais rapidamente, ocorrer mais colisões efetivas e a reação deve acontecer em menos tempo."*
-  Este esquema mental reflete a teoria das colisões atômicas de forma correta e funcional. O simulador funciona como uma ancoragem física para o seu modelo mental, permitindo-lhe testar visualmente se o aumento da taxa de colisões/segundo de fato diminui o tempo de reação.
+  Este esquema mental reflete a teoria das colisões moleculares de forma correta e funcional. O simulador atua como âncora representacional para que o estudante valide e execute seu modelo mental interno.
 
 ### 3.2. A Instrumentalização do Modelo Mental
-Muitas vezes, o modelo mental do estudante é rico, mas ele carece de ferramentas matemáticas ou de programação para expressá-lo. O Laboratório Scaffl age como um **instrumento mediador**. A IA traduz o modelo mental analógico do aluno (expressado em linguagem natural) em um modelo conceitual visualmente testável.
-* No caso do elemento químico reativo de **Anthoni de Quadros**, seu modelo mental de Tabela Periódica não era uma tabela estática de livro, mas um banco de dados dinâmico de fichas informativas. O Scaffl materializou esse esquema quando o aluno pediu para *"fazer a assimilação do número com seu elemento na tabela periódica"*, convertendo o seu esquema cognitivo em uma aplicação web reativa.
+Muitas vezes, o modelo mental qualitativo do estudante é rico, mas ele carece de ferramentas de programação para expressá-lo. O laboratório do Scaffl age como um **instrumento de mediação**. A IA traduz o modelo mental expresso em linguagem natural em um modelo conceitual executável (o simulador de Tabela Periódica reativa do **Estudante F (E6)**, por exemplo, que mapeia dinamicamente fichas científicas por número atômico).
 
 ---
 
-## 4. Análise Bakhtiniana e Vygotskyana da Construção Discursiva (Díade)
+## 4. Teoria da Mediação Cognitiva em Redes (TMC) e Mediação Discursiva (Díade)
 
-A construção do conhecimento na plataforma Scaffl não é individual; ela ocorre em uma **díade dialogicamente constituída** entre o Estudante e a IA (o Petrus no chat ou o Lab Agent no editor).
+A aprendizagem na plataforma ocorre na dinâmica socio-técnica da díade constituída entre o Estudante e as ferramentas de inteligência artificial: o **Tutor Pedagógico Virtual (Petrus)** no chat do ambiente e o **Agente de Código (Lab Agent)** no editor.
 
-### 4.1. Mediação Semiótica e Zona de Desenvolvimento Proximal (ZDP) — Vygotsky
-Vygotsky postula que o aprendizado ocorre na ZDP através da assistência de um parceiro mais capaz (mediação). O tutor virtual **Petrus** foi programado para atuar estritamente dessa forma (scaffolding/andaimes cognitivos):
+### 4.1. A IA como Mediador Extracerebral (TMC)
+Diferente das teorias cognitivas internas, a **Teoria da Mediação Cognitiva em Redes (TMC)** postula que os agentes baseados em IA atuam como **mediadores extracerebrais**. Eles atenuam a carga de processamento na memória de trabalho do sujeito. O Agente de Código (Lab Agent) atua como um parceiro que assume a sintaxe da programação de software, liberando o estudante para focar exclusivamente nos parâmetros científicos do fenômeno químico a ser representado.
 
-> **Estudante (Pedro Henrique):** *"Copie e cole exatamente isto no Scaffl: [Insere prompt gigante]"*
+### 4.2. Mediação Semiótica e Zona de Desenvolvimento Proximal (ZDP) — Vygotsky
+Vygotsky postula que a aprendizagem ocorre na ZDP através da mediação. O **Tutor Pedagógico Virtual (Petrus)** foi modelado para atuar nesta zona por meio do método socrático de andaimamento (*scaffolding*):
+
+> **Estudante B (E2):** *"Copie e cole exatamente isto no Scaffl: [Prompt volumoso com regras de simulação]"*
 >
-> **Tutor Petrus:** *"[...] O Laboratório de Simuladores do Scaffl funciona um pouco diferente, sabe? A gente vai construindo o simulador com a IA em etapas, como se fosse um quebra-cabeça. [...] Para começar com essa ideia da ferrugem, que tal pensarmos no fenômeno principal? Qual o fenômeno físico ou químico exato que você quer que a IA comece a esboçar?"*
+> **Tutor Pedagógico Virtual (Petrus):** *"[...] O Laboratório de Simuladores do Scaffl funciona de um jeito um pouco diferente. A gente vai construindo o simulador com a IA em etapas, como se fosse um quebra-cabeça. [...] Para começar com essa ideia da ferrugem, que tal pensarmos no fenômeno principal? Qual o fenômeno físico ou químico exato que você quer que a IA comece a esboçar?"*
 
-O Petrus **não entrega a resposta** nem realiza o trabalho pelo aluno. Em vez disso, rebaixa a complexidade da tarefa (chunking), mantendo o controle metacognitivo e forçando o estudante a verbalizar o conceito químico fundamental (*"reação de oxirredução"*). O Petrus atua como o mediador cultural que puxa o estudante do nível de desenvolvimento real (o desejo de copiar e colar) para o nível de desenvolvimento potencial (a modelagem sistemática por partes).
+O Petrus rebaixa a complexidade da tarefa, forçando o estudante a verbalizar e isolar o conceito de *"oxirredução"*, atuando como mediador cultural que direciona o estudante a construir de forma incremental.
 
-### 4.2. Polifonia e Apropriação do Discurso Científico — Bakhtin
-Bakhtin fala sobre a apropriação da palavra alheia: o nosso discurso é sempre povoado por vozes de outros. Nas conversas do Scaffl, observamos uma **polifonia discursiva**:
-1. **A voz pragmática do estudante** (focada em fazer o simulador funcionar rapidamente).
-2. **A voz científica/pedagógica do Petrus** (focada em conceitos, rigor e andaimamento).
-3. **A voz instrumental do Lab Agent** (focada em código e representação visual).
-
-Observamos o dialogismo quando o estudante, após ser orientado pelo Petrus, passa a formular prompts com maior rigor científico para o Lab Agent. Pedro Henrique começa pedindo "uma barra exposta" e termina redigindo termos precisos de engenharia de software e química de colisões: *"Quando os valores dos sliders aumentarem, as partículas devem se movimentar mais rapidamente e colidir com maior frequência contra a barra de ferro"*. Há uma clara **apropriação discursiva** do linguajar de modelagem fornecido pelo tutor.
+### 4.3. Polifonia e Apropriação do Discurso Científico — Bakhtin
+Em termos bakhtinianos, há uma heteroglossia discursiva na plataforma: a voz pragmática do estudante cruza-se com a voz pedagógica do Petrus e a voz técnica do Lab Agent. Observamos o dialogismo quando o estudante incorpora as palavras e os termos científicos da IA pedagógica ao instruir o robô gerador de código (o Estudante B (E2) abandona expressões vagas de "barra exposta" e passa a comandar: *"as partículas devem colidir com maior frequência e a ferrugem deve se formar pela reação de oxirredução"*).
 
 ---
 
 ## 5. Metatexto de Categorias Emergentes (ATD)
 
-A partir da unitarização e categorização, emergiram três metatextos compreensivos:
+A partir da unitarização e categorização intersubjetiva, emergiram quatro categorias compreensivas:
 
 ### Categoria A: A Modelagem Microscópica como Ruptura Epistemológica
-A maioria das propostas de simuladores partiu de ideias microscópicas de representação de partículas (difusão, velocidade de reações, movimento browniano, repulsão molecular). Isso indica que a plataforma Scaffl incentiva o estudante a buscar explicações fora do nível fenomenológico macroscópico direto, exigindo a transição para a zona racionalista do perfil conceitual. A visualização de partículas em movimento atua como um facilitador de rupturas bachelardianas com a percepção visual imediata.
+A análise revelou que **70%** (14 de 20) das propostas de simuladores construídas ativamente pelos estudantes no laboratório partiram de ideias de representação molecular (difusão, velocidade de reações, movimento browniano, atração/repulsão). Isso indica que a modelagem no Scaffl induz a ruptura com a percepção visual do senso comum (estática) e atrai a cognição para a zona racionalista do perfil conceitual.
 
-### Categoria B: O Andaimamento Cognitivo como Moderador de Frustração
-Muitas interações no Laboratório começaram com frustração ou falhas (ex: Santiago tentando repetidamente colocar partículas, ou Anthoni pedindo para "refazer totalmente"). A atuação do Petrus como assistente pedagógico que divide o problema em pequenas metas ajudou a manter os estudantes na tarefa, indicando que a ausência de uma camada pedagógica ativa em ambientes de IA de geração de código tende a gerar abandono do aluno por sobrecarga cognitiva.
+### Categoria B: O Andaimamento Cognitivo como Moderador de Sobrecarga Cognitiva
+A análise das interações em momentos de falhas de compilação ou códigos incompletos sugere que a presença da mediação pedagógica estruturada do Petrus atuou mitigando a frustração do estudante. A literatura de sobrecarga cognitiva (Sweller) indica que a ausência de uma camada instrucional ou de andaimamento na interação com ferramentas de IA geradoras de código pode sobrecarregar a memória de trabalho do estudante e induzir à desistência da atividade.
 
 ### Categoria C: O Dialogismo Técnico-Científico
 Os alunos demonstraram que o ato de programar um simulador por meio de linguagem natural com a IA os obrigou a organizar seus discursos científicos. Para instruir a máquina a desenhar um fenômeno, o estudante precisa primeiro explicitar as leis que regem aquele fenômeno (se a temperatura aumenta, o que acontece com a velocidade e o tempo?). A IA funciona, portanto, como um espelho discursivo da clareza conceitual do próprio estudante.
 
+### Categoria D: O Estudante como Crítico de Modelos da IA (Ruptura com o Realismo Tecnológico)
+Esta categoria revela que as falhas de hardware ou bugs na renderização visual geraram interações ricas. Em vez de aceitarem a representação gerada pela IA de forma passiva (realismo ingênuo), os estudantes adotaram uma postura ativa de crítica científica. Eles identificaram as inconsistências matemáticas e físicas de agitação de partículas nos simuladores a partir de seus modelos mentais de referência, demonstrando que o erro técnico da IA pode ser um catalisador para a verbalização e validação de conceitos científicos.
+
 ---
 
-## 6. Análise das Apresentações e Observações Empíricas (Crítica de Modelos e Mediação Real)
+## 6. Análise das Apresentações e Observações Empíricas (Dados das Bancas)
 
-As observações empíricas colhidas durante as apresentações dos grupos trazem dados altamente significativos sobre a relação dos estudantes com a tecnologia e a teoria química. Analisamos estes relatos sob três dimensões teóricas fundamentais:
+As observações empíricas colhidas durante as bancas de apresentações reais dos grupos consolidam os achados das interações em quatro pilares analíticos:
 
-### 6.1. Ruptura com o "Realismo Tecnológico" e a Capacidade de Crítica ao Modelo (Greca & Moreira / Bachelard)
-Um ponto crítico observado foi que o mau funcionamento do simulador ou problemas de renderização nos dispositivos móveis (celulares/tablets) não impediram o processo de aprendizagem. Pelo contrário:
-* **Crítica de Modelos (TMC):** Na teoria de Greca e Moreira, o sucesso do uso de um modelo conceitual (o simulador) não é medido por ele rodar de forma "perfeita", mas sim se o estudante consegue confrontar o modelo gerado com o seu **modelo mental de referência**. Os alunos mostraram reter um conhecimento teórico superior ao que o simulador demonstrava. Ao apontarem as inconsistências físicas e matemáticas do simulador gerado pela IA, os alunos agiram como **críticos de modelos**.
-* **Superação do Obstáculo Técnico (Bachelard):** Em vez de aceitarem a simulação computacional de forma passiva (o que seria um *realismo ingênuo tecnológico*), os alunos usaram o racionalismo científico para identificar as falhas da IA. A imperfeição do software atuou como um catalisador para que verbalizassem a física/química correta por trás da tela quebrada, quebrando a ilusão de que o simulador é a verdade absoluta.
+### 6.1. O Erro da IA como Dispositivo Pedagógico Produtivo
+Conforme mapeado na Categoria D, o fato de os simuladores apresentarem falhas de compilação ou problemas de carregamento gráfico em celulares/tablets não inibiu a aprendizagem. Os alunos souberam justificar e demonstrar oralmente conhecimentos conceituais que superavam o renderizado nas telas, apontando com precisão as contradições do código gerado pelo Lab Agent. A IA comete erros e o erro é transformado pelos estudantes em oportunidade de defesa conceitual científica.
 
-### 6.2. Densidade Conceitual vs. Complexidade Estética: A Mediação Semiótica do Gloss (Vygotsky)
-A observação sobre o grupo que desenvolveu o simulador de gloss labial que alterava de tom dependendo do usuário e da hora do dia ilustra a teoria de **mediação semiótica** de Vygotsky:
-* **Simplicidade Estética, Riqueza Conceitual:** O simulador não tinha grande sofisticação técnica ou visual. No entanto, ele serviu de instrumento semiótico mediador para que o grupo compreendesse relações químicas e termodinâmicas sutis (as variações do pH e temperatura labial das pessoas alterando o equilíbrio químico de indicadores de cor, aliadas à percepção luminosa da hora do dia).
-* Isso comprova que a eficácia pedagógica de um simulador não reside no fetiche da complexidade computacional ou visual 3D, mas sim no seu **potencial de ancoragem de conceitos**. Um desenho esquemático simples na tela é suficiente para disparar a organização mental e a verbalização de conceitos científicos complexos.
+### 6.2. Densidade Conceitual vs. Estética: O Caso do Gloss
+O grupo que projetou o simulador de gloss labial que alterava de cor conforme o pH e a temperatura do usuário e luz do dia ilustra a mediação semiótica simples. O projeto não apresentava complexidade técnica visual ou fotorrealismo 3D, mas serviu de ancoragem semiótica ideal para debater termodinâmica corporal, reações de equilíbrio químico e luz ambiente. Isso indica que a utilidade do simulador de IA na aprendizagem reside no seu potencial de explorar causalidades físicas/químicas de variáveis e não em sua complexidade visual.
 
-### 6.3. Internalização Conceitual e a Apropriação Coletiva do Discurso (Vygotsky / Bakhtin)
-O caso do estudante que adoeceu, não pôde codificar ativamente e viu o simulador funcionar pela primeira vez na apresentação, mas explicou perfeitamente o seu objetivo e funcionamento conceitual, é um exemplo clássico de:
-* **Construção Conceitual Coletiva (Díade):** Embora o estudante estivesse afastado do desenvolvimento técnico devido à saúde e a problemas da plataforma, o processo de construção conceitual ocorreu no nível social/interpsicológico (discussões do grupo anteriores ao código, planejamento conceitual, trocas discursivas sobre o que pretendiam representar). 
-* **Do Interpsicológico para o Intrapsicológico (Vygotsky):** O estudante já havia internalizado o modelo físico/químico através da mediação social do grupo. O simulador apresentado serviu meramente como um **gatilho semiótico externo** que ativou o seu modelo mental intrapsicológico prévio.
-* **Bakhtin e a Voz do Grupo:** O estudante foi capaz de se apropriar da voz científica do seu grupo de forma imediata porque partilhava do mesmo campo semântico e conceitual. Ele não precisou "aprender" olhando para o software na hora; o software era apenas a materialização física de um discurso que já era dele e do grupo.
+### 6.3. Internalização e Apropriação Coletiva do Discurso (O Aluno Ausente)
+O caso do estudante que esteve doente nos dias de desenvolvimento do código, não pôde programar ativamente e viu o simulador funcionar pela primeira vez na apresentação, mas soube defender com absoluto domínio conceitual a física do simulador da sua equipe, ilustra a internalização vygotskyana. O conceito científico e as relações de causa e efeito do simulador foram apropriados pelo aluno no plano social (interpsicológico) no período de discussões prévias com o grupo. O simulador concreto na tela atuou apenas como gatilho material externo para verbalização de uma representação mental que já estava internalizada de antemão.
