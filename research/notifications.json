@@ -1,0 +1,20 @@
+[
+  {
+    "id": "notif-status-ok-1",
+    "title": "Instabilidade Resolvida! 🌐",
+    "content": "A instabilidade na API de Inteligência Artificial foi solucionada. O sistema de simulação e os chats estão 100% restabelecidos e operando normalmente.",
+    "type": "system",
+    "targetClassroomId": "290a6978-c60f-488f-85ea-1073b9c75753",
+    "referenceId": null,
+    "createdAt": "2026-06-06 20:33:37"
+  },
+  {
+    "id": "notif-status-ok-2",
+    "title": "Instabilidade Resolvida! 🌐",
+    "content": "A instabilidade na API de Inteligência Artificial foi solucionada. O sistema de simulação e os chats estão 100% restabelecidos e operando normalmente.",
+    "type": "system",
+    "targetClassroomId": "01b1e20e-d423-4b92-9b9a-bf77907bbe68",
+    "referenceId": null,
+    "createdAt": "2026-06-06 20:33:37"
+  }
+]

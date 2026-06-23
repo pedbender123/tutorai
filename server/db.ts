@@ -285,6 +285,66 @@ if (!discCols.find((c: any) => c.name === 'classroomId')) {
   db.exec("ALTER TABLE disciplinas ADD COLUMN classroomId TEXT REFERENCES classrooms(id) ON DELETE CASCADE");
 }
 
+// ai_models: model registry with cost-per-token data used for credit calculation
+db.exec(`
+  CREATE TABLE IF NOT EXISTS ai_models (
+    id TEXT PRIMARY KEY,
+    provider TEXT NOT NULL,
+    display_name TEXT NOT NULL,
+    input_cost_per_1m REAL NOT NULL DEFAULT 0,
+    input_cached_cost_per_1m REAL NOT NULL DEFAULT 0,
+    output_cost_per_1m REAL NOT NULL DEFAULT 0,
+    currency TEXT NOT NULL DEFAULT 'BRL',
+    enabled INTEGER NOT NULL DEFAULT 1,
+    is_default INTEGER NOT NULL DEFAULT 0,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_by TEXT
+  );
+`);
+
+// provider_credentials: encrypted API keys for each AI provider
+db.exec(`
+  CREATE TABLE IF NOT EXISTS provider_credentials (
+    provider TEXT PRIMARY KEY,
+    encrypted_key TEXT NOT NULL,
+    iv TEXT NOT NULL,
+    auth_tag TEXT NOT NULL,
+    key_last4 TEXT NOT NULL,
+    base_url TEXT,
+    updated_by TEXT,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+`);
+
+// Seed ai_models on first run (table empty = fresh install)
+const modelCount = (db.prepare('SELECT COUNT(*) as n FROM ai_models').get() as { n: number }).n;
+if (modelCount === 0) {
+  const seedPath = join(__dirname, 'providers', 'models.seed.json');
+  if (fs.existsSync(seedPath)) {
+    const seed = JSON.parse(fs.readFileSync(seedPath, 'utf8'));
+    const insertModel = db.prepare(`
+      INSERT OR IGNORE INTO ai_models
+        (id, provider, display_name, input_cost_per_1m, input_cached_cost_per_1m, output_cost_per_1m, currency, enabled, is_default)
+      VALUES
+        (@id, @provider, @display_name, @input_cost_per_1m, @input_cached_cost_per_1m, @output_cost_per_1m, @currency, @enabled, @is_default)
+    `);
+    for (const m of seed.models) {
+      insertModel.run({
+        id:                    m.id,
+        provider:              m.provider,
+        display_name:          m.display_name,
+        input_cost_per_1m:     m.input_cost_per_1m,
+        input_cached_cost_per_1m: m.input_cached_cost_per_1m ?? 0,
+        output_cost_per_1m:    m.output_cost_per_1m,
+        currency:              m.currency,
+        enabled:               m.enabled ? 1 : 0,
+        is_default:            m.is_default ? 1 : 0,
+      });
+    }
+    console.log(`[db] Seeded ${seed.models.length} models from models.seed.json`);
+  }
+}
+
 // SimAgent migration: add new columns idempotently
 import { runSimAgentMigration } from './migrations/add_simagent_columns.js';
 runSimAgentMigration(db);

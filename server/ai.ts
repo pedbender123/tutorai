@@ -2,21 +2,14 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import OpenAI from 'openai';
 import db from './db.js';
 import { buildSystemPromptV3 } from './promptBuilder.js';
+import { getActiveKey, calcCredits } from './providers/registry.js';
 
-// Clients will be initialized inside the function to ensure env vars are loaded
-let genAI: GoogleGenerativeAI | null = null;
-let openai: OpenAI | null = null;
-
-// Global state for traffic shaping (5 RPM / 250k TPM for Gemini)
+// Global state for Gemini traffic shaping (5 RPM / 250k TPM)
 let lastRequestTime = 0;
 const MIN_INTERVAL_MS = 12000;
 let tokenHistory: { timestamp: number, tokens: number }[] = [];
 const TPM_LIMIT = 250000;
 const TPM_WINDOW_MS = 60000;
-
-// Flash 2.5: $0.30/M normal in, $0.03/M cached in, $2.50/M out (Dólar a R$ 5,50, 1M créditos = R$ 1,00)
-const FLASH_RATE = { input: 1_650_000, input_cached: 165_000, output: 13_750_000 };
-const PRO_RATE  = { input: 6_875, output: 55_000 };
 // GPT desabilitado temporariamente
 // const GPT_RATE = 1.3;
 
@@ -105,19 +98,9 @@ async function _generateChatResponse(
   provider: 'google' | 'gpt' = 'google',
   overrideSystemPrompt?: string
 ) {
-  // Initialize Google
-  if (!genAI) {
-    const key = (process.env.GEMINI_API_KEY || '').trim();
-    if (!key) throw new Error('GEMINI_API_KEY não configurada no servidor.');
-    genAI = new GoogleGenerativeAI(key);
-  }
-
-  // Initialize OpenAI if needed
-  if (provider === 'gpt' && !openai) {
-    const key = (process.env.OPENAI_API_KEY || '').trim();
-    if (!key) throw new Error('OPENAI_API_KEY não configurada no servidor. Por favor, adicione ao seu arquivo .env.');
-    openai = new OpenAI({ apiKey: key });
-  }
+  // Fetch credentials from registry (DB first, env fallback)
+  const { key: googleKey } = getActiveKey('google');
+  const genAI = new GoogleGenerativeAI(googleKey);
 
   // 1. Token Limit: 50k per request (approximate)
   const historyText = history.map(m => m.content).join(' ');
@@ -285,12 +268,14 @@ async function _generateChatResponse(
       cachedTok = (response.usageMetadata as any)?.cachedContentTokenCount ?? 0;
 
     } else {
-      // OpenAI GPT-4o-mini
+      // OpenAI-compatible path
+      const { key: openaiKey, baseUrl } = getActiveKey('openai-compatible');
+      const openaiClient = new OpenAI({ apiKey: openaiKey, ...(baseUrl ? { baseURL: baseUrl } : {}) });
       const messages: any[] = [{ role: 'system', content: systemInstruction }];
       history.forEach(m => messages.push({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
       messages.push({ role: 'user', content: newMessage });
 
-      const completion = await openai!.chat.completions.create({
+      const completion = await openaiClient.chat.completions.create({
         model: 'gpt-4o-mini',
         messages,
         temperature: 0.7,
@@ -305,12 +290,10 @@ async function _generateChatResponse(
       inputTokFinal  = Math.ceil(tokensUsed * 0.4);
       outputTokFinal = Math.ceil(tokensUsed * 0.6);
     }
-    const normalInputTok = Math.max(0, inputTokFinal - cachedTok);
-    
-    const creditsUsed = provider === 'google'
-      ? Math.ceil((normalInputTok * FLASH_RATE.input + cachedTok * FLASH_RATE.input_cached + outputTokFinal * FLASH_RATE.output) / 1_000_000)
-      : Math.ceil(tokensUsed * 1.3); // GPT-4o-mini fallback
-    console.log(`[AI] Request completed. Chat: ${chatId}, Provider: ${provider}, Credits: ${creditsUsed} (cached: ${cachedTok}, normal: ${normalInputTok}, output: ${outputTokFinal})`);
+
+    const modelId = provider === 'google' ? 'gemini-2.5-flash' : 'gpt-4o-mini';
+    const creditsUsed = calcCredits(modelId, inputTokFinal, cachedTok, outputTokFinal);
+    console.log(`[AI] Request completed. Chat: ${chatId}, Model: ${modelId}, Credits: ${creditsUsed} (cached: ${cachedTok}, input: ${inputTokFinal}, output: ${outputTokFinal})`);
 
     return { text, tokensUsed, creditsUsed };
 

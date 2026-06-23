@@ -137,11 +137,9 @@ class ApiClient {
 
   private get headers() {
     const token = localStorage.getItem('tutorai_token');
-    const adminSecret = localStorage.getItem('tutorai_admin_secret');
     return {
       'Content-Type': 'application/json',
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-      ...(adminSecret ? { 'X-Admin-Secret': adminSecret } : {}),
     };
   }
 
