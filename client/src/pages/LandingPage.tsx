@@ -498,14 +498,14 @@ export default function LandingPage() {
   const TX2   = dark ? '#94A3B8' : '#475569';
   const TX3   = dark ? '#4B5563' : '#94A3B8';
   const GRAD  = `linear-gradient(135deg,${theme.a1},${a2} 50%,${theme.a3})`;
+  // text on a2/GRAD background — needs dark in neutral+dark (white gradient)
+  const btnTx = color === 'neutral' && dark ? '#0F172A' : '#fff';
 
   const navPages: { id: Page; key: TKey }[] = [
-    { id:'home',        key:'navHome'        },
-    { id:'examples',    key:'navEx'          },
-    { id:'about',       key:'navAbout'       },
-    { id:'self',        key:'navSelf'        },
-    { id:'docs',        key:'navDocs'        },
-    { id:'researchers', key:'navResearchers' },
+    { id:'home',     key:'navHome'  },
+    { id:'examples', key:'navEx'    },
+    { id:'about',    key:'navAbout' },
+    { id:'docs',     key:'navDocs'  },
   ];
 
   const go = (p: Page) => { setPage(p); setMenuOpen(false); window.scrollTo({ top:0, behavior:'smooth' }); };
@@ -556,7 +556,7 @@ export default function LandingPage() {
           </h1>
           <p style={{ maxWidth:640, lineHeight:1.72, marginBottom:40, color: TX2, fontSize:'clamp(1rem,1.8vw,1.18rem)' }}>{t('heroSub')}</p>
           <div style={{ display:'flex', gap:14, flexWrap:'wrap', marginBottom:60 }}>
-            <button onClick={() => navigate('/login')} style={{ display:'inline-flex', alignItems:'center', gap:10, padding:'14px 28px', borderRadius:14, background: GRAD, color:'#fff', fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'0.97rem', border:'none', cursor:'pointer', boxShadow:`0 8px 28px ${a2}45` }}>
+            <button onClick={() => navigate('/login')} style={{ display:'inline-flex', alignItems:'center', gap:10, padding:'14px 28px', borderRadius:14, background: GRAD, color: btnTx, fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'0.97rem', border:'none', cursor:'pointer', boxShadow:`0 8px 28px ${a2}45` }}>
               {t('heroCta1')} <ArrowRight size={18} />
             </button>
             <button onClick={() => go('examples')} style={{ display:'inline-flex', alignItems:'center', gap:10, padding:'14px 28px', borderRadius:14, background:'transparent', color: TX, fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'0.97rem', border:`1px solid ${LINE}`, cursor:'pointer' }}>
@@ -672,7 +672,7 @@ export default function LandingPage() {
           <div style={{ position:'relative', zIndex:1 }}>
             <h2 style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:800, fontSize:'clamp(1.8rem,3.5vw,2.8rem)', color: TX, marginBottom:14 }}>{lang==='pt' ? 'Pronto para explorar?' : lang==='en' ? 'Ready to explore?' : '¿Listo para explorar?'}</h2>
             <p style={{ color: TX2, maxWidth:420, margin:'0 auto 32px', lineHeight:1.7 }}>{lang==='pt' ? 'Acesse com o convite da sua instituição ou entre com suas credenciais.' : lang==='en' ? 'Access with your institution\'s invite or sign in with your credentials.' : 'Accede con el enlace de tu institución o entra con tus credenciales.'}</p>
-            <button onClick={() => navigate('/login')} style={{ display:'inline-flex', alignItems:'center', gap:10, padding:'16px 36px', borderRadius:16, background: GRAD, color:'#fff', fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'1rem', border:'none', cursor:'pointer', boxShadow:`0 12px 40px ${a2}50` }}>
+            <button onClick={() => navigate('/login')} style={{ display:'inline-flex', alignItems:'center', gap:10, padding:'16px 36px', borderRadius:16, background: GRAD, color: btnTx, fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'1rem', border:'none', cursor:'pointer', boxShadow:`0 12px 40px ${a2}50` }}>
               {t('heroCta1')} <ArrowRight size={18} />
             </button>
           </div>
@@ -755,6 +755,25 @@ export default function LandingPage() {
         </div>
       </div>
       <SectionWrap bg={BG2}>
+        {/* Institutional context */}
+        <div style={{ background: PANEL, border:`1px solid ${LINE}`, borderRadius:18, padding:30, marginBottom:28 }}>
+          <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.68rem', color: a2, letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:14 }}>
+            {lang==='pt' ? 'Contexto institucional' : lang==='en' ? 'Institutional context' : 'Contexto institucional'}
+          </div>
+          <p style={{ color: TX, lineHeight:1.8, fontSize:'0.95rem', margin:'0 0 14px' }}>
+            {lang==='pt'
+              ? 'A SCAFFL é desenvolvida no âmbito do Programa de Pós-Graduação em Ensino de Ciências e Matemática (PPGECiMa) da Universidade de Caxias do Sul (UCS), vinculada ao projeto guarda-chuva IAGENEduc, coordenado pelo Prof. Dr. Agostinho Serrano de Andrade Neto. O desenvolvimento conta com financiamento da FAPERGS via PROBIC (Iniciação Científica) e tem como campo de aplicação o ensino médio do CETEC/UCS.'
+              : lang==='en'
+              ? 'SCAFFL is developed within the Graduate Program in Science and Mathematics Education (PPGECiMa) at the University of Caxias do Sul (UCS), linked to the IAGENEduc umbrella project coordinated by Prof. Dr. Agostinho Serrano de Andrade Neto. Development is funded by FAPERGS via PROBIC (undergraduate research grant) and the intended application context is secondary education at CETEC/UCS.'
+              : 'SCAFFL se desarrolla en el marco del Programa de Posgrado en Enseñanza de Ciencias y Matemáticas (PPGECiMa) de la Universidad de Caxias do Sul (UCS), vinculado al proyecto IAGENEduc coordinado por el Prof. Dr. Agostinho Serrano de Andrade Neto. El desarrollo cuenta con financiamiento de FAPERGS vía PROBIC y su contexto de aplicación previsto es la enseñanza media del CETEC/UCS.'}
+          </p>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+            {['PPGECiMa / UCS', 'CIAGE', 'FAPERGS · PROBIC', 'CETEC/UCS'].map(tag => (
+              <span key={tag} style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.72rem', border:`1px solid ${a2}35`, color: a2, background:`${a2}0d`, padding:'5px 11px', borderRadius:999 }}>{tag}</span>
+            ))}
+          </div>
+        </div>
+
         {/* Mission */}
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:22, marginBottom:48 }}>
           <div style={{ background: PANEL, border:`1px solid ${LINE}`, borderRadius:18, padding:30 }}>
@@ -804,10 +823,19 @@ export default function LandingPage() {
         </div>
         {/* Stack */}
         <h3 style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'1.3rem', color: TX, marginBottom:16 }}>{t('abStack')}</h3>
-        <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+        <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:56 }}>
           {['Node.js','TypeScript','React','PostgreSQL','Drizzle ORM','Claude (Anthropic)','Gemini (Google)','Tailwind CSS','Vite','Docker'].map(s => (
             <span key={s} style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.78rem', padding:'7px 13px', border:`1px solid ${LINE}`, borderRadius:8, color: TX2 }}>{s}</span>
           ))}
+        </div>
+        {/* Researchers CTA */}
+        <div style={{ borderTop:`1px solid ${LINE}`, paddingTop:48, textAlign:'center' }}>
+          <p style={{ color: TX2, maxWidth:580, margin:'0 auto 24px', lineHeight:1.75, fontSize:'0.97rem' }}>
+            {lang==='pt' ? 'Quer conhecer a fundamentação teórica completa, os eixos de pesquisa, os dados do estudo piloto e a produção científica em desenvolvimento?' : lang==='en' ? 'Want to explore the full theoretical framework, research axes, pilot study data and scientific output in development?' : '¿Quieres conocer el marco teórico completo, los ejes de investigación, los datos del estudio piloto y la producción científica en desarrollo?'}
+          </p>
+          <button onClick={() => go('researchers')} style={{ display:'inline-flex', alignItems:'center', gap:10, padding:'14px 32px', borderRadius:14, background: GRAD, color: btnTx, fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'0.97rem', border:'none', cursor:'pointer', boxShadow:`0 8px 28px ${a2}45` }}>
+            {lang==='pt' ? 'Para Pesquisadores' : lang==='en' ? 'For Researchers' : 'Para Investigadores'} <ArrowRight size={18} />
+          </button>
         </div>
       </SectionWrap>
     </>
@@ -984,6 +1012,224 @@ export default function LandingPage() {
             <span style={{ color: a2 }}>MAX_TOKENS_LAB</span>        <span style={{ color:'#64748B' }}># limite mensal por aluno (Lab){'\n'}</span>
             <span style={{ color: a2 }}>INVITE_ONLY</span>           <span style={{ color:'#64748B' }}># true = cadastro só por convite</span>
           </Term>
+
+          {/* ── SELF-HOSTED TUTORIAL ── */}
+          <div style={{ height:56 }} />
+          <div style={{ borderTop:`1px solid ${LINE}`, paddingTop:48 }}>
+            <Kicker text={lang==='pt' ? 'Instalação própria' : lang==='en' ? 'Self-Hosted' : 'Instalación propia'} color={a2} />
+            <h2 style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:800, fontSize:'clamp(1.6rem,3vw,2.2rem)', color: TX, marginBottom:14 }}>
+              {lang==='pt' ? 'Rode a SCAFFL na sua infraestrutura' : lang==='en' ? 'Run SCAFFL on your own infrastructure' : 'Ejecuta SCAFFL en tu propia infraestructura'}
+            </h2>
+            <p style={{ color: TX2, maxWidth:680, lineHeight:1.75, marginBottom:32 }}>
+              {lang==='pt' ? 'A SCAFFL é open-source e auto-hospedável. Você mantém controle total dos dados dos seus estudantes — nenhuma interação sai para terceiros além das APIs de IA. Este tutorial guia você do zero até a plataforma funcionando, mesmo sem experiência prévia com servidores.' : lang==='en' ? 'SCAFFL is open-source and self-hostable. You maintain full control of your students\' data — no interaction leaves your server beyond the AI API calls. This tutorial guides you from zero to a running platform, even without prior server experience.' : 'SCAFFL es open-source y autoalojable. Mantienes el control total de los datos de tus estudiantes. Este tutorial te guía desde cero hasta la plataforma funcionando, incluso sin experiencia previa con servidores.'}
+            </p>
+
+            {/* Why block */}
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16, marginBottom:40 }}>
+              {([
+                [Shield, lang==='pt' ? 'Privacidade total' : lang==='en' ? 'Full privacy' : 'Privacidad total', lang==='pt' ? 'Dados dos alunos ficam no seu servidor. Zero vazamento para plataformas externas.' : lang==='en' ? 'Student data stays on your server. No leakage to external platforms.' : 'Los datos de los alumnos permanecen en tu servidor.'],
+                [DollarSign, lang==='pt' ? 'Sem mensalidade' : lang==='en' ? 'No monthly fee' : 'Sin mensualidad', lang==='pt' ? 'Você paga só pelas chamadas de API (Anthropic + Gemini). A plataforma é gratuita.' : lang==='en' ? 'You only pay for API calls (Anthropic + Gemini). The platform itself is free.' : 'Solo pagas las llamadas de API. La plataforma es gratuita.'],
+                [Sliders, lang==='pt' ? 'Customizável' : lang==='en' ? 'Customizable' : 'Personalizable', lang==='pt' ? 'Modifique o prompt do Petrus, ajuste o Lab Agent, personalize para sua instituição.' : lang==='en' ? 'Modify Petrus\'s prompt, adjust Lab Agent, personalize for your institution.' : 'Modifica el prompt de Petrus y personaliza para tu institución.'],
+              ] as [React.ElementType, string, string][]).map(([Icon, title, desc]) => (
+                <div key={title} style={{ background: PANEL, border:`1px solid ${LINE}`, borderRadius:14, padding:22 }}>
+                  <div style={{ width:36, height:36, borderRadius:9, background:`${a2}14`, display:'flex', alignItems:'center', justifyContent:'center', marginBottom:12 }}><Icon size={16} color={a2} /></div>
+                  <div style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'0.95rem', color: TX, marginBottom:6 }}>{title}</div>
+                  <p style={{ fontSize:'0.85rem', color: TX2, lineHeight:1.65, margin:0 }}>{desc}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* VPS recommendation */}
+            <div style={{ border:`1px solid ${a2}30`, borderRadius:14, padding:'20px 24px', background:`${a2}08`, marginBottom:36 }}>
+              <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.68rem', color: a2, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:10 }}>
+                {lang==='pt' ? 'Não tem um servidor? Use uma VPS' : lang==='en' ? 'No server? Use a VPS' : '¿Sin servidor? Usa una VPS'}
+              </div>
+              <p style={{ color: TX2, fontSize:'0.9rem', lineHeight:1.75, margin:0 }}>
+                {lang==='pt'
+                  ? 'Uma VPS (Servidor Privado Virtual) é um computador alugado na nuvem que fica ligado 24h. Provedores como DigitalOcean, Hetzner ou Hostinger oferecem planos a partir de ~US$ 4–6/mês com Ubuntu 22 LTS pré-instalado. Você acessa via SSH (um terminal remoto) e executa os comandos abaixo. Escolha um plano com pelo menos 1 GB de RAM e 10 GB de disco.'
+                  : lang==='en'
+                  ? 'A VPS (Virtual Private Server) is a rented cloud computer that stays on 24/7. Providers like DigitalOcean, Hetzner or Hostinger offer plans from ~US$ 4–6/month with Ubuntu 22 LTS pre-installed. You access it via SSH (a remote terminal) and run the commands below. Choose a plan with at least 1 GB RAM and 10 GB disk.'
+                  : 'Una VPS es un computador alquilado en la nube que permanece encendido 24/7. Proveedores como DigitalOcean, Hetzner u Hostinger ofrecen planes desde ~US$ 4–6/mes con Ubuntu 22 LTS preinstalado. Accedes vía SSH y ejecutas los comandos de abajo.'}
+              </p>
+            </div>
+
+            {/* Step 1 */}
+            <div style={{ marginBottom:32 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
+                <span style={{ width:28, height:28, borderRadius:'50%', background: GRAD, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'JetBrains Mono',monospace", fontSize:'0.75rem', fontWeight:700, color: btnTx, flexShrink:0 }}>1</span>
+                <h3 style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'1.1rem', color: TX, margin:0 }}>
+                  {lang==='pt' ? 'Prepare o servidor' : lang==='en' ? 'Prepare the server' : 'Prepara el servidor'}
+                </h3>
+              </div>
+              <p style={{ color: TX2, fontSize:'0.9rem', lineHeight:1.72, marginBottom:14, paddingLeft:40 }}>
+                {lang==='pt' ? 'Conecte-se ao servidor via SSH e execute:' : lang==='en' ? 'Connect to the server via SSH and run:' : 'Conéctate al servidor vía SSH y ejecuta:'}
+              </p>
+              <Term title="bash — preparar servidor">
+                <span style={{ color:'#64748B' }}># Atualizar o sistema{'\n'}</span>
+                <span style={{ color: a2 }}>$</span> sudo apt update && sudo apt upgrade -y{'\n\n'}
+                <span style={{ color:'#64748B' }}># Instalar Node.js 20 (via nvm — recomendado){'\n'}</span>
+                <span style={{ color: a2 }}>$</span> curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash{'\n'}
+                <span style={{ color: a2 }}>$</span> source ~/.bashrc{'\n'}
+                <span style={{ color: a2 }}>$</span> nvm install 20{'\n'}
+                <span style={{ color: a2 }}>$</span> node -v   <span style={{ color:'#64748B' }}># deve mostrar v20.x.x</span>
+              </Term>
+            </div>
+
+            {/* Step 2 */}
+            <div style={{ marginBottom:32 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
+                <span style={{ width:28, height:28, borderRadius:'50%', background: GRAD, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'JetBrains Mono',monospace", fontSize:'0.75rem', fontWeight:700, color: btnTx, flexShrink:0 }}>2</span>
+                <h3 style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'1.1rem', color: TX, margin:0 }}>
+                  {lang==='pt' ? 'Instale o PostgreSQL' : lang==='en' ? 'Install PostgreSQL' : 'Instala PostgreSQL'}
+                </h3>
+              </div>
+              <p style={{ color: TX2, fontSize:'0.9rem', lineHeight:1.72, marginBottom:14, paddingLeft:40 }}>
+                {lang==='pt' ? 'PostgreSQL é o banco de dados que armazena usuários, conversas e simuladores.' : lang==='en' ? 'PostgreSQL is the database that stores users, conversations and simulators.' : 'PostgreSQL es la base de datos que almacena usuarios, conversaciones y simuladores.'}
+              </p>
+              <Term title="bash — instalar PostgreSQL">
+                <span style={{ color: a2 }}>$</span> sudo apt install -y postgresql postgresql-contrib{'\n'}
+                <span style={{ color: a2 }}>$</span> sudo systemctl start postgresql{'\n'}
+                <span style={{ color: a2 }}>$</span> sudo systemctl enable postgresql{'\n\n'}
+                <span style={{ color:'#64748B' }}># Criar banco e usuário{'\n'}</span>
+                <span style={{ color: a2 }}>$</span> sudo -u postgres psql -c "CREATE USER scaffl WITH PASSWORD 'senha_segura';"{'\n'}
+                <span style={{ color: a2 }}>$</span> sudo -u postgres psql -c "CREATE DATABASE scaffl OWNER scaffl;"
+              </Term>
+            </div>
+
+            {/* Step 3 */}
+            <div style={{ marginBottom:32 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
+                <span style={{ width:28, height:28, borderRadius:'50%', background: GRAD, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'JetBrains Mono',monospace", fontSize:'0.75rem', fontWeight:700, color: btnTx, flexShrink:0 }}>3</span>
+                <h3 style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'1.1rem', color: TX, margin:0 }}>
+                  {lang==='pt' ? 'Baixe o código da plataforma' : lang==='en' ? 'Download the platform code' : 'Descarga el código de la plataforma'}
+                </h3>
+              </div>
+              <Term title="bash — clonar repositório">
+                <span style={{ color: a2 }}>$</span> git clone https://github.com/pedbender123/scaffl.git{'\n'}
+                <span style={{ color: a2 }}>$</span> cd scaffl{'\n'}
+                <span style={{ color: a2 }}>$</span> npm install{'\n'}
+                <span style={{ color:'#64748B' }}>{'\n'}# Isso instala todas as dependências. Pode demorar 1–2 minutos.</span>
+              </Term>
+            </div>
+
+            {/* Step 4 */}
+            <div style={{ marginBottom:32 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
+                <span style={{ width:28, height:28, borderRadius:'50%', background: GRAD, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'JetBrains Mono',monospace", fontSize:'0.75rem', fontWeight:700, color: btnTx, flexShrink:0 }}>4</span>
+                <h3 style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'1.1rem', color: TX, margin:0 }}>
+                  {lang==='pt' ? 'Configure as variáveis de ambiente' : lang==='en' ? 'Configure environment variables' : 'Configura las variables de entorno'}
+                </h3>
+              </div>
+              <p style={{ color: TX2, fontSize:'0.9rem', lineHeight:1.72, marginBottom:14, paddingLeft:40 }}>
+                {lang==='pt'
+                  ? 'O arquivo .env guarda as chaves de API e as configurações do servidor. Você precisará criar uma chave na Anthropic (para o Petrus) e outra no Google AI Studio (para o Lab Agent). Ambos têm planos gratuitos para começar.'
+                  : lang==='en'
+                  ? 'The .env file holds API keys and server settings. You will need to create a key at Anthropic (for Petrus) and another at Google AI Studio (for Lab Agent). Both have free tiers to get started.'
+                  : 'El archivo .env contiene las claves de API y la configuración del servidor. Necesitarás crear una clave en Anthropic (para Petrus) y otra en Google AI Studio (para el Lab Agent).'}
+              </p>
+              <Term title="bash — criar .env">
+                <span style={{ color: a2 }}>$</span> cp .env.example .env{'\n'}
+                <span style={{ color: a2 }}>$</span> nano .env   <span style={{ color:'#64748B' }}># editor de texto no terminal</span>
+              </Term>
+              <div style={{ height:12 }} />
+              <Term title=".env — preencher">
+                <span style={{ color:'#64748B' }}># Chaves de IA — obtenha em platform.openai.com e aistudio.google.com{'\n'}</span>
+                <span style={{ color: a2 }}>ANTHROPIC_API_KEY</span>=sk-ant-...{'\n'}
+                <span style={{ color: a2 }}>GEMINI_API_KEY</span>=AIza...{'\n\n'}
+                <span style={{ color:'#64748B' }}># Banco de dados (use a senha criada no passo 2){'\n'}</span>
+                <span style={{ color: a2 }}>DATABASE_URL</span>=postgresql://scaffl:senha_segura@localhost:5432/scaffl{'\n\n'}
+                <span style={{ color:'#64748B' }}># Gerar com: openssl rand -base64 32{'\n'}</span>
+                <span style={{ color: a2 }}>JWT_SECRET</span>={"<string aleatória com 32+ caracteres>"}{'\n\n'}
+                <span style={{ color: a2 }}>PORT</span>=3000{'\n'}
+                <span style={{ color: a2 }}>NODE_ENV</span>=production
+              </Term>
+            </div>
+
+            {/* Step 5 */}
+            <div style={{ marginBottom:32 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
+                <span style={{ width:28, height:28, borderRadius:'50%', background: GRAD, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'JetBrains Mono',monospace", fontSize:'0.75rem', fontWeight:700, color: btnTx, flexShrink:0 }}>5</span>
+                <h3 style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'1.1rem', color: TX, margin:0 }}>
+                  {lang==='pt' ? 'Inicialize o banco e inicie a plataforma' : lang==='en' ? 'Initialize the database and start the platform' : 'Inicializa la base de datos e inicia la plataforma'}
+                </h3>
+              </div>
+              <Term title="bash — iniciar">
+                <span style={{ color:'#64748B' }}># Criar as tabelas no banco{'\n'}</span>
+                <span style={{ color: a2 }}>$</span> npm run db:push{'\n\n'}
+                <span style={{ color:'#64748B' }}># Compilar o frontend{'\n'}</span>
+                <span style={{ color: a2 }}>$</span> npm run build{'\n\n'}
+                <span style={{ color:'#64748B' }}># Iniciar em modo produção{'\n'}</span>
+                <span style={{ color: a2 }}>$</span> npm start{'\n\n'}
+                <span style={{ color:'#64748B' }}># Para manter rodando mesmo após fechar o terminal:{'\n'}</span>
+                <span style={{ color: a2 }}>$</span> npm install -g pm2{'\n'}
+                <span style={{ color: a2 }}>$</span> pm2 start "npm start" --name scaffl{'\n'}
+                <span style={{ color: a2 }}>$</span> pm2 save
+              </Term>
+            </div>
+
+            {/* Step 6 */}
+            <div style={{ marginBottom:40 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
+                <span style={{ width:28, height:28, borderRadius:'50%', background: GRAD, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'JetBrains Mono',monospace", fontSize:'0.75rem', fontWeight:700, color: btnTx, flexShrink:0 }}>6</span>
+                <h3 style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'1.1rem', color: TX, margin:0 }}>
+                  {lang==='pt' ? 'Aponte um domínio para a plataforma (opcional mas recomendado)' : lang==='en' ? 'Point a domain to the platform (optional but recommended)' : 'Apunta un dominio a la plataforma (opcional pero recomendado)'}
+                </h3>
+              </div>
+              <p style={{ color: TX2, fontSize:'0.9rem', lineHeight:1.72, marginBottom:14, paddingLeft:40 }}>
+                {lang==='pt'
+                  ? 'Com um domínio próprio você acessa via endereço.com em vez de IP:porta. Use o Nginx como proxy reverso — ele recebe as requisições na porta 80/443 e as repassa para a aplicação na porta 3000. O Certbot instala SSL (HTTPS) gratuitamente.'
+                  : lang==='en'
+                  ? 'With your own domain you access via youraddress.com instead of IP:port. Use Nginx as a reverse proxy — it receives requests on port 80/443 and forwards them to the application on port 3000. Certbot installs free SSL (HTTPS).'
+                  : 'Con tu propio dominio accedes por dirección.com en vez de IP:puerto. Usa Nginx como proxy inverso y Certbot para SSL gratuito.'}
+              </p>
+              <Term title="bash — Nginx + SSL">
+                <span style={{ color: a2 }}>$</span> sudo apt install -y nginx certbot python3-certbot-nginx{'\n\n'}
+                <span style={{ color:'#64748B' }}># Criar arquivo de configuração (substitua seu-dominio.com){'\n'}</span>
+                <span style={{ color: a2 }}>$</span> sudo nano /etc/nginx/sites-available/scaffl{'\n\n'}
+                <span style={{ color:'#64748B' }}># Cole o conteúdo abaixo no arquivo:{'\n'}</span>
+                server {'{'}{'\n'}
+                {'  '}server_name seu-dominio.com;{'\n'}
+                {'  '}location / {'{'}{'\n'}
+                {'    '}proxy_pass http://localhost:3000;{'\n'}
+                {'    '}proxy_http_version 1.1;{'\n'}
+                {'    '}proxy_set_header Upgrade $http_upgrade;{'\n'}
+                {'    '}proxy_set_header Connection 'upgrade';{'\n'}
+                {'    '}proxy_set_header Host $host;{'\n'}
+                {'  '}{'}'}{'\n'}
+                {'}'}{'\n\n'}
+                <span style={{ color: a2 }}>$</span> sudo ln -s /etc/nginx/sites-available/scaffl /etc/nginx/sites-enabled/{'\n'}
+                <span style={{ color: a2 }}>$</span> sudo nginx -t && sudo systemctl reload nginx{'\n'}
+                <span style={{ color: a2 }}>$</span> sudo certbot --nginx -d seu-dominio.com
+              </Term>
+            </div>
+
+            {/* Docker alternative */}
+            <div style={{ background: PANEL, border:`1px solid ${LINE}`, borderRadius:14, padding:24, marginBottom:32 }}>
+              <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.68rem', color: a2, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:12 }}>
+                {lang==='pt' ? 'Alternativa: via Docker' : lang==='en' ? 'Alternative: via Docker' : 'Alternativa: con Docker'}
+              </div>
+              <p style={{ color: TX2, fontSize:'0.88rem', lineHeight:1.72, marginBottom:14 }}>
+                {lang==='pt' ? 'Docker empacota toda a aplicação num contêiner — dispensa instalar Node.js e PostgreSQL separadamente. Se o servidor já tiver Docker, use:' : lang==='en' ? 'Docker packages the entire application in a container — no need to install Node.js and PostgreSQL separately. If the server already has Docker, use:' : 'Docker empaqueta toda la aplicación en un contenedor. Si el servidor ya tiene Docker instalado, usa:'}
+              </p>
+              <Term title="bash — Docker">
+                <span style={{ color: a2 }}>$</span> sudo apt install -y docker.io docker-compose{'\n'}
+                <span style={{ color: a2 }}>$</span> git clone https://github.com/pedbender123/scaffl.git && cd scaffl{'\n'}
+                <span style={{ color: a2 }}>$</span> cp .env.example .env && nano .env{'\n'}
+                <span style={{ color: a2 }}>$</span> docker compose up -d{'\n\n'}
+                <span style={{ color:'#64748B' }}># Verificar status{'\n'}</span>
+                <span style={{ color: a2 }}>$</span> docker compose logs -f scaffl
+              </Term>
+            </div>
+
+            <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
+              <button style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'11px 20px', borderRadius:11, border:`1px solid ${a2}`, background:`${a2}14`, color: a2, fontFamily:"'Space Grotesk',sans-serif", fontWeight:600, fontSize:'0.88rem', cursor:'pointer' }}>
+                <ExternalLink size={15} /> {lang==='pt' ? 'GitHub — Código-fonte' : lang==='en' ? 'GitHub — Source code' : 'GitHub — Código fuente'}
+              </button>
+              <button style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'11px 20px', borderRadius:11, border:`1px solid ${LINE}`, background:'transparent', color: TX3, fontFamily:"'Space Grotesk',sans-serif", fontWeight:600, fontSize:'0.88rem', cursor:'default', opacity:0.5 }}>
+                <Book size={15} /> {lang==='pt' ? 'Tutorial em vídeo (em breve)' : lang==='en' ? 'Video tutorial (coming soon)' : 'Tutorial en video (próximamente)'}
+              </button>
+            </div>
+          </div>
         </SectionWrap>
       </>
     );
@@ -1011,24 +1257,59 @@ export default function LandingPage() {
       </div>
 
       <SectionWrap bg={BG2}>
-        {/* Coming soon notice */}
-        <div style={{ border:`1px dashed ${a2}50`, borderRadius:18, padding:'40px 36px', background:`${a2}07`, textAlign:'center', marginBottom:48 }}>
-          <div style={{ width:48, height:48, borderRadius:14, background:`${a2}18`, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px' }}>
-            <Book size={22} color={a2} />
+        {/* Research question + DBR */}
+        <div style={{ background: PANEL, border:`1px solid ${LINE}`, borderRadius:18, padding:30, marginBottom:32 }}>
+          <Quote size={28} color={a2} style={{ opacity:0.2, float:'right', marginLeft:16 }} />
+          <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.68rem', color: a2, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:12 }}>
+            {lang==='pt' ? 'Pergunta de pesquisa' : lang==='en' ? 'Research question' : 'Pregunta de investigación'}
           </div>
-          <h3 style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'1.3rem', color: TX, marginBottom:10 }}>
-            {lang==='pt' ? 'Conteúdo detalhado em preparação' : lang==='en' ? 'Detailed content in preparation' : 'Contenido detallado en preparación'}
-          </h3>
-          <p style={{ color: TX2, maxWidth:560, margin:'0 auto', lineHeight:1.7, fontSize:'0.95rem' }}>
+          <p style={{ fontStyle:'italic', color: TX, lineHeight:1.8, fontSize:'1.05rem', marginBottom:18 }}>
             {lang==='pt'
-              ? 'O pesquisador Pedro Bender Randon está organizando os materiais completos — artigos, dados brutos, análises discursivas e referências bibliográficas precisas. Esta seção será atualizada em breve.'
+              ? '"De que modo ambientes educacionais baseados em IA Generativa, simuladores interativos e arquiteturas multiagente podem apoiar a aprendizagem de Ciências e Matemática quando desenvolvidos, aplicados e analisados em contexto real de sala de aula?"'
               : lang==='en'
-              ? 'Researcher Pedro Bender Randon is organizing the complete materials — papers, raw data, discursive analyses and precise bibliographic references. This section will be updated soon.'
-              : 'El investigador Pedro Bender Randon está organizando los materiales completos — artículos, datos brutos, análisis discursivos y referencias bibliográficas precisas. Esta sección se actualizará pronto.'}
+              ? '"In what ways can educational environments based on Generative AI, interactive simulations and multi-agent architectures support learning in Science and Mathematics when developed, implemented and analyzed in real classroom contexts?"'
+              : '"¿De qué modo los entornos educativos basados en IA Generativa, simuladores interactivos y arquitecturas multiagente pueden apoyar el aprendizaje de Ciencias y Matemáticas en contextos reales de aula?"'}
           </p>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+            {['Design-Based Research (DBR)', 'PPGECiMa / UCS', 'IAGENEduc', 'FAPERGS · PROBIC'].map(t => (
+              <span key={t} style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.7rem', border:`1px solid ${LINE}`, color: TX3, padding:'5px 10px', borderRadius:8 }}>{t}</span>
+            ))}
+          </div>
         </div>
 
-        {/* Theoretical frameworks - already established */}
+        {/* 4 Research axes */}
+        <h3 style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'1.3rem', color: TX, marginBottom:20 }}>
+          {lang==='pt' ? 'Eixos de pesquisa' : lang==='en' ? 'Research axes' : 'Ejes de investigación'}
+        </h3>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:48 }}>
+          {[
+            { n:'4.1', icon: GraduationCap,
+              title: lang==='pt' ? 'Perfis didático-pedagógicos e clones de professores' : lang==='en' ? 'Didactic-pedagogical profiles and teacher clones' : 'Perfiles didáctico-pedagógicos y clones de docentes',
+              desc: lang==='pt' ? 'Investiga se o método de ensino pode ser desacoplado do conteúdo disciplinar e transferido para domínios inéditos via meta-prompts e RAG. Resultado preliminar: uma persona de professor de Física preservou traços do estilo didático ao explicar Química — evidência inicial do desacoplamento forma–conteúdo.' : lang==='en' ? 'Investigates whether teaching method can be decoupled from disciplinary content and transferred to novel domains via meta-prompts and RAG. Preliminary result: a Physics teacher persona preserved stylistic traits when explaining Chemistry — initial evidence of form–content decoupling.' : 'Investiga si el método de enseñanza puede desacoplarse del contenido disciplinar y transferirse a nuevos dominios mediante meta-prompts y RAG. Resultado preliminar: una persona de docente de Física preservó rasgos de estilo al explicar Química.' },
+            { n:'4.2', icon: Network,
+              title: lang==='pt' ? 'Atomicidade cognitiva em grafos para SLMs' : lang==='en' ? 'Cognitive atomicity in graphs for SLMs' : 'Atomicidad cognitiva en grafos para SLMs',
+              desc: lang==='pt' ? 'Frente teórica que busca formalizar o conceito de atomicidade cognitiva como critério de granularidade ótima dos nós em grafos de conhecimento manipuláveis por modelos de linguagem de pequeno porte (SLMs, < 7B parâmetros).' : lang==='en' ? 'Theoretical strand formalizing "cognitive atomicity" as an optimal granularity criterion for knowledge graph nodes manipulable by small language models (SLMs, < 7B parameters).' : 'Frente teórica que busca formalizar la "atomicidad cognitiva" como criterio de granularidad óptima de nodos en grafos manipulables por modelos de lenguaje pequeños (SLMs < 7B parámetros).' },
+            { n:'4.3', icon: Atom,
+              title: lang==='pt' ? 'Simuladores de Química mediados por IA — plataforma SCAFFL' : lang==='en' ? 'AI-mediated Chemistry simulations — SCAFFL platform' : 'Simuladores de Química mediados por IA — plataforma SCAFFL',
+              desc: lang==='pt' ? 'Frente aplicada central. Estudantes constroem simuladores que articulam os três níveis de Johnstone (macroscópico, submicroscópico, simbólico) em sequência didática que parte da experimentação prática — organizador prévio ausubeliano.' : lang==='en' ? 'Central applied strand. Students build simulations articulating Johnstone\'s three levels (macroscopic, submicroscopic, symbolic) in a didactic sequence starting from hands-on experimentation — an Ausbelian advance organizer.' : 'Frente aplicada central. Los estudiantes construyen simuladores que articulan los tres niveles de Johnstone en una secuencia didáctica que parte de la experimentación práctica.' },
+            { n:'4.4', icon: Layers,
+              title: lang==='pt' ? 'Projeto Petrus — orquestração multiagente e modelos compactos' : lang==='en' ? 'Project Petrus — multi-agent orchestration and compact models' : 'Proyecto Petrus — orquestación multiagente y modelos compactos',
+              desc: lang==='pt' ? 'Sistema de orquestração multiagente de inspiração biológica. Resultado preliminar: modelo de 7B parâmetros com banco vetorial apresentou desempenho qualitativamente comparável ao de um modelo de 32B em tarefas selecionadas — princípio análogo à "prova com consulta".' : lang==='en' ? 'Biologically inspired multi-agent orchestration system. Preliminary result: a 7B model with vector retrieval showed qualitatively comparable performance to a 32B model on selected tasks — analogous to an "open-book exam" principle.' : 'Sistema de orquestación multiagente de inspiración biológica. Resultado preliminar: un modelo de 7B con banco vectorial mostró desempeño comparable al de 32B en tareas seleccionadas.' },
+          ].map(({ n, icon: Icon, title, desc }) => (
+            <div key={n} style={{ background: PANEL, border:`1px solid ${LINE}`, borderRadius:16, padding:26, position:'relative' }}>
+              <div style={{ position:'absolute', top:18, right:20, fontFamily:"'JetBrains Mono',monospace", fontSize:'0.78rem', color: TX3, opacity:0.5 }}>{n}</div>
+              <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14 }}>
+                <div style={{ width:36, height:36, borderRadius:10, background:`${a2}14`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                  <Icon size={16} color={a2} />
+                </div>
+                <div style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'0.95rem', color: TX }}>{title}</div>
+              </div>
+              <p style={{ fontSize:'0.86rem', color: TX2, lineHeight:1.7, margin:0 }}>{desc}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Theoretical frameworks */}
         <h3 style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'1.3rem', color: TX, marginBottom:20 }}>
           {lang==='pt' ? 'Aportes teóricos' : lang==='en' ? 'Theoretical frameworks' : 'Aportes teóricos'}
         </h3>
@@ -1058,30 +1339,52 @@ export default function LandingPage() {
           ))}
         </div>
 
-        {/* Research paper */}
+        {/* Scientific production */}
         <h3 style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'1.3rem', color: TX, marginBottom:16 }}>
-          {lang==='pt' ? 'Produção científica' : lang==='en' ? 'Scientific output' : 'Producción científica'}
+          {lang==='pt' ? 'Produção científica (em preparação)' : lang==='en' ? 'Scientific output (in preparation)' : 'Producción científica (en preparación)'}
         </h3>
-        <div style={{ background: PANEL, border:`1px solid ${LINE}`, borderRadius:16, padding:28, marginBottom:32 }}>
-          <div style={{ display:'flex', gap:16, alignItems:'flex-start' }}>
-            <div style={{ width:44, height:44, borderRadius:12, background:`${a2}14`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-              <Quote size={18} color={a2} />
-            </div>
-            <div style={{ flex:1 }}>
-              <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.67rem', color: a2, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:8 }}>
-                {lang==='pt' ? 'Artigo em desenvolvimento' : lang==='en' ? 'Article in development' : 'Artículo en desarrollo'}
+        <div style={{ display:'flex', flexDirection:'column', gap:12, marginBottom:32 }}>
+          {[
+            {
+              tag: lang==='pt' ? 'Artigo de prática aplicada' : lang==='en' ? 'Applied practice article' : 'Artículo de práctica aplicada',
+              venue: 'QNEsc',
+              title: lang==='pt' ? 'Sequência didática de construção de simuladores de química mediados por IA: da experimentação ao artefato' : lang==='en' ? 'Didactic sequence for AI-mediated chemistry simulator construction: from experimentation to artifact' : 'Secuencia didáctica para construcción de simuladores mediados por IA: de la experimentación al artefacto',
+              axis: 'Ausubel · Papert · Johnstone',
+            },
+            {
+              tag: lang==='pt' ? 'Artigo da plataforma + análise discursiva' : lang==='en' ? 'Platform article + discursive analysis' : 'Artículo de plataforma + análisis discursivo',
+              venue: lang==='pt' ? 'Revista de perfil teórico (a definir)' : lang==='en' ? 'Theory-focused journal (TBD)' : 'Revista de perfil teórico (a definir)',
+              title: lang==='pt' ? 'A SCAFFL como instrumento de pesquisa: construção conceitual na interação aluno–IA e a instalação do driver cognitivo' : lang==='en' ? 'SCAFFL as a research instrument: conceptual construction in student–AI interaction and the installation of the cognitive driver' : 'SCAFFL como instrumento de investigación: construcción conceptual en la interacción alumno–IA e instalación del driver cognitivo',
+              axis: 'Bachelard · Mortimer · TMC · Bakhtin / Vygotsky',
+            },
+            {
+              tag: lang==='pt' ? 'Manuscrito — clones de professores' : lang==='en' ? 'Manuscript — teacher clones' : 'Manuscrito — clones de docentes',
+              venue: lang==='pt' ? 'A definir' : lang==='en' ? 'TBD' : 'A definir',
+              title: lang==='pt' ? 'Extração de perfis didático-pedagógicos via meta-prompt: metodologia em três fases e evidências de desacoplamento forma–conteúdo' : lang==='en' ? 'Extraction of didactic-pedagogical profiles via meta-prompt: three-phase methodology and evidence of form–content decoupling' : 'Extracción de perfiles didáctico-pedagógicos vía meta-prompt: metodología en tres fases y evidencias de desacoplamiento forma–contenido',
+              axis: 'Style transfer · RAG · LLMs',
+            },
+            {
+              tag: lang==='pt' ? 'Manuscrito teórico' : lang==='en' ? 'Theoretical manuscript' : 'Manuscrito teórico',
+              venue: lang==='pt' ? 'A definir' : lang==='en' ? 'TBD' : 'A definir',
+              title: lang==='pt' ? 'Atomicidade cognitiva em grafos: critério de granularidade ótima para SLMs em contextos educacionais' : lang==='en' ? 'Cognitive atomicity in graphs: optimal granularity criterion for SLMs in educational contexts' : 'Atomicidad cognitiva en grafos: criterio de granularidad óptima para SLMs en contextos educativos',
+              axis: 'SLMs · Knowledge graphs · Vector retrieval',
+            },
+            {
+              tag: lang==='pt' ? 'Revisão sistemática' : lang==='en' ? 'Systematic review' : 'Revisión sistemática',
+              venue: 'A definir',
+              title: lang==='pt' ? 'LLMs, modelagem docente e personalização do ensino (2020–2025): revisão crítica do campo em transição' : lang==='en' ? 'LLMs, teacher modeling and instructional personalization (2020–2025): critical review of a transitioning field' : 'LLMs, modelado docente y personalización de la enseñanza (2020–2025): revisión crítica del campo en transición',
+              axis: 'Ruffle&Riley · SocratiQ · SimClass · HiTA',
+            },
+          ].map(({ tag, venue, title, axis }) => (
+            <div key={title.slice(0,30)} style={{ background: PANEL, border:`1px solid ${LINE}`, borderRadius:14, padding:'20px 24px' }}>
+              <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center', marginBottom:10 }}>
+                <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.68rem', color: a2, background:`${a2}12`, border:`1px solid ${a2}28`, padding:'4px 10px', borderRadius:999 }}>{tag}</span>
+                <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.68rem', color: TX3 }}>→ {venue}</span>
               </div>
-              <h4 style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'1.1rem', color: TX, marginBottom:8 }}>From Command to Authorship: Discursive Mediation and Cognitive Driver Installation in Student–AI Interaction during Science Simulator Construction</h4>
-              <p style={{ fontSize:'0.87rem', color: TX2, lineHeight:1.68, marginBottom:12 }}>
-                {lang==='pt'
-                  ? 'Pedro Bender Randon, Agostinho [sobrenome]. CIAGE, Universidade de Caxias do Sul. Submetido para: Research in Science Education (Springer).'
-                  : lang==='en'
-                  ? 'Pedro Bender Randon, Agostinho [surname]. CIAGE, University of Caxias do Sul. Submitted to: Research in Science Education (Springer).'
-                  : 'Pedro Bender Randon, Agostinho [apellido]. CIAGE, Universidad de Caxias do Sul. Enviado a: Research in Science Education (Springer).'}
-              </p>
-              <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.75rem', color: a2 }}>→ Research in Science Education (Springer) · 2026</div>
+              <div style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'0.95rem', color: TX, marginBottom:8, lineHeight:1.45 }}>{title}</div>
+              <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.7rem', color: TX3 }}>{axis}</div>
             </div>
-          </div>
+          ))}
         </div>
 
         {/* Pilot data */}
@@ -1103,11 +1406,57 @@ export default function LandingPage() {
             </div>
           ))}
         </div>
-        <p style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.72rem', color: TX3 }}>
-          {lang==='pt' ? 'CETEC — Sala Delta 2 · 27 mai – 06 jun 2026 · sujeitos pseudonimizados · protocolo de pesquisa aprovado'
-          : lang==='en' ? 'CETEC — Delta 2 Class · May 27 – Jun 6, 2026 · pseudonymized subjects · approved research protocol'
-          : 'CETEC — Sala Delta 2 · 27 may – 06 jun 2026 · sujetos seudonimizados · protocolo de investigación aprobado'}
+        <p style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.72rem', color: TX3, marginBottom:48 }}>
+          {lang==='pt' ? 'CETEC — Sala Delta 2 · 27 mai – 06 jun 2026 · sujeitos pseudonimizados · aprovação CEP/UCS em curso'
+          : lang==='en' ? 'CETEC — Delta 2 Class · May 27 – Jun 6, 2026 · pseudonymized subjects · CEP/UCS ethics approval in progress'
+          : 'CETEC — Sala Delta 2 · 27 may – 06 jun 2026 · sujetos seudonimizados · aprobación CEP/UCS en curso'}
         </p>
+
+        {/* Methodology note */}
+        <div style={{ background: PANEL, border:`1px solid ${LINE}`, borderRadius:14, padding:'20px 24px', marginBottom:32 }}>
+          <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.68rem', color: a2, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:10 }}>
+            {lang==='pt' ? 'Desenho metodológico' : lang==='en' ? 'Methodological design' : 'Diseño metodológico'}
+          </div>
+          <p style={{ color: TX2, fontSize:'0.9rem', lineHeight:1.75, marginBottom:14 }}>
+            {lang==='pt'
+              ? 'Pesquisa qualitativa com delineamento de Design-Based Research (DBR), caracterizada pela iteração entre o desenvolvimento da intervenção e a investigação sistemática de seus efeitos em contexto real. Análise de dados: Análise de Conteúdo de Bardin (eixo aplicado) e Análise Textual Discursiva — Moraes & Galiazzi (eixo discursivo).'
+              : lang==='en'
+              ? 'Qualitative research with a Design-Based Research (DBR) design, characterized by iteration between the intervention development and systematic investigation of its effects in real context. Data analysis: Bardin Content Analysis (applied axis) and Discursive Textual Analysis — Moraes & Galiazzi (discursive axis).'
+              : 'Investigación cualitativa con diseño de Investigación Basada en el Diseño (DBR), caracterizada por la iteración entre el desarrollo de la intervención y la investigación sistemática de sus efectos en contexto real.'}
+          </p>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+            {[
+              lang==='pt' ? 'Logs completos (prompts + respostas + código)' : lang==='en' ? 'Complete logs (prompts + responses + code)' : 'Logs completos (prompts + respuestas + código)',
+              lang==='pt' ? 'Rubrica baseada em Johnstone' : lang==='en' ? 'Johnstone-based rubric' : 'Rúbrica basada en Johnstone',
+              lang==='pt' ? 'Entrevistas semiestruturadas' : lang==='en' ? 'Semi-structured interviews' : 'Entrevistas semiestructuradas',
+            ].map(tag => (
+              <span key={tag} style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.7rem', border:`1px solid ${LINE}`, color: TX3, padding:'5px 10px', borderRadius:8 }}>{tag}</span>
+            ))}
+          </div>
+        </div>
+
+        {/* Collaboration */}
+        <div style={{ borderTop:`1px solid ${LINE}`, paddingTop:40, display:'grid', gridTemplateColumns:'1fr 1fr', gap:18 }}>
+          <div>
+            <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.68rem', color: a2, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:10 }}>
+              {lang==='pt' ? 'Colaboração e contato' : lang==='en' ? 'Collaboration & contact' : 'Colaboración y contacto'}
+            </div>
+            <p style={{ color: TX2, fontSize:'0.9rem', lineHeight:1.75, marginBottom:16 }}>
+              {lang==='pt'
+                ? 'Pesquisadores e instituições interessados em colaborar, replicar a metodologia ou hospedar a plataforma podem entrar em contato com o grupo de pesquisa do PPGECiMa/UCS. Protocolos, rubricas e documentação técnica estão sendo organizados para uso por terceiros mediante os devidos cuidados éticos.'
+                : lang==='en'
+                ? 'Researchers and institutions interested in collaborating, replicating the methodology or hosting the platform may contact the PPGECiMa/UCS research group. Protocols, rubrics and technical documentation are being organized for third-party use under appropriate ethical safeguards.'
+                : 'Investigadores e instituciones interesados en colaborar, replicar la metodología u hospedar la plataforma pueden contactar al grupo de investigación PPGECiMa/UCS.'}
+            </p>
+          </div>
+          <div style={{ background: PANEL, border:`1px solid ${LINE}`, borderRadius:14, padding:22 }}>
+            <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.68rem', color: TX3, marginBottom:10, textTransform:'uppercase', letterSpacing:'0.08em' }}>PPGECiMa · UCS · CIAGE</div>
+            <div style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, color: TX, marginBottom:4 }}>Pedro Bender Randon</div>
+            <div style={{ fontSize:'0.83rem', color: TX2, marginBottom:12 }}>Universidade de Caxias do Sul</div>
+            <div style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, color: TX, marginBottom:4 }}>Prof. Dr. Agostinho Serrano de Andrade Neto</div>
+            <div style={{ fontSize:'0.83rem', color: TX2 }}>{lang==='pt' ? 'Orientador · PPGECiMa / CIAGE / UCS' : lang==='en' ? 'Advisor · PPGECiMa / CIAGE / UCS' : 'Director · PPGECiMa / CIAGE / UCS'}</div>
+          </div>
+        </div>
       </SectionWrap>
     </>
   );
@@ -1144,7 +1493,7 @@ export default function LandingPage() {
             {/* Lang */}
             <div style={{ display:'flex', border:`1px solid ${LINE}`, borderRadius:9, overflow:'hidden', fontFamily:"'JetBrains Mono',monospace", fontSize:'0.72rem' }}>
               {(['pt','en','es'] as Lang[]).map(l => (
-                <button key={l} onClick={() => setLang(l)} style={{ padding:'6px 9px', border:'none', cursor:'pointer', textTransform:'uppercase', fontWeight: lang===l ? 700 : 400, background: lang===l ? a2 : 'transparent', color: lang===l ? '#fff' : TX3, transition:'all .15s' }}>{l}</button>
+                <button key={l} onClick={() => setLang(l)} style={{ padding:'6px 9px', border:'none', cursor:'pointer', textTransform:'uppercase', fontWeight: lang===l ? 700 : 400, background: lang===l ? a2 : 'transparent', color: lang===l ? btnTx : TX3, transition:'all .15s' }}>{l}</button>
               ))}
             </div>
             {/* Colors */}
@@ -1165,7 +1514,7 @@ export default function LandingPage() {
               {dark ? <Sun size={15} /> : <Moon size={15} />}
             </button>
             {/* Login */}
-            <button onClick={() => navigate('/login')} style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 18px', borderRadius:10, border:'none', cursor:'pointer', background: GRAD, color:'#fff', fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'0.88rem', boxShadow:`0 4px 16px ${a2}45` }}>
+            <button onClick={() => navigate('/login')} style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 18px', borderRadius:10, border:'none', cursor:'pointer', background: GRAD, color: btnTx, fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'0.88rem', boxShadow:`0 4px 16px ${a2}45` }}>
               {t('navLogin')} <ChevronRight size={14} />
             </button>
           </div>
