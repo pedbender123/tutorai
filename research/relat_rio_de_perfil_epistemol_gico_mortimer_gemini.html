@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCAFFL-EPA: Analisador de Perfis Epistemológicos de Mortimer</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+        /* Custom scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        .active-tab {
+            background-color: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white">
+
+    <!-- Top Navigation Header -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50 px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-3">
+            <div class="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg shadow-blue-500/10">
+                <i data-lucide="brain-circuit" class="w-6 h-6 text-white animate-pulse"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 via-indigo-200 to-white bg-clip-text text-transparent">
+                    SCAFFL-EPA
+                </h1>
+                <p class="text-xs text-slate-400 font-medium">Analisador de Perfis Epistemológicos & Obstáculos de Bachelard</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="flex h-2 w-2 relative">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span class="text-xs text-emerald-400 font-semibold uppercase tracking-wider bg-emerald-950/50 border border-emerald-800/30 px-2.5 py-1 rounded-full">
+                Dados Piloto (Junho/2026)
+            </span>
+        </div>
+    </header>
+
+    <div class="flex flex-1 flex-col md:flex-row">
+        <!-- Sidebar Navigation -->
+        <aside class="w-full md:w-80 border-r border-slate-800 bg-slate-900/40 p-6 flex flex-col gap-6 shrink-0">
+            <div>
+                <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Módulos do Relatório</p>
+                <nav class="flex flex-col gap-2">
+                    <button id="btn-framework" onclick="switchTab('framework')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-400 hover:text-slate-100 hover:bg-slate-800/50 transition duration-200 text-left">
+                        <i data-lucide="book-open" class="w-4 h-4"></i>
+                        Fundamentação Teórica
+                    </button>
+                    <button id="btn-students" onclick="switchTab('students')" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold active-tab transition duration-200 text-left">
+                        <span class="flex items-center gap-3">
+                            <i data-lucide="users" class="w-4 h-4"></i>
+                            Análise dos Estudantes
+                        </span>
+                        <span class="bg-slate-950 text-blue-400 px-2 py-0.5 rounded-md text-xs font-bold">5</span>
+                    </button>
+                    <button id="btn-matrix" onclick="switchTab('matrix')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-400 hover:text-slate-100 hover:bg-slate-800/50 transition duration-200 text-left">
+                        <i data-lucide="grid" class="w-4 h-4"></i>
+                        Matriz Comparativa
+                    </button>
+                    <button id="btn-guidelines" onclick="switchTab('guidelines')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-400 hover:text-slate-100 hover:bg-slate-800/50 transition duration-200 text-left">
+                        <i data-lucide="sparkles" class="w-4 h-4"></i>
+                        Diretrizes Pedagógicas
+                    </button>
+                </nav>
+            </div>
+
+            <div class="border-t border-slate-800/60 pt-6">
+                <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Estudantes sob Análise</p>
+                <div class="flex flex-col gap-1.5" id="student-menu-list">
+                    <!-- Dynamic Student Buttons -->
+                </div>
+            </div>
+
+            <!-- Theory Card -->
+            <div class="mt-auto p-4 bg-gradient-to-br from-indigo-950/40 to-slate-900 border border-indigo-800/20 rounded-2xl">
+                <div class="flex items-center gap-2 text-indigo-400 mb-2">
+                    <i data-lucide="info" class="w-4 h-4"></i>
+                    <h4 class="text-xs font-bold uppercase tracking-wider">Metodologia</h4>
+                </div>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    A análise cruza as falas e prompts dos alunos com as 4 zonas do perfil conceitual de Mortimer e identifica os obstáculos epistemológicos descritos por Gaston Bachelard.
+                </p>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 p-6 md:p-8 overflow-y-auto max-w-7xl mx-auto w-full">
+            
+            <!-- TAB 1: FRAMEWORK -->
+            <section id="tab-framework" class="hidden space-y-8 animate-fade-in">
+                <div class="space-y-4">
+                    <h2 class="text-3xl font-extrabold tracking-tight">Referencial Teórico: Mortimer & Bachelard</h2>
+                    <p class="text-slate-400 max-w-4xl">
+                        Compreender o processo de ensino-aprendizagem de conceitos científicos exige uma visão não linear do conhecimento. Esta seção sintetiza a epistemologia de Gaston Bachelard e sua transposição para a psicologia da aprendizagem por Eduardo Mortimer.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                        <div class="flex items-center gap-3">
+                            <span class="p-2 bg-blue-500/10 text-blue-400 rounded-xl">
+                                <i data-lucide="shield-alert" class="w-5 h-5"></i>
+                            </span>
+                            <h3 class="text-lg font-bold">1. Gaston Bachelard e os Obstáculos Epistemológicos</h3>
+                        </div>
+                        <p class="text-sm text-slate-300 leading-relaxed">
+                            Bachelard propõe que a ciência progride por <strong>rupturas epistemológicas</strong>. O conhecimento prévio, advindo do senso comum ou de impressões sensoriais diretas, atua como um <em>obstáculo epistemológico</em> que impede o acesso ao conhecimento puramente racional.
+                        </p>
+                        <ul class="space-y-3 text-sm text-slate-400">
+                            <li class="flex items-start gap-2">
+                                <span class="text-blue-400 font-bold">•</span>
+                                <div><strong>Obstáculo Substancialista:</strong> Atribuir qualidades macroscópicas ocultas ou substâncias místicas a fenômenos microscópicos (ex: "o feijão come a água", "a bolacha fica mole porque a propriedade 'mole' passa da água para ela").</div>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-blue-400 font-bold">•</span>
+                                <div><strong>Obstáculo Sensorial/Realista:</strong> Tomar a percepção direta do olho/tato como verdade absoluta e autossuficiente, dispensando abstrações matemáticas ou moleculares.</div>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-blue-400 font-bold">•</span>
+                                <div><strong>Obstáculo Verbalista:</strong> Usar jargão científico ("mols", "pH", "átomos") como etiquetas vazias, sem compreender a malha relacional subjacente.</div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                        <div class="flex items-center gap-3">
+                            <span class="p-2 bg-indigo-500/10 text-indigo-400 rounded-xl">
+                                <i data-lucide="git-branch" class="w-5 h-5"></i>
+                            </span>
+                            <h3 class="text-lg font-bold">2. Eduardo Mortimer e os Perfis Conceituais</h3>
+                        </div>
+                        <p class="text-sm text-slate-300 leading-relaxed">
+                            Mortimer transpõe Bachelard afirmando que os alunos não apagam o senso comum para dar lugar ao conhecimento científico. Em vez disso, eles constroem um <strong>Perfil Conceitual heterogêneo</strong>, composto por diferentes zonas que coexistem. A aprendizagem efetiva consiste em saber <em>qual zona mobilizar</em> de acordo com o contexto (metacognição).
+                        </p>
+                        <div class="grid grid-cols-2 gap-3 text-xs">
+                            <div class="p-3 bg-slate-950 rounded-xl border border-slate-800/60">
+                                <span class="text-rose-400 font-bold uppercase tracking-wider block mb-1 text-[10px]">Zona Sensorial</span>
+                                Conceito atrelado às propriedades perceptíveis do dia a dia.
+                            </div>
+                            <div class="p-3 bg-slate-950 rounded-xl border border-slate-800/60">
+                                <span class="text-amber-400 font-bold uppercase tracking-wider block mb-1 text-[10px]">Zona Empirista</span>
+                                Explicações baseadas em utilidade prática e observação macroscópica linear.
+                            </div>
+                            <div class="p-3 bg-slate-950 rounded-xl border border-slate-800/60">
+                                <span class="text-emerald-400 font-bold uppercase tracking-wider block mb-1 text-[10px]">Zona Racionalista Simples</span>
+                                Uso correto de modelos atômico-moleculares e equações químicas formais.
+                            </div>
+                            <div class="p-3 bg-slate-950 rounded-xl border border-slate-800/60">
+                                <span class="text-blue-400 font-bold uppercase tracking-wider block mb-1 text-[10px]">Zona Racionalista Complexa</span>
+                                Relações dinâmicas sistêmicas (equilíbrio químico, termodinâmica).
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rupture Flowchart -->
+                <div class="bg-gradient-to-r from-blue-950/20 via-indigo-950/20 to-slate-900 border border-slate-800 p-8 rounded-2xl flex flex-col items-center justify-center gap-6 text-center">
+                    <h4 class="text-sm font-bold uppercase tracking-widest text-slate-400">O Fluxo da Evolução Cognitiva no Scaffl</h4>
+                    <div class="flex flex-col md:flex-row items-center gap-4 w-full max-w-3xl">
+                        <div class="flex-1 p-4 bg-slate-900 border border-slate-800 rounded-xl text-xs space-y-1">
+                            <span class="text-rose-400 font-bold">1. Intuição Sensorial</span>
+                            <p class="text-slate-400">O estudante inicia com ideias cotidianas (ex: "biscuit mole").</p>
+                        </div>
+                        <i data-lucide="arrow-right" class="w-5 h-5 text-slate-600 hidden md:block"></i>
+                        <div class="flex-1 p-4 bg-slate-900 border border-slate-800 rounded-xl text-xs space-y-1">
+                            <span class="text-amber-400 font-bold">2. Conflito Empírico</span>
+                            <p class="text-slate-400">Tenta programar no Lab ou pergunta ao tutor como reproduzir.</p>
+                        </div>
+                        <i data-lucide="arrow-right" class="w-5 h-5 text-slate-600 hidden md:block"></i>
+                        <div class="flex-1 p-4 bg-slate-900 border border-slate-800 rounded-xl text-xs space-y-1">
+                            <span class="text-emerald-400 font-bold">3. Ruptura Racionalista</span>
+                            <p class="text-slate-400">Adota o modelo microscópico de partículas e cinético-molecular.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: STUDENT ANALYSIS (DYNAMIC) -->
+            <section id="tab-students" class="space-y-8 animate-fade-in">
+                <!-- Selected Student Header Card -->
+                <div id="student-header-card"></div>
+
+                <!-- Quick Stats / Profile Distribution Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between space-y-4">
+                        <div>
+                            <h3 class="text-lg font-bold flex items-center gap-2">
+                                <i data-lucide="sliders" class="w-5 h-5 text-blue-400"></i>
+                                Distribuição do Perfil Conceitual (Mortimer)
+                            </h3>
+                            <p class="text-xs text-slate-400">Abaixo, veja a estimativa consolidada do engajamento do estudante em cada zona teórica ao longo de todas as suas conversas.</p>
+                        </div>
+                        <div class="space-y-4" id="profile-bars-container">
+                            <!-- JS Dynamic Profile Bars -->
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between space-y-4">
+                        <div>
+                            <h3 class="text-lg font-bold flex items-center gap-2">
+                                <i data-lucide="shield-alert" class="w-5 h-5 text-amber-500"></i>
+                                Diagnóstico de Obstáculos
+                            </h3>
+                            <p class="text-xs text-slate-400">Barreiras de aprendizagem identificadas nas interações.</p>
+                        </div>
+                        <div class="space-y-3" id="obstacles-container">
+                            <!-- JS Dynamic Obstacles List -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat by Chat Timeline (1 by 1 Analysis) -->
+                <div class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold flex items-center gap-2">
+                            <i data-lucide="message-square" class="w-5 h-5 text-indigo-400"></i>
+                            Análise Individualizada das Conversas (1 por 1)
+                        </h3>
+                        <span class="text-xs text-slate-400 font-mono" id="chats-count"></span>
+                    </div>
+
+                    <div class="space-y-6" id="chats-timeline-container">
+                        <!-- Dynamic Chat Timeline Cards -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: COMPARATIVE MATRIX -->
+            <section id="tab-matrix" class="hidden space-y-8 animate-fade-in">
+                <div class="space-y-4">
+                    <h2 class="text-3xl font-extrabold tracking-tight">Matriz Comparativa dos Perfis Cognitivos</h2>
+                    <p class="text-slate-400 max-w-4xl">
+                        Visão comparativa de todo o grupo de alunos piloto. Esta tabela permite contrastar os compromissos epistemológicos, permitindo ao professor formular agrupamentos mais heterogêneos para as dinâmicas de sala de aula.
+                    </p>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-950 text-slate-400 uppercase tracking-wider text-xs border-b border-slate-800">
+                                <tr>
+                                    <th class="px-6 py-4">Estudante</th>
+                                    <th class="px-6 py-4">Foco dos Projetos (Lab)</th>
+                                    <th class="px-6 py-4">Zonas Predominantes</th>
+                                    <th class="px-6 py-4 text-center">Nº de Chats</th>
+                                    <th class="px-6 py-4">Obstáculo Principal</th>
+                                    <th class="px-6 py-4">Potencial de Transição</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800/60" id="comparison-table-body">
+                                <!-- Dynamic JS Generation -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Global Group Insights Card -->
+                <div class="bg-gradient-to-br from-indigo-950/20 to-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                    <h3 class="text-lg font-bold flex items-center gap-2">
+                        <i data-lucide="trending-up" class="w-5 h-5 text-indigo-400"></i>
+                        Padrões e Insights Identificados no Grupo Piloto
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+                        <div class="space-y-2">
+                            <h4 class="font-bold text-blue-400">Salto Cognitivo no Petrus</h4>
+                            <p class="text-slate-400 text-xs leading-relaxed">
+                                Estudantes como <strong>Franco (E1)</strong> e <strong>Lorenzo (E3)</strong> demonstraram perguntas muito mais complexas e voltadas para a zona Racionalista Clássica/Relacional quando interagiam com o tutor virtual Petrus do que quando criavam códigos com o Lab Agent. O canal dialógico favorece o amadurecimento conceitual.
+                            </p>
+                        </div>
+                        <div class="space-y-2">
+                            <h4 class="font-bold text-amber-400">O Obstáculo Tecnológico</h4>
+                            <p class="text-slate-400 text-xs leading-relaxed">
+                                <strong>Pedro Henrique (E2)</strong> centrou seu diálogo no desenvolvimento do "script" de código. Isso mostra que as dificuldades operacionais da simulação podem ofuscar o engajamento com os conceitos químicos fundamentais se não forem devidamente monitoradas pelo professor.
+                            </p>
+                        </div>
+                        <div class="space-y-2">
+                            <h4 class="font-bold text-emerald-400">A Riqueza da Multizonalidade</h4>
+                            <p class="text-slate-400 text-xs leading-relaxed">
+                                <strong>Isadora Maria (E5)</strong> exemplifica com maestria o modelo de Mortimer: ela transitou perfeitamente entre o rigor racionalista e a aplicação pragmática e sensorial do dia a dia (gloss labial, indicadores do cotidiano). Ela não "apagou" o senso comum, mas usou a química para iluminá-lo.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: PEDAGOGICAL GUIDELINES -->
+            <section id="tab-guidelines" class="hidden space-y-8 animate-fade-in">
+                <div class="space-y-4">
+                    <h2 class="text-3xl font-extrabold tracking-tight">Diretrizes de Mediação Baseadas no Perfil</h2>
+                    <p class="text-slate-400 max-w-4xl">
+                        Como utilizar os perfis epistemológicos analisados para planejar intervenções pedagógicas assertivas em sala de aula física e na plataforma digital.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                        <h3 class="text-lg font-bold flex items-center gap-2 text-blue-400">
+                            <i data-lucide="file-text" class="w-5 h-5"></i>
+                            Elaboração de Roteiros de Conflito Cognitivo
+                        </h3>
+                        <p class="text-sm text-slate-300 leading-relaxed">
+                            Para incentivar a ruptura com as visões sensoriais e substancialistas (como a ideia de que "partículas de bolacha ficam moles" ou que o "fermento biológico simplesmente come e respira"), os roteiros devem conter perguntas disruptivas:
+                        </p>
+                        <blockquote class="border-l-2 border-blue-500 pl-4 py-1 text-xs text-slate-400 italic">
+                            "Se as partículas individuais da bolacha não se tornam 'moles' sozinhas, como o arranjo espacial e as pontes de hidrogênio da água alteram a flexibilidade da malha molecular do amido?"
+                        </blockquote>
+                        <p class="text-xs text-slate-400">
+                            <strong>Meta:</strong> Forçar o trânsito da Zona Sensorial para a Racionalista/Relacional por meio da modelagem mecânica de propriedades macroscópicas.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                        <h3 class="text-lg font-bold flex items-center gap-2 text-indigo-400">
+                            <i data-lucide="git-merge" class="w-5 h-5"></i>
+                            Configuração Socrática de Chatbots (Petrus)
+                        </h3>
+                        <p class="text-sm text-slate-300 leading-relaxed">
+                            O Petrus deve ser parametrizado para não entregar a resposta pronta na Zona Racionalista diretamente aos alunos que estão na Zona Empirista (como Pedro Henrique com dúvidas de código). Ele deve retroalimentar a pergunta relacionando a física do modelo:
+                        </p>
+                        <blockquote class="border-l-2 border-indigo-500 pl-4 py-1 text-xs text-slate-400 italic">
+                            "Para fazer o seu termômetro funcionar na tela, quais regras físicas sobre a energia cinética e a colisão das moléculas nós precisamos traduzir em código Javascript?"
+                        </blockquote>
+                        <p class="text-xs text-slate-400">
+                            <strong>Meta:</strong> Evitar o obstáculo instrumental, forçando o estudante a conectar o código à teoria termodinâmica clássica.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                    <h3 class="text-lg font-bold flex items-center gap-2">
+                        <i data-lucide="check-square" class="w-5 h-5 text-emerald-400"></i>
+                        Checklist do Professor no Lab de Simuladores
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-slate-400">
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="check" class="w-5 h-5 text-emerald-500 shrink-0 mt-0.5"></i>
+                            <div><strong>Rastrear a linguagem:</strong> Fique atento a analogias ingênuas nas apresentações orais. Use-as como trampolim para a explicação corpuscular.</div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="check" class="w-5 h-5 text-emerald-500 shrink-0 mt-0.5"></i>
+                            <div><strong>Não proibir o cotidiano:</strong> Promova a "multizonalidade consciente" (como no caso do gloss labial), mostrando que o cientista também transita entre o sensorial e o racional.</div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="check" class="w-5 h-5 text-emerald-500 shrink-0 mt-0.5"></i>
+                            <div><strong>Romper o pragmatismo mecânico:</strong> Quando o aluno comemorar que "o simulador rodou", pergunte: "Mas o que as bolinhas azuis representam de verdade na natureza?".</div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="check" class="w-5 h-5 text-emerald-500 shrink-0 mt-0.5"></i>
+                            <div><strong>Desafiar a simplificação didática:</strong> Estudantes que pedem fórmulas ou simplificações exageradas devem ser instigados a pensar nos limites desses modelos (ex: por que o modelo de gás ideal falha em pressões extremas?).</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Interactive Data Structure for JS -->
+    <script>
+        // Database structured exactly from raw md interactions and mortimer theoretical guidelines
+        const studentsData = [
+            {
+                id: "e1",
+                name: "Franco Augusto Panassol",
+                initials: "FP",
+                code: "Estudante A (E1)",
+                description: "Estudante proativo que apresenta evolução nítida. Inicia com analogias fortemente sensoriais e biológicas no Lab Agent, mas atinge um nível elevado de abstração racionalista e relacional ao ser instigado a formular perguntas conceituais para o chatbot Petrus.",
+                profile: {
+                    sensorial: 25,
+                    empirista: 25,
+                    racionalista: 45,
+                    complexo: 5
+                },
+                obstacles: [
+                    { title: "Substancialização", desc: "Mapeamento direto de propriedades macroscópicas ('mole') para o nível submicroscópico." },
+                    { title: "Conhecimento Geral", desc: "Uso do modelo de germinação vegetal (feijão/algodão) como substituto para modelagem de processos puramente químicos." }
+                ],
+                chats: [
+                    {
+                        number: 1,
+                        agent: "Lab Agent (Código)",
+                        id: "a75b8fec-5971-4413-a631-6c2a1da8082f",
+                        dominantZone: "Sensorial / Substancialista",
+                        dominantZoneColor: "rose",
+                        prompt: "Simule as particulas de uma bolacha que era sólida e depois de ficar molhada ficou mole",
+                        analysis: "Neste chat com o Lab, Franco manifesta claramente a Zona Sensorial/Substancialista. Ele deseja ver a 'molhabilidade' e o estado 'mole' retratados nas partículas individuais da bolacha. Há uma transposição direta de uma sensação do tato (mole/sólida) para as entidades corpusculares microscópicas. No nível atômico-molecular, o amolecimento decorre da quebra de forças intermoleculares do amido decorrentes do ingresso de água por solvatação e plastificação. Franco quer ver a partícula de bolcha em si 'mudar de consistência'.",
+                        mediation: "O professor deve instigar Franco a pensar: 'Será que uma molécula de amido sozinha é mole ou dura? Ou essas qualidades dependem do espaço e do tipo de ligação entre elas e as moléculas de água?'"
+                    },
+                    {
+                        number: 2,
+                        agent: "Lab Agent (Código)",
+                        id: "367b2e48-b7f6-49be-99a6-5a47581c7877",
+                        dominantZone: "Empirista / Pragmático",
+                        dominantZoneColor: "amber",
+                        prompt: "fassa uma simulação do experimento do feijao e o algodao so que com a agua",
+                        analysis: "Aqui, Franco recua em termos de abstração química para uma zona predominantemente Empirista/Pragmática e observacional, focada no contexto biológico escolar clássico (feijão no algodão). Ele busca representar macroscopicamente um fenômeno natural conhecido, focando na observação imediata do experimento e no ato de regar, em vez de estabelecer relações atômico-moleculares ou reações cinéticas.",
+                        mediation: "Conectar o experimento biológico aos processos químicos internos da semente (respiração celular de glicose, ativação enzimática pela água), forçando o aluno a olhar para o lado invisível da biologia."
+                    },
+                    {
+                        number: 3,
+                        agent: "Tutor Petrus (Pedagógico)",
+                        id: "48ebfa26-8798-4c3a-bc44-598d929b9f93",
+                        dominantZone: "Racionalista / Relacional",
+                        dominantZoneColor: "emerald",
+                        prompt: "Como o calor afeta a velocidade de uma reação quimica... E a concentração de reagentes, o que muda?... Como a energia cinetica se relaciona com a energia termica",
+                        analysis: "Neste longo diálogo com o Petrus, Franco realiza uma fantástica ruptura epistemológica em direção à Zona Racionalista/Relacional. Ele abandona as analogias sensoriais comuns e adota a linguagem da física-química formal: estuda cinética química, as colisões moleculares decorrentes do aquecimento, e a relação direta entre energia cinética macro/micro e energia térmica conceitual. Há um compromisso sério em consolidar um modelo de partículas coerente.",
+                        mediation: "Apresentar a Teoria das Colisões de Arrhenius e a equação cinético-molecular matemática, estabilizando e aprofundando esta zona racionalista que acabou de se consolidar."
+                    }
+                ]
+            },
+            {
+                id: "e2",
+                name: "Pedro Henrique Dal Pizzol",
+                initials: "PP",
+                code: "Estudante B (E2)",
+                description: "Estudante com forte perfil de engenheiro/desenvolvedor. Seus compromissos cognitivos residem essencialmente na esfera procedimental e tecnológica. Apresenta o obstáculo pragmático e utilitário de forma muito pronunciada.",
+                profile: {
+                    sensorial: 10,
+                    empirista: 75,
+                    racionalista: 15,
+                    complexo: 0
+                },
+                obstacles: [
+                    { title: "Pragmatismo Instrumental", desc: "Concentração excessiva em detalhes técnicos e estruturais (código, botões, script) em detrimento da teoria de termodinâmica molecular." }
+                ],
+                chats: [
+                    {
+                        number: 1,
+                        agent: "Lab Agent (Código)",
+                        id: "63b0fd82-f5db-44c1-8409-eb7d79b908eb",
+                        dominantZone: "Empirista / Pragmático",
+                        dominantZoneColor: "amber",
+                        prompt: "crie um simulador em que tenha um recepiente com agua e nela ocorra alteração de temperatura e que o usuario mude a temperatura",
+                        analysis: "Pedro Henrique expressa suas metas de design focando na interatividade imediata do usuário (criar botões, controlar a temperatura da água na interface). Sua abordagem é Pragmática/Empirista: foca no controle mecânico das variáveis macroscópicas na tela, ignorando no prompt inicial quaisquer demandas de visualização do arranjo microscópico das moléculas de água líquida frente ao calor.",
+                        mediation: "Questionar o aluno sobre como ele codificaria as moléculas de água: 'No seu script, o que você vai programar para as moléculas fazerem quando o usuário arrastar a barra de temperatura para cima? Elas vão vibrar mais? Vão se espalhar?'"
+                    },
+                    {
+                        number: 2,
+                        agent: "Tutor Petrus (Pedagógico)",
+                        id: "0aac3403-582b-4e1a-895d-f12a927af5e5",
+                        dominantZone: "Empirista / Pragmático",
+                        dominantZoneColor: "amber",
+                        prompt: "como faço um simulador de alteração de temperatura na agua... certo, mas no simulador, o que deve ter no script?",
+                        analysis: "No diálogo com o Petrus, o obstáculo instrumental fica ainda mais evidente. Pedro Henrique não pergunta sobre calor latente, pontes de hidrogênio ou entropia do sistema. Ele quer saber expressamente o que deve escrever no 'script'. Sua cognição está direcionada a aprender a sintaxe do código e resolver o problema prático de engenharia que a atividade solicita.",
+                        mediation: "O professor/tutor virtual deve orientá-lo por meio de analogias de mapeamento: 'O script é uma lei física escrita em código. Para que o script funcione, qual regra da física molecular você precisa ditar para o computador seguir?'"
+                    }
+                ]
+            },
+            {
+                id: "e3",
+                name: "Lorenzo Valente de Oliveira",
+                initials: "LO",
+                code: "Estudante C (E3)",
+                description: "Estudante focado em biologia e processos biotecnológicos. Apresenta transição interessante entre ideias animistas (biológicas) e formulação de equações atômicas formais.",
+                profile: {
+                    sensorial: 30,
+                    empirista: 20,
+                    racionalista: 45,
+                    complexo: 5
+                },
+                obstacles: [
+                    { title: "Obstáculo Animista/Vitalista", desc: "Uso do conceito de 'fermento vivo' que consome açúcar como explicação metabólica totalizante, mascarando o mecanismo de reação química orgânica." }
+                ],
+                chats: [
+                    {
+                        number: 1,
+                        agent: "Lab Agent (Código)",
+                        id: "9c1a011a-3e5e-49b0-a50d-d42398b96495",
+                        dominantZone: "Sensorial / Substancialista",
+                        dominantZoneColor: "rose",
+                        prompt: "gostaria de uma simulação da reaçao da fermentaçao de um fermento biologico",
+                        analysis: "Lorenzo começa com uma contextualização biológica cotidiana: o fermento biológico doméstico. Esta zona inicial aproxima-se do Sensorial/Substancialista (vitalismo) onde a fermentação é vista como a respiração ou consumo por parte de 'organismos vivos'. No entanto, ao pedir explicitamente a 'reação', ele manifesta o desejo de formalizar este processo na forma de um modelo científico.",
+                        mediation: "Ajudá-lo a transicionar mostrando que, apesar de ser um processo conduzido por células vivas (leveduras), o que de fato ocorre é um conjunto de reações químicas catalisadas por enzimas que podem ser modeladas atomicamente."
+                    },
+                    {
+                        number: 2,
+                        agent: "Tutor Petrus (Pedagógico)",
+                        id: "f6b6ba63-3112-4f36-bebf-ea8921df2a1a",
+                        dominantZone: "Racionalista / Relacional",
+                        dominantZoneColor: "emerald",
+                        prompt: "fale um pouco mais sobre fermentação biológica... e qual a reação química da fermentação biológica?... explique mais sobre essa reação de forma simples",
+                        analysis: "Com o Petrus, Lorenzo consolida a Zona Racionalista Clássica/Relacional. Ele busca diretamente a equação balanceada da fermentação alcoólica ($C_6H_{12}O_6 \\rightarrow 2 C_2H_5OH + 2 CO_2$). Ele quer correlacionar o estufamento do bolo (macro) com a geração do gás carbônico molecular (micro). Ao pedir para explicar 'de forma simples', ele procura construir pontes cognitivas saudáveis entre o modelo rígido de fórmulas orgânicas e sua percepção sensorial diária.",
+                        mediation: "Apresentar a estrutura tridimensional da glicose e o papel ativo das enzimas, mostrando que a química da fermentação é um exemplo magnífico de termodinâmica bioquímica em ação."
+                    }
+                ]
+            },
+            {
+                id: "e4",
+                name: "João Pedro Borges",
+                initials: "JB",
+                code: "Estudante D (E4)",
+                description: "Estudante com forte inclinação conceitual científica clássica. Dispensa descrições metafóricas ou puramente cotidianas, engajando-se de forma direta em formulações teóricas abstratas de física estatística e gases ideais.",
+                profile: {
+                    sensorial: 5,
+                    empirista: 10,
+                    racionalista: 75,
+                    complexo: 10
+                },
+                obstacles: [
+                    { title: "Verbalismo Focado", desc: "Risco de decorar equações e terminologias de termodinâmica de forma mecânica sem aplicá-las a situações práticas imperfeitas da natureza." }
+                ],
+                chats: [
+                    {
+                        number: 1,
+                        agent: "Lab Agent (Código)",
+                        id: "5c34cb12-87ba-4e92-bc12-f12ab7c2ef48",
+                        dominantZone: "Racionalista / Relacional",
+                        dominantZoneColor: "emerald",
+                        prompt: "simule o comportamento das moleculas de um gas no recipiente quando aquecido",
+                        analysis: "João Pedro já inicia sua interação na plataforma na Zona Racionalista/Relacional. Ele não propõe representações sensoriais como bolacha ou termômetros funcionais. Ele quer simular 'o comportamento das moléculas de um gás no recipiente quando aquecido'. Ele assume e exige a natureza corpuscular da matéria e as premissas básicas da teoria cinética dos gases logo em seu primeiro prompt.",
+                        mediation: "Provocar o aluno com parâmetros de gases reais: 'E o que aconteceria se você diminuísse muito o tamanho do recipiente a ponto de termos interações intermoleculares atrativas e repulsivas entre as moléculas do gás?'"
+                    },
+                    {
+                        number: 2,
+                        agent: "Tutor Petrus (Pedagógico)",
+                        id: "d2b71944-9c12-421b-bf1c-a3f29b79412a",
+                        dominantZone: "Racionalista / Relacional",
+                        dominantZoneColor: "emerald",
+                        prompt: "o que acontece quando aquecemos um gas?... e qual a relaçao disso com a pressao?",
+                        analysis: "No diálogo com Petrus, João Pedro aprofunda suas conexões relacionais científicas. Ele investiga como as variáveis termodinâmicas macro (Temperatura e Pressão) emergem estatisticamente do comportamento das colisões das partículas (micro). Ele constrói uma sólida malha relacional baseada na Lei de Gay-Lussac e na equação de Clapeyron.",
+                        mediation: "Introduzir a interpretação matemática e estatística da temperatura ($E_k = \\frac{3}{2}k_BT$), estimulando-o a transitar para a Zona Racionalista Complexa onde modelos matemáticos de alta abstração explicam o cosmos."
+                    }
+                ]
+            },
+            {
+                id: "e5",
+                name: "Isadora Maria de Sousa",
+                initials: "IS",
+                code: "Estudante E (E5)",
+                description: "Estudante que apresenta o perfil mais rico, equilibrado e heterogêneo do grupo. Demonstra enorme flexibilidade mental para mover-se conscientemente em todas as zonas do perfil conceitual, aplicando conceitos complexos de pH e neutralização a cosméticos e alimentos.",
+                profile: {
+                    sensorial: 25,
+                    empirista: 25,
+                    racionalista: 45,
+                    complexo: 5
+                },
+                obstacles: [
+                    { title: "Verbalismo Parcial", desc: "Perguntas pontuais sobre a estrutura interna de indicadores como a fenolftaleína, resolvidas de forma rápida pelo tutor, necessitando de aprofundamento orgânico." }
+                ],
+                chats: [
+                    {
+                        number: 1,
+                        agent: "Lab Agent (Código)",
+                        id: "92b00d38-1d00-4fa6-a168-69d0343b3589",
+                        dominantZone: "Multizonal / Heterogênea",
+                        dominantZoneColor: "purple",
+                        prompt: "Crie uma simulação de neutralização... Crie um gloss labial que muda de cor de acordo com o pH dos lábios... Crie um simulador de substâncias do cotidiano como limão, vinagre, sabão...",
+                        analysis: "Isadora exibe um comportamento espetacular neste chat multizonal. Ela inicia racionalmente solicitando uma simulação abstrata de neutralização ácido-base e escala matemática de pH. Logo em seguida, ela conecta esse saber a um cenário puramente Sensorial/Substancialista: um gloss labial cosmético que muda de cor nos lábios usando pigmentos sensíveis e ingredientes hidratantes (ácido hialurônico). Por fim, ela aterrissa na Zona Empirista/Pragmática solicitando testes com substâncias do cotidiano (vinagre, água sanitária). Esta incrível oscilação consciente constitui a síntese ideal do modelo de Mortimer: o saber racional enriquecendo a percepção do cotidiano.",
+                        mediation: "Orientar Isadora a desvendar a química dos corantes cosméticos sensíveis ao pH (como as antocianinas ou compostos sintéticos), mostrando como a estrutura química do pigmento muda sob ação dos íons $H^+$."
+                    },
+                    {
+                        number: 2,
+                        agent: "Tutor Petrus (Pedagógico)",
+                        id: "fe0087ee-02d4-4142-8463-a45f29e97cde",
+                        dominantZone: "Racionalista / Relacional",
+                        dominantZoneColor: "emerald",
+                        prompt: "Crie uma simulação da velocidade das reações químicas... mostrando partículas reagentes se movimentando, Temperatura, Concentração, Superfície...",
+                        analysis: "Isadora interage com o Petrus com foco na modelagem físico-química da cinética das reações. Ela desenha especificamente o roteiro de uma simulação clássica de teoria de colisões, elencando variáveis de estado fundamentais para a catálise. Seu pensamento está estruturado em volta de um modelo atômico-molecular sólido.",
+                        mediation: "Parabenizar o detalhamento e solicitar que ela relacione a superfície de contato ao número absoluto de colisões por unidade de tempo na interface sólido-líquido."
+                    },
+                    {
+                        number: 3,
+                        agent: "Tutor Petrus (Pedagógico)",
+                        id: "ab924169-40c0-4a19-82e1-326804a85bb8",
+                        dominantZone: "Empirista / Pragmático",
+                        dominantZoneColor: "amber",
+                        prompt: "Crie uma simulação da velocidade das reações químicas... (Repetição do prompt anterior)",
+                        analysis: "Este chat curto e repetitivo demonstra um momento de Pragmatismo/Utilitarismo tecnológico. Provavelmente por impaciência ou falha operacional na recepção das respostas da IA, Isadora repete o comando exato buscando apenas forçar o funcionamento adequado do gerador de códigos.",
+                        mediation: "Tratar esta interação como um desvio operacional inevitável no uso de plataformas de IA, não caracterizando evolução conceitual química."
+                    },
+                    {
+                        number: 4,
+                        agent: "Tutor Petrus (Pedagógico)",
+                        id: "7dbbe313-8be6-4261-af68-7481127e89d9",
+                        dominantZone: "Racionalista / Relacional",
+                        dominantZoneColor: "emerald",
+                        prompt: "O que é o pH exatamente?... Como a fenolftaleína muda de cor na presença de base?",
+                        analysis: "Em sua última conversa, Isadora busca consolidar conceitualmente as bases orgânicas de sua simulação inicial. Ela deseja superar o verbalismo do conceito 'pH' e compreender o mecanismo microscópico de transição cromática da fenolftaleína. Ela descobre que o indicador é um composto orgânico que reage estruturalmente (mudando o seu sistema conjugado de elétrons pi) na presença de íons hidroxila ($OH^-$), mudando sua absorbância espectral.",
+                        mediation: "Apresentar a fenolftaleína em suas duas formas estruturais principais, ilustrando o rearranjo da molécula quando ela perde ou ganha prótons ($H^+$)."
+                    }
+                ]
+            }
+        ];
+
+        // Active View State
+        let activeTab = 'students';
+        let activeStudentId = 'e1';
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            renderStudentMenu();
+            updateDashboard();
+            lucide.createIcons();
+        });
+
+        // Tab Switcher
+        function switchTab(tabId) {
+            // Update active state in sidebar buttons
+            const tabs = ['framework', 'students', 'matrix', 'guidelines'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`btn-${t}`);
+                if (btn) {
+                    if (t === tabId) {
+                        btn.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold active-tab transition duration-200 text-left";
+                    } else {
+                        btn.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-400 hover:text-slate-100 hover:bg-slate-800/50 transition duration-200 text-left";
+                    }
+                }
+                
+                const section = document.getElementById(`tab-${t}`);
+                if (section) {
+                    if (t === tabId) {
+                        section.classList.remove('hidden');
+                    } else {
+                        section.classList.add('hidden');
+                    }
+                }
+            });
+
+            activeTab = tabId;
+            if (tabId === 'matrix') {
+                renderComparisonMatrix();
+            }
+            lucide.createIcons();
+        }
+
+        // Render Sidebar Student Sub-menu
+        function renderStudentMenu() {
+            const listContainer = document.getElementById('student-menu-list');
+            listContainer.innerHTML = '';
+            
+            studentsData.forEach(student => {
+                const isActive = student.id === activeStudentId;
+                const activeClass = isActive 
+                    ? "bg-slate-800/80 text-blue-400 font-bold border-l-2 border-blue-500" 
+                    : "text-slate-400 hover:text-slate-100 hover:bg-slate-800/30";
+                
+                const btn = document.createElement('button');
+                btn.className = `w-full text-left px-3 py-2 text-xs rounded-lg transition-all flex items-center justify-between ${activeClass}`;
+                btn.onclick = () => selectStudent(student.id);
+                
+                btn.innerHTML = `
+                    <span class="truncate pr-2">${student.name}</span>
+                    <span class="text-[10px] font-mono bg-slate-900 border border-slate-800/80 px-1.5 py-0.5 rounded text-slate-500 shrink-0">${student.initials}</span>
+                `;
+                listContainer.appendChild(btn);
+            });
+        }
+
+        // Switch Active Student
+        function selectStudent(studentId) {
+            activeStudentId = studentId;
+            renderStudentMenu();
+            switchTab('students');
+            updateDashboard();
+        }
+
+        // Update Dashboard Elements dynamically based on student
+        function updateDashboard() {
+            const student = studentsData.find(s => s.id === activeStudentId);
+            if (!student) return;
+
+            // Render Header Card
+            const headerContainer = document.getElementById('student-header-card');
+            headerContainer.innerHTML = `
+                <div class="bg-gradient-to-r from-slate-900 to-indigo-950/30 border border-slate-800 p-6 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xl font-black text-white shadow-xl shadow-blue-500/10">
+                            ${student.initials}
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2.5">
+                                <h2 class="text-2xl font-black tracking-tight text-white">${student.name}</h2>
+                                <span class="bg-blue-950 border border-blue-800/40 text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">${student.code}</span>
+                            </div>
+                            <p class="text-sm text-slate-400 max-w-2xl leading-relaxed">${student.description}</p>
+                        </div>
+                    </div>
+                    <div class="bg-slate-950/80 border border-slate-800/80 p-4 rounded-xl flex items-center gap-4 shrink-0">
+                        <div class="text-center">
+                            <span class="block text-xs text-slate-500 font-semibold uppercase tracking-wider">Conversas</span>
+                            <span class="text-2xl font-black text-blue-400">${student.chats.length}</span>
+                        </div>
+                        <div class="h-8 w-px bg-slate-800"></div>
+                        <div class="text-center">
+                            <span class="block text-xs text-slate-500 font-semibold uppercase tracking-wider">Lab Code</span>
+                            <span class="text-2xl font-black text-amber-400">${student.chats.filter(c => c.agent.includes("Lab")).length}</span>
+                        </div>
+                        <div class="h-8 w-px bg-slate-800"></div>
+                        <div class="text-center">
+                            <span class="block text-xs text-slate-500 font-semibold uppercase tracking-wider">Petrus</span>
+                            <span class="text-2xl font-black text-emerald-400">${student.chats.filter(c => c.agent.includes("Petrus")).length}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Render Profile Bars
+            const barsContainer = document.getElementById('profile-bars-container');
+            barsContainer.innerHTML = '';
+            
+            const zones = [
+                { key: 'sensorial', label: 'Sensorial / Substancialista', color: 'bg-rose-500', text: 'text-rose-400' },
+                { key: 'empirista', label: 'Empirista / Pragmático', color: 'bg-amber-500', text: 'text-amber-400' },
+                { key: 'racionalista', label: 'Racionalista Simples / Relacional', color: 'bg-emerald-500', text: 'text-emerald-400' },
+                { key: 'complexo', label: 'Racionalista Complexo', color: 'bg-blue-500', text: 'text-blue-400' }
+            ];
+
+            zones.forEach(zone => {
+                const val = student.profile[zone.key];
+                barsContainer.appendChild(createBarElement(zone.label, val, zone.color, zone.text));
+            });
+
+            // Render Obstacles list
+            const obsContainer = document.getElementById('obstacles-container');
+            obsContainer.innerHTML = '';
+            student.obstacles.forEach(obs => {
+                const div = document.createElement('div');
+                div.className = "p-3 bg-slate-950 rounded-xl border border-slate-800/60 flex gap-3";
+                div.innerHTML = `
+                    <div class="p-1.5 bg-red-500/10 text-red-400 rounded-lg shrink-0 h-fit">
+                        <i data-lucide="ban" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-200">${obs.title}</h4>
+                        <p class="text-[11px] text-slate-400 leading-normal mt-0.5">${obs.desc}</p>
+                    </div>
+                `;
+                obsContainer.appendChild(div);
+            });
+
+            // Render Chats 1 by 1 Analysis
+            const timelineContainer = document.getElementById('chats-timeline-container');
+            timelineContainer.innerHTML = '';
+            document.getElementById('chats-count').textContent = `Total: ${student.chats.length} conversas analisadas`;
+
+            student.chats.forEach(chat => {
+                const isLab = chat.agent.includes("Lab");
+                const pillColorClass = chat.dominantZoneColor === 'rose' 
+                    ? 'bg-rose-950/50 border-rose-800/30 text-rose-400' 
+                    : chat.dominantZoneColor === 'amber' 
+                    ? 'bg-amber-950/50 border-amber-800/30 text-amber-400' 
+                    : chat.dominantZoneColor === 'emerald' 
+                    ? 'bg-emerald-950/50 border-emerald-800/30 text-emerald-400'
+                    : 'bg-purple-950/50 border-purple-800/30 text-purple-400';
+
+                const card = document.createElement('div');
+                card.className = "bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 relative overflow-hidden";
+                card.innerHTML = `
+                    <!-- Top Ribbon info -->
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800/60 pb-4">
+                        <div class="flex items-center gap-3">
+                            <span class="p-2 ${isLab ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'} rounded-xl">
+                                <i data-lucide="${isLab ? 'code-2' : 'message-square'}" class="w-5 h-5"></i>
+                            </span>
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-200">Conversa ${chat.number} — ${chat.agent}</h4>
+                                <p class="text-[10px] text-slate-500 font-mono">Chat/Project ID: ${chat.id}</p>
+                            </div>
+                        </div>
+                        <span class="text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full border ${pillColorClass} h-fit w-fit">
+                            Dominante: ${chat.dominantZone}
+                        </span>
+                    </div>
+
+                    <!-- Quote Block (Evidence of student prompt) -->
+                    <div class="space-y-2">
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-widest block">Evidência empírica (Prompt do Estudante)</span>
+                        <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 relative">
+                            <i data-lucide="quote" class="w-8 h-8 text-slate-800 absolute right-4 top-4"></i>
+                            <p class="text-sm text-slate-300 italic font-medium leading-relaxed font-mono">
+                                "${chat.prompt}"
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Epistemological detailed analysis text -->
+                    <div class="space-y-2">
+                        <span class="text-xs font-bold text-indigo-400 uppercase tracking-widest block flex items-center gap-1.5">
+                            <i data-lucide="microscope" class="w-3.5 h-3.5"></i>
+                            Análise Epistemológica da Conversa
+                        </span>
+                        <div class="text-sm text-slate-300 leading-relaxed space-y-3">
+                            ${chat.analysis}
+                        </div>
+                    </div>
+
+                    <!-- Pedagogical Recommendation Action -->
+                    <div class="bg-blue-950/10 border border-blue-900/30 rounded-xl p-4 flex gap-3">
+                        <div class="p-1.5 bg-blue-500/10 text-blue-400 rounded-lg shrink-0 h-fit">
+                            <i data-lucide="sparkles" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-blue-400 uppercase tracking-widest block mb-1">Ação de Mediação Recomendada para o Professor</span>
+                            <p class="text-xs text-slate-300 leading-relaxed">${chat.mediation}</p>
+                        </div>
+                    </div>
+                `;
+                timelineContainer.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        // Horizontal Stacked Bar Creator Widget helper
+        function createBarElement(label, value, bgColor, textColor) {
+            const wrapper = document.createElement('div');
+            wrapper.className = "space-y-1.5";
+            wrapper.innerHTML = `
+                <div class="flex justify-between text-xs font-semibold">
+                    <span class="text-slate-300">${label}</span>
+                    <span class="${textColor}">${value}%</span>
+                </div>
+                <div class="h-2 w-full bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                    <div class="h-full ${bgColor} rounded-full transition-all duration-1000" style="width: ${value}%"></div>
+                </div>
+            `;
+            return wrapper;
+        }
+
+        // Render Matrix tab
+        function renderComparisonMatrix() {
+            const tbody = document.getElementById('comparison-table-body');
+            tbody.innerHTML = '';
+
+            studentsData.forEach(student => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-900/40 transition duration-150 cursor-pointer";
+                tr.onclick = () => selectStudent(student.id);
+
+                // Find main focus (extracting from mock themes)
+                let focus = "Química";
+                if (student.id === 'e1') focus = "Mudança de Estado Físico & Cinética";
+                if (student.id === 'e2') focus = "Temperatura e Interação da Água";
+                if (student.id === 'e3') focus = "Fermentação Biológica / Orgânica";
+                if (student.id === 'e4') focus = "Cinética de Gases e Pressão";
+                if (student.id === 'e5') focus = "Ácido-Base (Neutralização e pH)";
+
+                // Find active zones representation text
+                let zones = [];
+                if (student.profile.sensorial > 15) zones.push("Sensorial");
+                if (student.profile.empirista > 15) zones.push("Empírica");
+                if (student.profile.racionalista > 15) zones.push("Racionalista");
+                if (student.profile.complexo > 5) zones.push("Complexa");
+
+                // Get primary obstacle
+                const primObstacle = student.obstacles[0] ? student.obstacles[0].title : "Nenhum";
+
+                // Evolutionary trajectory estimate label
+                let trajectory = "Rápida Evolução";
+                if (student.id === 'e2') trajectory = "Estacionário Técnico";
+                if (student.id === 'e4') trajectory = "Sólido Racionalista";
+                if (student.id === 'e5') trajectory = "Oscilação Rica";
+
+                tr.innerHTML = `
+                    <td class="px-6 py-4 font-bold text-slate-100 flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold text-xs">
+                            ${student.initials}
+                        </div>
+                        <div>
+                            <span>${student.name}</span>
+                            <span class="block text-[10px] text-slate-500 font-normal font-mono">${student.code}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-xs text-slate-300 font-medium">${focus}</td>
+                    <td class="px-6 py-4">
+                        <div class="flex gap-1">
+                            ${zones.map(z => `<span class="bg-slate-950 border border-slate-800 text-slate-400 text-[10px] px-1.5 py-0.5 rounded font-medium">${z}</span>`).join('')}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-center font-bold text-blue-400 font-mono text-sm">${student.chats.length}</td>
+                    <td class="px-6 py-4">
+                        <span class="text-xs font-semibold text-rose-400">${primObstacle}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="text-xs bg-indigo-950/40 border border-indigo-800/20 text-indigo-300 px-2.5 py-1 rounded-full font-bold">
+                            ${trajectory}
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>

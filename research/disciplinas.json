@@ -1,0 +1,11 @@
+[
+  {
+    "id": "scaffl-docs",
+    "userId": "system",
+    "institutionId": "scaffl",
+    "nome": "Plataforma SCAFFL",
+    "conteudo": "# Documentação da Plataforma SCAFFL\nEsta disciplina contém todas as instruções de uso e ajuda sobre a plataforma SCAFFL.\n\n## 1. O que é a SCAFFL?\nA SCAFFL é um ambiente interativo de tutoria inteligente e desenvolvimento socrático. O sistema é composto por:\n* **Mural de Personas:** Espaço onde você interage com professores virtuais focados em disciplinas e estilos pedagógicos específicos.\n* **Laboratório de Simuladores:** Área onde você cria e evolui simuladores interativos e dinâmicos de forma guiada com ajuda da nossa IA.\n\n## 2. Dúvidas Frequentes sobre Simuladores\n\n### Onde clico para editar os nomes e títulos dos projetos?\nPara renomear um projeto, basta ir ao painel do Laboratório e clicar diretamente sobre o **título do projeto** (seja na lista lateral ou no cabeçalho superior). Um campo de edição de texto aparecerá para você atualizar e salvar o novo título.\n\n### Se eu apagar meus projetos, todos podem vê-los ou eles somem?\nAo apagar um projeto no Laboratório, ele é deletado de forma permanente e irreversível do banco de dados. \n* Por padrão, todos os projetos criados são **privados** (apenas você pode ver).\n* Se você configurou o projeto como **público**, ele aparece no Mural de Projetos da Instituição. Ao deletá-lo, ele sumirá completamente e ninguém mais terá acesso a ele.\n\n### Como os simuladores consomem créditos?\nOs simuladores rodam com agentes inteligentes especializados que geram código em blocos modulares em tempo real. Interagir com os agentes para criar ou atualizar simuladores consome mais créditos da IA do que chats de conversação comum com professores, pois a geração de interfaces exige maior processamento e infraestrutura.\n",
+    "createdAt": "2026-05-28 17:49:38",
+    "classroomId": null
+  }
+]

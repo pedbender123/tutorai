@@ -13,8 +13,10 @@ import { runSimAgent } from './labAI.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { compressProjectContext } from './labContextCompressor.js';
 import { getUserCreditLimit } from './ai.js';
+import { validateConfig } from './config.js';
 
 dotenv.config({ path: join(dirname(fileURLToPath(import.meta.url)), '../.env') });
+validateConfig();
 
 const app = express();
 const PORT = process.env.PORT || 3001;

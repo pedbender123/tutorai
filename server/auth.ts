@@ -2,9 +2,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import db from './db.js';
+import { config } from './config.js';
 import { Request, Response, NextFunction } from 'express';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_change_me';
 
 export interface AuthRequest extends Request {
   user?: {
@@ -19,7 +18,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const decoded = jwt.verify(token, config.jwtSecret) as any;
     
     // Obter dados de permissão atualizados em tempo real do banco
     const dbUser = db.prepare('SELECT id, email, role, isAdmin FROM users WHERE id = ?').get(decoded.id) as any;
@@ -59,7 +58,7 @@ export const login = async (req: Request, res: Response) => {
     return res.status(403).json({ error: 'Acesso bloqueado: Esta conta foi detectada como uma duplicata de acesso do estudante Thales Fachin Curra.' });
   }
 
-  const token = jwt.sign({ id: user.id, email: user.email, role: user.role, isAdmin: !!user.isAdmin }, JWT_SECRET, { expiresIn: '7d' });
+  const token = jwt.sign({ id: user.id, email: user.email, role: user.role, isAdmin: !!user.isAdmin }, config.jwtSecret, { expiresIn: '7d' });
   
   // Calculate credits (chat + lab)
   const chatCr = db.prepare(`SELECT SUM(creditsUsed) as total FROM messages WHERE userId = ? AND createdAt >= DATETIME('now', '-30 days')`).get(user.id) as { total: number };
@@ -134,7 +133,7 @@ export const register = async (req: AuthRequest, res: Response) => {
     user.institutions = (db.prepare('SELECT institutionId FROM user_institutions WHERE userId = ?').all(userId) as { institutionId: string }[]).map(r => r.institutionId);
     delete user.password;
 
-    const token = jwt.sign({ id: user.id, email: user.email, role: user.role, isAdmin: !!user.isAdmin }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role, isAdmin: !!user.isAdmin }, config.jwtSecret, { expiresIn: '7d' });
     res.json({ user, token });
   } catch (err: any) {
     if (err.message.includes('UNIQUE constraint failed')) {

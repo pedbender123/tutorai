@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Análise de Perfis Conceituais de Mortimer — Scaffl</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0b10;
+      --bg-secondary: #12131a;
+      --bg-tertiary: #1b1c26;
+      --accent-violet: #8b5cf6;
+      --accent-blue: #3b82f6;
+      --accent-cyan: #06b6d4;
+      --accent-orange: #f97316;
+      --accent-yellow: #eab308;
+      --accent-green: #10b981;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --glass-bg: rgba(18, 19, 26, 0.7);
+      --glass-border: rgba(255, 255, 255, 0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1b103c 0%, #080c21 100%);
+      padding: 3rem 2rem;
+      border-bottom: 1px solid var(--border-color);
+      position: relative;
+    }
+
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent-violet), var(--accent-blue), transparent);
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    .header-content {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .badge-top {
+      align-self: flex-start;
+      background: rgba(139, 92, 246, 0.2);
+      border: 1px solid var(--accent-violet);
+      color: #c084fc;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      background: linear-gradient(90deg, #fff, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      max-width: 800px;
+    }
+
+    /* Dashboard Grid */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+      margin-top: -2rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (min-width: 768px) {
+      .dashboard-grid {
+        grid-template-columns: 3fr 2fr;
+      }
+    }
+
+    .card {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Stats Card styling */
+    .stats-card {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .stats-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .stats-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .stat-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      width: 140px;
+      flex-shrink: 0;
+    }
+
+    .stat-bar-outer {
+      flex-grow: 1;
+      height: 8px;
+      background-color: var(--bg-tertiary);
+      border-radius: 9999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .stat-bar-inner {
+      height: 100%;
+      border-radius: 9999px;
+    }
+
+    .stat-percentage {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-main);
+      width: 40px;
+      text-align: right;
+    }
+
+    /* Ethics Card Alert */
+    .ethics-alert {
+      border-left: 4px solid var(--accent-yellow);
+      background: rgba(234, 179, 8, 0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .ethics-title {
+      color: var(--accent-yellow);
+      font-weight: 600;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .ethics-text {
+      font-size: 0.85rem;
+      color: #d1d5db;
+    }
+
+    /* App Layout */
+    .app-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      margin-top: 2rem;
+      margin-bottom: 5rem;
+    }
+
+    @media (min-width: 1024px) {
+      .app-layout {
+        grid-template-columns: 280px 1fr;
+      }
+    }
+
+    /* Sidebar Navigation */
+    .sidebar {
+      position: sticky;
+      top: 2rem;
+      height: fit-content;
+      max-height: 85vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .sidebar-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+      padding-left: 0.75rem;
+    }
+
+    .student-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      background-color: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .student-link:hover {
+      background-color: var(--bg-tertiary);
+      color: var(--text-main);
+    }
+
+    .student-link.active {
+      background-color: rgba(139, 92, 246, 0.15);
+      border-color: rgba(139, 92, 246, 0.3);
+      color: #c084fc;
+      font-weight: 600;
+    }
+
+    .student-link .code-badge {
+      font-size: 0.75rem;
+      background-color: var(--bg-tertiary);
+      color: var(--text-muted);
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+    }
+
+    .student-link.active .code-badge {
+      background-color: rgba(139, 92, 246, 0.3);
+      color: #c084fc;
+    }
+
+    /* Filter Toolbar */
+    .filter-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .filter-btn {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--glass-border);
+      color: var(--text-muted);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .filter-btn:hover {
+      background-color: var(--bg-tertiary);
+      color: var(--text-main);
+    }
+
+    .filter-btn.active {
+      background-color: var(--accent-violet);
+      border-color: var(--accent-violet);
+      color: white;
+    }
+
+    /* Content Area */
+    .content-area {
+      display: flex;
+      flex-direction: column;
+      gap: 2.5rem;
+    }
+
+    .student-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      scroll-margin-top: 2rem;
+    }
+
+    .student-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid var(--bg-tertiary);
+      padding-bottom: 0.5rem;
+    }
+
+    .student-name-box {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+    }
+
+    .student-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .student-real-name {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .student-index-badge {
+      background: linear-gradient(135deg, var(--accent-violet), var(--accent-blue));
+      color: white;
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+    }
+
+    .chat-cards-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+
+    /* Chat Card */
+    .chat-card {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-card:hover {
+      border-color: rgba(255, 255, 255, 0.12);
+      transform: translateY(-2px);
+    }
+
+    .chat-header {
+      background-color: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .chat-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .bot-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .bot-badge.lab {
+      background-color: rgba(6, 182, 212, 0.15);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      color: #22d3ee;
+    }
+
+    .bot-badge.petrus {
+      background-color: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      color: #a78bfa;
+    }
+
+    .chat-date {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .zone-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .zone-essentialist {
+      background-color: rgba(234, 179, 8, 0.15);
+      border: 1px solid rgba(234, 179, 8, 0.3);
+      color: #facc15;
+    }
+
+    .zone-generalist {
+      background-color: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+    }
+
+    .zone-substancialist {
+      background-color: rgba(249, 115, 22, 0.15);
+      border: 1px solid rgba(249, 115, 22, 0.3);
+      color: #fb923c;
+    }
+
+    .zone-racionalist {
+      background-color: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: #60a5fa;
+    }
+
+    .zone-relational {
+      background-color: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      color: #c084fc;
+    }
+
+    .zone-aconceptual {
+      background-color: rgba(156, 163, 175, 0.15);
+      border: 1px solid rgba(156, 163, 175, 0.3);
+      color: #d1d5db;
+    }
+
+    .chat-body {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .chat-section-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .prompt-box {
+      background-color: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.875rem;
+      color: #e5e7eb;
+      white-space: pre-wrap;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+
+    .analysis-box {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .analysis-text {
+      font-size: 0.95rem;
+      color: #d1d5db;
+    }
+
+    .card-footer-info {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border-color);
+      padding: 0.75rem 1.25rem;
+      background-color: rgba(0, 0, 0, 0.08);
+    }
+
+    .card-footer-info svg {
+      width: 14px;
+      height: 14px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+    }
+
+    /* Floating top button */
+    .top-link {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background-color: var(--accent-violet);
+      color: white;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+      text-decoration: none;
+      transition: all 0.2s ease;
+      z-index: 100;
+      opacity: 0.8;
+    }
+
+    .top-link:hover {
+      transform: translateY(-2px);
+      opacity: 1;
+    }
+
+    .top-link svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.5;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="container header-content">
+      <span class="badge-top">Referencial Científico e Qualitativo</span>
+      <h1>Perfis Conceituais de Mortimer</h1>
+      <div class="subtitle">
+        Análise pedagógica individualizada de cada interação registrada no banco de dados do projeto Scaffl. Mapeamento sistemático de zonas epistêmicas nas conversas com o Agente de Código (Lab Agent) e Tutor (Petrus).
+      </div>
+    </div>
+  </header>
+
+  <div class="container" style="margin-top: 2rem;">
+    <div class="dashboard-grid">
+      <!-- Stats Card -->
+      <div class="card stats-card">
+        <div class="stats-title">
+          <svg style="width: 20px; height: 20px; stroke: var(--accent-violet); fill: none; stroke-width: 2;" viewBox="0 0 24 24">
+            <path d="M18 20V10M12 20V4M6 20v-6"/>
+          </svg>
+          Distribuição Epistêmica das Conversas (N = 21)
+        </div>
+        <div class="stats-container">
+          <div class="stat-row">
+            <span class="stat-label">Racionalista</span>
+            <div class="stat-bar-outer">
+              <div class="stat-bar-inner" style="width: 52%; background-color: var(--accent-blue);"></div>
+            </div>
+            <span class="stat-percentage">52%</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Substancialista</span>
+            <div class="stat-bar-outer">
+              <div class="stat-bar-inner" style="width: 19%; background-color: var(--accent-orange);"></div>
+            </div>
+            <span class="stat-percentage">19%</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Generalista</span>
+            <div class="stat-bar-outer">
+              <div class="stat-bar-inner" style="width: 14%; background-color: var(--accent-green);"></div>
+            </div>
+            <span class="stat-percentage">14%</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">A-conceitual</span>
+            <div class="stat-bar-outer">
+              <div class="stat-bar-inner" style="width: 10%; background-color: var(--text-muted);"></div>
+            </div>
+            <span class="stat-percentage">10%</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Relacional</span>
+            <div class="stat-bar-outer">
+              <div class="stat-bar-inner" style="width: 5%; background-color: var(--accent-violet);"></div>
+            </div>
+            <span class="stat-percentage">5%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ethics Alert Card -->
+      <div class="card ethics-alert">
+        <div class="ethics-title">
+          <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2;" viewBox="0 0 24 24">
+            <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          Nota Ética (Homologação CEP)
+        </div>
+        <p class="ethics-text">
+          Estes dados referem-se à fase de testes piloto e ajustes funcionais dos simuladores no Scaffl. Nomes reais dos estudantes do Ensino Médio foram pseudonimizados como <strong>Estudante A (E1)</strong> a <strong>Estudante L (E13)</strong>. A publicação definitiva em periódicos científicos aguarda o trâmite formal do CEP (TCLE/TALE).
+        </p>
+      </div>
+    </div>
+
+    <!-- App Main Layout -->
+    <div class="app-layout">
+      <!-- Sidebar Links -->
+      <div class="sidebar">
+        <div class="sidebar-title">Navegar por Aluno</div>
+        <a href="#aluno-e1" class="student-link active" data-student="e1">
+          <span>Estudante A</span>
+          <span class="code-badge">E1</span>
+        </a>
+        <a href="#aluno-e2" class="student-link" data-student="e2">
+          <span>Estudante B</span>
+          <span class="code-badge">E2</span>
+        </a>
+        <a href="#aluno-e3" class="student-link" data-student="e3">
+          <span>Estudante C</span>
+          <span class="code-badge">E3</span>
+        </a>
+        <a href="#aluno-e4" class="student-link" data-student="e4">
+          <span>Estudante D</span>
+          <span class="code-badge">E4</span>
+        </a>
+        <a href="#aluno-e5" class="student-link" data-student="e5">
+          <span>Estudante E</span>
+          <span class="code-badge">E5</span>
+        </a>
+        <a href="#aluno-e6" class="student-link" data-student="e6">
+          <span>Estudante F</span>
+          <span class="code-badge">E6</span>
+        </a>
+        <a href="#aluno-e7" class="student-link" data-student="e7">
+          <span>Estudante G</span>
+          <span class="code-badge">E7</span>
+        </a>
+        <a href="#aluno-e8" class="student-link" data-student="e8">
+          <span>Estudante H</span>
+          <span class="code-badge">E8</span>
+        </a>
+        <a href="#aluno-e9" class="student-link" data-student="e9">
+          <span>Estudante I</span>
+          <span class="code-badge">E9</span>
+        </a>
+        <a href="#aluno-e15" class="student-link" data-student="e15">
+          <span>Estudante J</span>
+          <span class="code-badge">E15</span>
+        </a>
+        <a href="#aluno-e17" class="student-link" data-student="e17">
+          <span>Estudante K</span>
+          <span class="code-badge">E17</span>
+        </a>
+        <a href="#aluno-e13" class="student-link" data-student="e13">
+          <span>Estudante L</span>
+          <span class="code-badge">E13</span>
+        </a>
+      </div>
+
+      <!-- Main Content Area -->
+      <div class="content-container">
+        <!-- Filter Toolbar -->
+        <div class="filter-toolbar">
+          <button class="filter-btn active" data-filter="all">Todas as Conversas</button>
+          <button class="filter-btn" data-filter="lab">Apenas Lab Agent</button>
+          <button class="filter-btn" data-filter="petrus">Apenas Petrus (Tutor)</button>
+          <button class="filter-btn" data-filter="z-racionalist">Zonas Racionalistas</button>
+          <button class="filter-btn" data-filter="z-substancialist">Zonas Substancialistas</button>
+        </div>
+
+        <div class="content-area">
+
+          <!-- ESTUDANTE A (E1) -->
+          <section id="aluno-e1" class="student-section" data-student="e1">
+            <div class="student-header">
+              <div class="student-name-box">
+                <span class="student-title">Estudante A</span>
+                <span class="student-real-name">(Franco Augusto Panassol)</span>
+              </div>
+              <span class="student-index-badge">E1</span>
+            </div>
+            
+            <div class="chat-cards-grid">
+              <!-- Chat 1 -->
+              <div class="chat-card" data-bot="lab" data-zone="z-substancialist">
+                <div class="chat-header">
+                  <div class="chat-meta">
+                    <span class="bot-badge lab">Lab Agent</span>
+                    <span class="chat-date">31/05/2026 18:27</span>
+                  </div>
+                  <span class="zone-badge zone-substancialist">Substancialista / Generalista</span>
+                </div>
+                <div class="chat-body">
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Instrução ao Agente</span>
+                    <div class="prompt-box">"Simule as particulas de uma bolacha que era sólida e depois de ficar molhada ficou mole"</div>
+                  </div>
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Análise de Mortimer</span>
+                    <p class="analysis-text">
+                      O estudante busca descrever a transição macroscópica sensorial e física ("bolacha mole") por meio de partículas discretas. Ao projetar o atributo de maciez direta da substância para o nível microscópico invisível ("partículas moles"), ele ativa um obstáculo epistemológico substancialista, onde a molécula herda a característica tátil da matéria.
+                    </p>
+                  </div>
+                </div>
+                <div class="card-footer-info">
+                  <svg viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  Compromisso Ontológico: Matéria contínua e dotada de qualidades sensoriais diretas.
+                </div>
+              </div>
+
+              <!-- Chat 2 -->
+              <div class="chat-card" data-bot="lab" data-zone="z-substancialist">
+                <div class="chat-header">
+                  <div class="chat-meta">
+                    <span class="bot-badge lab">Lab Agent</span>
+                    <span class="chat-date">31/05/2026 18:36</span>
+                  </div>
+                  <span class="zone-badge zone-substancialist">Substancialista / Transição</span>
+                </div>
+                <div class="chat-body">
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Instrução ao Agente</span>
+                    <div class="prompt-box">"Simule as particulas de água fervendo"</div>
+                  </div>
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Análise de Mortimer</span>
+                    <p class="analysis-text">
+                      Embora adote o termo químico de partículas (Racionalista), o objetivo da modelagem foca em uma animação visual do processo de ebulição perceptível macroscópico direto, representando uma transição onde a modelagem molecular atende à necessidade fenomenológica de representação.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ESTUDANTE B (E2) -->
+          <section id="aluno-e2" class="student-section" data-student="e2" style="display:none;">
+            <div class="student-header">
+              <div class="student-name-box">
+                <span class="student-title">Estudante B</span>
+                <span class="student-real-name">(Pedro Henrique Dal Pizzol)</span>
+              </div>
+              <span class="student-index-badge">E2</span>
+            </div>
+
+            <div class="chat-cards-grid">
+              <div class="chat-card" data-bot="petrus" data-zone="z-racionalist">
+                <div class="chat-header">
+                  <div class="chat-meta">
+                    <span class="bot-badge petrus">Petrus Chat</span>
+                    <span class="chat-date">02/06/2026 08:07</span>
+                  </div>
+                  <span class="zone-badge zone-racionalist">Racionalista</span>
+                </div>
+                <div class="chat-body">
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Enunciado / Diálogo de Planejamento</span>
+                    <div class="prompt-box">"Copie e cole exatamente isto no Scaffl: Crie um simulador interativo chamado “A Fábrica da Ferrugem”. O cenário deve mostrar uma barra de ferro exposta... átomos de ferro reagindo com oxigênio e água para formar óxido de ferro... oxirredução..."</div>
+                  </div>
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Análise de Mortimer</span>
+                    <p class="analysis-text">
+                      Demonstra uma articulação puramente científica e racionalista clássica. Compreende a formação da ferrugem como um processo químico e atômico discreto ("átomos reagindo", "óxido de ferro", "oxirredução"). Há total aceitação da mediação lógica orientada pelo chatbot Petrus de construir o projeto científico em fases.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="chat-card" data-bot="lab" data-zone="z-racionalist">
+                <div class="chat-header">
+                  <div class="chat-meta">
+                    <span class="bot-badge lab">Lab Agent</span>
+                    <span class="chat-date">02/06/2026 08:14</span>
+                  </div>
+                  <span class="zone-badge zone-racionalist">Racionalista</span>
+                </div>
+                <div class="chat-body">
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Instrução ao Agente</span>
+                    <div class="prompt-box">"Crie um simulador que mostre uma barra de ferro reagindo com oxigênio e água para formar ferrugem. Adicione controles de umidade, temperatura e quantidade de sal, fazendo a corrosão acelerar... proteção como pintura e galvanização..."</div>
+                  </div>
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Análise de Mortimer</span>
+                    <p class="analysis-text">
+                      Consolidação do modelo mental racionalista. As variáveis cinéticas controláveis de salinidade e umidade são mapeadas como aceleradores da frequência de colisão atômica. O estudante inclui barreiras químicas de isolamento (galvanização/pintura), conectando o microscópico com a física prática.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ESTUDANTE C (E3) -->
+          <section id="aluno-e3" class="student-section" data-student="e3" style="display:none;">
+            <div class="student-header">
+              <div class="student-name-box">
+                <span class="student-title">Estudante C</span>
+                <span class="student-real-name">(Thales Fachin Curra)</span>
+              </div>
+              <span class="student-index-badge">E3</span>
+            </div>
+
+            <div class="chat-cards-grid">
+              <div class="chat-card" data-bot="lab" data-zone="z-racionalist">
+                <div class="chat-header">
+                  <div class="chat-meta">
+                    <span class="bot-badge lab">Lab Agent</span>
+                    <span class="chat-date">01/06/2026 17:56</span>
+                  </div>
+                  <span class="zone-badge zone-racionalist">Racionalista</span>
+                </div>
+                <div class="chat-body">
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Instrução ao Agente</span>
+                    <div class="prompt-box">"Você é um simulador da Tabela Periódica... Nome, Símbolo, Número Atômico, Massa Atômica... Classificação, Prótons, Nêutrons, Elétrons, Configuração Eletrônica..."</div>
+                  </div>
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Análise de Mortimer</span>
+                    <p class="analysis-text">
+                      O estudante opera inteiramente na zona racionalista, com alto compromisso matemático e dedutivo. A tabela periódica é modelada como a estruturação taxonômica exata das partículas subatômicas clássicas.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="chat-card" data-bot="petrus" data-zone="z-aconceptual">
+                <div class="chat-header">
+                  <div class="chat-meta">
+                    <span class="bot-badge petrus">Petrus Chat</span>
+                    <span class="chat-date">01/06/2026 20:18</span>
+                  </div>
+                  <span class="zone-badge zone-aconceptual">A-conceitual / Pragmática</span>
+                </div>
+                <div class="chat-body">
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Diálogo com Petrus</span>
+                    <div class="prompt-box">"olá, esta dando erro na hora de fazer o simulador. O que pode ter acontecido"</div>
+                  </div>
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Análise de Mortimer</span>
+                    <p class="analysis-text">
+                      Uso instrumental operacional do canal socio-técnico. Sem mobilização de conceitos químicos directos, limitando-se ao suporte tecnológico de interface da plataforma.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ESTUDANTE D (E4) -->
+          <section id="aluno-e4" class="student-section" data-student="e4" style="display:none;">
+            <div class="student-header">
+              <div class="student-name-box">
+                <span class="student-title">Estudante D</span>
+                <span class="student-real-name">(Vitor da silva scheffer)</span>
+              </div>
+              <span class="student-index-badge">E4</span>
+            </div>
+
+            <div class="chat-cards-grid">
+              <div class="chat-card" data-bot="petrus" data-zone="z-generalist">
+                <div class="chat-header">
+                  <div class="chat-meta">
+                    <span class="bot-badge petrus">Petrus Chat</span>
+                    <span class="chat-date">01/06/2026 18:04</span>
+                  </div>
+                  <span class="zone-badge zone-generalist">Transição Generalista / Racionalista</span>
+                </div>
+                <div class="chat-body">
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Diálogo com Petrus</span>
+                    <div class="prompt-box">"o simulador pode criar um projeto que crie os estados da água? isso é considerado uma matéria de química?"</div>
+                  </div>
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Análise de Mortimer</span>
+                    <p class="analysis-text">
+                      O aluno revela uma âncora conceitual no senso comum escolar. Ele busca validar se a representação cotidiana e física que imaginou ("estados da água") é legítima e reconhecida sob as fronteiras conceituais formais da Química escolar.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ESTUDANTE E (E5) -->
+          <section id="aluno-e5" class="student-section" data-student="e5" style="display:none;">
+            <div class="student-header">
+              <div class="student-name-box">
+                <span class="student-title">Estudante E</span>
+                <span class="student-real-name">(Santiago Canal Copetti)</span>
+              </div>
+              <span class="student-index-badge">E5</span>
+            </div>
+
+            <div class="chat-cards-grid">
+              <div class="chat-card" data-bot="lab" data-zone="z-relational">
+                <div class="chat-header">
+                  <div class="chat-meta">
+                    <span class="bot-badge lab">Lab Agent</span>
+                    <span class="chat-date">31/05/2026 19:20</span>
+                  </div>
+                  <span class="zone-badge zone-relational">Racionalista / Transição Relacional</span>
+                </div>
+                <div class="chat-body">
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Instrução ao Agente</span>
+                    <div class="prompt-box">"Em uma área de 2 centímetros com 25 moléculas faça uma ilustração do limite atômico, no qual as moleculas sao repelidas com mais força quanto mais perto chegam entre si, ou seja onde não se encostam"</div>
+                  </div>
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Análise de Mortimer</span>
+                    <p class="analysis-text">
+                      Transição ativa para a zona <strong>Relacional</strong> de representação da matéria. Em vez de modelar átomos como simples bolas de bilhar rígidas em colisão física clássica, o aluno introduz a noção de campos de força repulsiva intangíveis que aumentam proporcionalmente com a proximidade, impedindo o toque direto (compromisso ontológico relacional).
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="chat-card" data-bot="petrus" data-zone="z-aconceptual">
+                <div class="chat-header">
+                  <div class="chat-meta">
+                    <span class="bot-badge petrus">Petrus Chat</span>
+                    <span class="chat-date">05/06/2026 01:58</span>
+                  </div>
+                  <span class="zone-badge zone-aconceptual">Metacognitiva / Pragmática</span>
+                </div>
+                <div class="chat-body">
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Diálogo com Petrus</span>
+                    <div class="prompt-box">"Oque eu posso adicionar no meu projeto?"</div>
+                  </div>
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Análise de Mortimer</span>
+                    <p class="analysis-text">
+                      Preocupação metacognitiva. O estudante enxerga seu próprio simulador científico como uma modelagem inacabada e busca na monitoria subsídios para aumentar o poder de representação teórica de suas variáveis.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ESTUDANTE F (E6) -->
+          <section id="aluno-e6" class="student-section" data-student="e6" style="display:none;">
+            <div class="student-header">
+              <div class="student-name-box">
+                <span class="student-title">Estudante F</span>
+                <span class="student-real-name">(Anthoni de Quadros Piva)</span>
+              </div>
+              <span class="student-index-badge">E6</span>
+            </div>
+
+            <div class="chat-cards-grid">
+              <div class="chat-card" data-bot="lab" data-zone="z-substancialist">
+                <div class="chat-header">
+                  <div class="chat-meta">
+                    <span class="bot-badge lab">Lab Agent</span>
+                    <span class="chat-date">31/05/2026 19:06</span>
+                  </div>
+                  <span class="zone-badge zone-substancialist">Racionalista / Substancialista (Conflito de Escala)</span>
+                </div>
+                <div class="chat-body">
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Instrução ao Agente</span>
+                    <div class="prompt-box">"não ta aparecendo a visualização, ta so uma tela preta. é para ter uma area de 5cm de contato, representando a repulsão entre eles"</div>
+                  </div>
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Análise de Mortimer</span>
+                    <p class="analysis-text">
+                      Ocorre uma colisão de escalas. Embora busque simular a repulsão eletrostática entre átomos (zona Racionalista), o estudante projeta uma escala métrica humana visível ("área de 5cm de contato") para governar as interações atômicas invisíveis de repulsão, revelando uma âncora conceitual na zona substancialista e sensorial.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ESTUDANTE G (E7) -->
+          <section id="aluno-e7" class="student-section" data-student="e7" style="display:none;">
+            <div class="student-header">
+              <div class="student-name-box">
+                <span class="student-title">Estudante G</span>
+                <span class="student-real-name">(Maira Giovana de Souza)</span>
+              </div>
+              <span class="student-index-badge">E7</span>
+            </div>
+
+            <div class="chat-cards-grid">
+              <div class="chat-card" data-bot="petrus" data-zone="z-aconceptual">
+                <div class="chat-header">
+                  <div class="chat-meta">
+                    <span class="bot-badge petrus">Petrus Chat</span>
+                    <span class="chat-date">02/06/2026 16:31</span>
+                  </div>
+                  <span class="zone-badge zone-aconceptual">Social-Institucional</span>
+                </div>
+                <div class="chat-body">
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Diálogo com Petrus</span>
+                    <div class="prompt-box">"tens acesso aos simuladores da instituição cetec?... consegue ver tipo nomes e registros?"</div>
+                  </div>
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Análise de Mortimer</span>
+                    <p class="analysis-text">
+                      Interação inativa em relação a conteúdos químicos ou de física. Seu foco centra-se na governança, permissões de mural e compartilhamento de dados privados da turma, constituindo uma interação social-institucional.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ESTUDANTE H (E8) -->
+          <section id="aluno-e8" class="student-section" data-student="e8" style="display:none;">
+            <div class="student-header">
+              <div class="student-name-box">
+                <span class="student-title">Estudante H</span>
+                <span class="student-real-name">(vicente ritzel)</span>
+              </div>
+              <span class="student-index-badge">E8</span>
+            </div>
+
+            <div class="chat-cards-grid">
+              <div class="chat-card" data-bot="lab" data-zone="z-substancialist">
+                <div class="chat-header">
+                  <div class="chat-meta">
+                    <span class="bot-badge lab">Lab Agent</span>
+                    <span class="chat-date">02/06/2026 02:29</span>
+                  </div>
+                  <span class="zone-badge zone-substancialist">Racionalista / Substancialista</span>
+                </div>
+                <div class="chat-body">
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Instrução ao Agente</span>
+                    <div class="prompt-box">"neutralizaçao acido-base , entre vinagre e solucao aquosa de bicarbonato"</div>
+                  </div>
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Análise de Mortimer</span>
+                    <p class="analysis-text">
+                      Transição ativa de zonas. O ponto de partida apoia-se em reagentes sensoriais domésticos do senso comum (vinagre, bicarbonato - Substancialista), mas com o objetivo conceitual claro de representar o processo de alteração e equilíbrio químico de neutralização ácido-base (Racionalista).
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="chat-card" data-bot="petrus" data-zone="z-racionalist">
+                <div class="chat-header">
+                  <div class="chat-meta">
+                    <span class="bot-badge petrus">Petrus Chat</span>
+                    <span class="chat-date">02/06/2026 02:34</span>
+                  </div>
+                  <span class="zone-badge zone-racionalist">Transição Racionalista / Pragmática</span>
+                </div>
+                <div class="chat-body">
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Diálogo com Petrus</span>
+                    <div class="prompt-box">"gostaria de ajuda para realizar uma reaçao"</div>
+                  </div>
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Análise de Mortimer</span>
+                    <p class="analysis-text">
+                      O estudante recorre à monitoria buscando suporte pragmático de modelagem para estruturar corretamente a simulação do fenômeno químico que deseja simular.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ESTUDANTE I (E9) -->
+          <section id="aluno-e9" class="student-section" data-student="e9" style="display:none;">
+            <div class="student-header">
+              <div class="student-name-box">
+                <span class="student-title">Estudante I</span>
+                <span class="student-real-name">(Eliz Carolina Monteiro Velho)</span>
+              </div>
+              <span class="student-index-badge">E9</span>
+            </div>
+
+            <div class="chat-cards-grid">
+              <div class="chat-card" data-bot="lab" data-zone="z-racionalist">
+                <div class="chat-header">
+                  <div class="chat-meta">
+                    <span class="bot-badge lab">Lab Agent</span>
+                    <span class="chat-date">02/06/2026 03:55</span>
+                  </div>
+                  <span class="zone-badge zone-racionalist">Racionalista</span>
+                </div>
+                <div class="chat-body">
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Instrução ao Agente</span>
+                    <div class="prompt-box">"Crie uma simulação interativa que permita ao usuário alterar a temperatura de uma reação química. À medida que a temperatura aumenta, as partículas devem se mover mais rapidamente, ocorrer mais colisões efetivas e a reação deve acontecer em menos tempo..."</div>
+                  </div>
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Análise de Mortimer</span>
+                    <p class="analysis-text">
+                      Ativação límpida do referencial racionalista clássico. A estudante traduz com perfeição a Teoria das Colisões cinéticas: energia térmica correlacionada ao aumento de choques efetivos microscópicos por segundo, afetando o tempo final da transformação química. Não há interferência do senso comum sensorial.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ESTUDANTE J (E15) -->
+          <section id="aluno-e15" class="student-section" data-student="e15" style="display:none;">
+            <div class="student-header">
+              <div class="student-name-box">
+                <span class="student-title">Estudante J</span>
+                <span class="student-real-name">(Nicolas Santos Garin)</span>
+              </div>
+              <span class="student-index-badge">E15</span>
+            </div>
+
+            <div class="chat-cards-grid">
+              <div class="chat-card" data-bot="petrus" data-zone="z-racionalist">
+                <div class="chat-header">
+                  <div class="chat-meta">
+                    <span class="bot-badge petrus">Petrus Chat</span>
+                    <span class="chat-date">01/06/2026 21:19</span>
+                  </div>
+                  <span class="zone-badge zone-racionalist">Racionalista</span>
+                </div>
+                <div class="chat-body">
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Diálogo com Petrus</span>
+                    <div class="prompt-box">"Crie um simulador de Química sobre a agitação das moléculas da água... recipiente transparente... controle deslizante de 0°C a 100°C... partículas moverem mais rapidamente... distância aumentar... energia cinética..."</div>
+                  </div>
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Análise de Mortimer</span>
+                    <p class="analysis-text">
+                      O estudante exibe compromisso ontológico racionalista de matéria discreta, modelando as fases físicas da água com base na velocidade molecular, energia cinética e distanciamento térmico induzido.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="chat-card" data-bot="lab" data-zone="z-substancialist">
+                <div class="chat-header">
+                  <div class="chat-meta">
+                    <span class="bot-badge lab">Lab Agent</span>
+                    <span class="chat-date">02/06/2026 10:55</span>
+                  </div>
+                  <span class="zone-badge zone-substancialist">Substancialista / Generalista</span>
+                </div>
+                <div class="chat-body">
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Instrução ao Agente</span>
+                    <div class="prompt-box">"Crie um simulador realista em 3D onde o usuário possa adicionar diferentes quantidades de sacarose (açúcar) em um motor de combustão interna virtual. O simulador deve mostrar... como a sacarose afeta o funcionamento do motor..."</div>
+                  </div>
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Análise de Mortimer</span>
+                    <p class="analysis-text">
+                      Foco em um modelo intuitivo de senso comum mecânico (açúcar danificando e travando um motor). A sacarose é tratada como um elemento substancial material tangível macro que age por atrito físico destrutivo, sem formular reações químicas moleculares da combustão da sacarose.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="chat-card" data-bot="lab" data-zone="z-generalist">
+                <div class="chat-header">
+                  <div class="chat-meta">
+                    <span class="bot-badge lab">Lab Agent</span>
+                    <span class="chat-date">02/06/2026 11:01</span>
+                  </div>
+                  <span class="zone-badge zone-generalist">Generalista (Fisiológica)</span>
+                </div>
+                <div class="chat-body">
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Instrução ao Agente</span>
+                    <div class="prompt-box">"Crie um simulador simples onde o usuário pode controlar água, luz solar e fertilizante de uma planta. A planta deve crescer ou murchar..."</div>
+                  </div>
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Análise de Mortimer</span>
+                    <p class="analysis-text">
+                      O estudante abandona o plano químico atômico para atuar sob o campo puramente naturalista macro-observável biológico (crescer, murchar em função de insumos sensoriais cotidianos).
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ESTUDANTE K (E17) -->
+          <section id="aluno-e17" class="student-section" data-student="e17" style="display:none;">
+            <div class="student-header">
+              <div class="student-name-box">
+                <span class="student-title">Estudante K</span>
+                <span class="student-real-name">(mariana alves albuquerque)</span>
+              </div>
+              <span class="student-index-badge">E17</span>
+            </div>
+
+            <div class="chat-cards-grid">
+              <div class="chat-card" data-bot="lab" data-zone="z-racionalist">
+                <div class="chat-header">
+                  <div class="chat-meta">
+                    <span class="bot-badge lab">Lab Agent</span>
+                    <span class="chat-date">06/06/2026 17:00</span>
+                  </div>
+                  <span class="zone-badge zone-racionalist">Transição Racionalista / Generalista</span>
+                </div>
+                <div class="chat-body">
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Instrução ao Agente</span>
+                    <div class="prompt-box">"Crie um simulador interativo de Química sobre um gloss que muda de cor de acordo com o pH dos lábios... pigmentos sensíveis... ácido hialurônico serve para hidratar e dar volume..."</div>
+                  </div>
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Análise de Mortimer</span>
+                    <p class="analysis-text">
+                      Manifestação excelente do pluralismo epistemológico. A estudante parte de um elemento estético do senso comum (gloss labial) e constrói uma barreira de distinção científica e molecular: separa o papel hidratante do ácido hialurônico do papel indicativo de cor dos pigmentos sensíveis de pH.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="chat-card" data-bot="lab" data-zone="z-racionalist">
+                <div class="chat-header">
+                  <div class="chat-meta">
+                    <span class="bot-badge lab">Lab Agent</span>
+                    <span class="chat-date">06/06/2026 17:02</span>
+                  </div>
+                  <span class="zone-badge zone-racionalist">Racionalista / Generalista</span>
+                </div>
+                <div class="chat-body">
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Instrução ao Agente</span>
+                    <div class="prompt-box">"Crie um simulador interativo sobre pH e indicadores ácido-base... substâncias do cotidiano, como limão, vinagre, água, sabão e água sanitária... escala de 0 a 14..."</div>
+                  </div>
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Análise de Mortimer</span>
+                    <p class="analysis-text">
+                      Classificação racional ativada. Insumos cotidianos do dia a dia (vinagre, água sanitária) são sistematizados em categorias químicas e em uma escala quantitativa de concentração hidrogêniônica (pH de 0 a 14).
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="chat-card" data-bot="petrus" data-zone="z-racionalist">
+                <div class="chat-header">
+                  <div class="chat-meta">
+                    <span class="bot-badge petrus">Petrus Chat</span>
+                    <span class="chat-date">01/06/2026 22:44</span>
+                  </div>
+                  <span class="zone-badge zone-racionalist">Racionalista</span>
+                </div>
+                <div class="chat-body">
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Diálogo com Petrus</span>
+                    <div class="prompt-box">"Crie uma simulação da velocidade das reações químicas... recipiente... Temperatura (baixa, média, alta)... Concentração... Superfície de contato... Número de colisões..."</div>
+                  </div>
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Análise de Mortimer</span>
+                    <p class="analysis-text">
+                      Replicação perfeita dos conceitos mecânicos de colisão rígida de esferas (cinética química escolar). Compromissos epistemológicos puramente racionalistas baseados no modelo discretizado.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ESTUDANTE L (E13) -->
+          <section id="aluno-e13" class="student-section" data-student="e13" style="display:none;">
+            <div class="student-header">
+              <div class="student-name-box">
+                <span class="student-title">Estudante L</span>
+                <span class="student-real-name">(luiza Rosset)</span>
+              </div>
+              <span class="student-index-badge">E13</span>
+            </div>
+
+            <div class="chat-cards-grid">
+              <div class="chat-card" data-bot="petrus" data-zone="z-racionalist">
+                <div class="chat-header">
+                  <div class="chat-meta">
+                    <span class="bot-badge petrus">Petrus Chat</span>
+                    <span class="chat-date">01/06/2026 22:53</span>
+                  </div>
+                  <span class="zone-badge zone-racionalist">Racionalista</span>
+                </div>
+                <div class="chat-body">
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Diálogo com Petrus</span>
+                    <div class="prompt-box">"Crie uma simulação da velocidade das reações químicas... Temperatura (baixa, média e alta)... Concentração dos reagentes... Superfície de contato... Número de colisões..."</div>
+                  </div>
+                  <div class="analysis-box">
+                    <span class="chat-section-title">Análise de Mortimer</span>
+                    <p class="analysis-text">
+                      O prompt é compartilhado e idêntico ao formulado pela estudante Mariana, revelando atuação conjunta em díade. Mobilização plena da zona racionalista clássica de cinética química de esferas discretas.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <a href="#" class="top-link" title="Voltar ao Topo">
+    <svg viewBox="0 0 24 24">
+      <path d="M5 15l7-7 7 7"/>
+    </svg>
+  </a>
+
+  <script>
+    // Sidebar navigation interactive highlighting
+    const links = document.querySelectorAll('.student-link');
+    const sections = document.querySelectorAll('.student-section');
+
+    links.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        // Remove active class from all links
+        links.forEach(l => l.classList.remove('active'));
+        
+        // Add active class to clicked link
+        link.classList.add('active');
+        
+        const targetStudent = link.getAttribute('data-student');
+        
+        // Hide all student sections
+        sections.forEach(sec => {
+          sec.style.display = 'none';
+        });
+        
+        // Show target section
+        const targetSec = document.getElementById(`aluno-${targetStudent}`);
+        if (targetSec) {
+          targetSec.style.display = 'flex';
+          targetSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    // Filtering logic
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const cards = document.querySelectorAll('.chat-card');
+
+    filterButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        const filter = btn.getAttribute('data-filter');
+        
+        cards.forEach(card => {
+          const cardBot = card.getAttribute('data-bot');
+          const cardZone = card.getAttribute('data-zone');
+          
+          let matchesFilter = false;
+          
+          if (filter === 'all') {
+            matchesFilter = true;
+          } else if (filter === 'lab' && cardBot === 'lab') {
+            matchesFilter = true;
+          } else if (filter === 'petrus' && cardBot === 'petrus') {
+            matchesFilter = true;
+          } else if (filter === cardZone) {
+            matchesFilter = true;
+          }
+          
+          if (matchesFilter) {
+            card.style.display = 'flex';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>
