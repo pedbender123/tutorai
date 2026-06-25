@@ -26,11 +26,6 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
       return res.status(401).json({ error: 'Usuário não encontrado.' });
     }
 
-    // Bloqueio de conta duplicada
-    if (dbUser.email === 'tfcurra@gmail.com') {
-      return res.status(403).json({ error: 'Acesso bloqueado: Esta conta foi detectada como uma duplicata de acesso do estudante Thales Fachin Curra.' });
-    }
-
     req.user = {
       id: dbUser.id,
       email: dbUser.email,
@@ -51,11 +46,6 @@ export const login = async (req: Request, res: Response) => {
   const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as any;
   if (!user || !(await bcrypt.compare(password, user.password))) {
     return res.status(401).json({ error: 'Invalid email or password' });
-  }
-
-  // Bloqueio de conta duplicada no login
-  if (user.email === 'tfcurra@gmail.com') {
-    return res.status(403).json({ error: 'Acesso bloqueado: Esta conta foi detectada como uma duplicata de acesso do estudante Thales Fachin Curra.' });
   }
 
   const token = jwt.sign({ id: user.id, email: user.email, role: user.role, isAdmin: !!user.isAdmin }, config.jwtSecret, { expiresIn: '7d' });

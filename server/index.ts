@@ -13,7 +13,9 @@ import { runSimAgent } from './labAI.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { compressProjectContext } from './labContextCompressor.js';
 import { getUserCreditLimit } from './ai.js';
-import { validateConfig } from './config.js';
+import { validateConfig, config } from './config.js';
+import { encryptSecret } from './crypto/secrets.js';
+import { getActiveKey, invalidateKeyCache } from './providers/registry.js';
 
 dotenv.config({ path: join(dirname(fileURLToPath(import.meta.url)), '../.env') });
 validateConfig();
@@ -804,8 +806,8 @@ app.get('/api/admin/ia-usage', auth.authenticate, requireAdmin, (req: any, res) 
     const reaisLab = creditsLab / 1_000_000;
     const reaisTotal = creditsTotal / 1_000_000;
     
-    const spendCap = 110.00;
-    const externalInitialSpend = 27.51;
+    const spendCap = config.spendCap;
+    const externalInitialSpend = config.externalInitialSpend;
     const grandTotalReais = reaisTotal + externalInitialSpend;
 
     // 2. Custos por Instituição
@@ -1354,6 +1356,182 @@ app.post('/api/notifications/:id/dismiss', auth.authenticate, (req: any, res) =>
   `).run(userId, notificationId);
 
   res.json({ ok: true });
+});
+
+// ==================== ADMIN: PROVIDER CREDENTIALS (BYOK) ====================
+
+const ALLOWED_PROVIDERS = ['google', 'openai-compatible', 'anthropic'] as const;
+type AllowedProvider = typeof ALLOWED_PROVIDERS[number];
+
+function getEnvKeyLast4(provider: AllowedProvider): string | null {
+  const envMap: Record<AllowedProvider, string | undefined> = {
+    google: process.env.GEMINI_API_KEY,
+    anthropic: process.env.ANTHROPIC_API_KEY,
+    'openai-compatible': process.env.OPENAI_API_KEY,
+  };
+  const k = envMap[provider]?.trim();
+  return k ? k.slice(-4) : null;
+}
+
+// GET /api/admin/providers — list provider credential status
+app.get('/api/admin/providers', auth.authenticate, requireAdmin, (req, res) => {
+  const rows = db.prepare('SELECT provider, key_last4, base_url, updated_at FROM provider_credentials').all() as any[];
+  const credMap = new Map(rows.map((r: any) => [r.provider, r]));
+
+  const providers = ALLOWED_PROVIDERS.map(p => ({
+    provider: p,
+    configured: credMap.has(p),
+    keyLast4: credMap.get(p)?.key_last4 ?? null,
+    baseUrl: credMap.get(p)?.base_url ?? null,
+    updatedAt: credMap.get(p)?.updated_at ?? null,
+    hasEnvFallback: !!getEnvKeyLast4(p),
+    envKeyLast4: getEnvKeyLast4(p),
+  }));
+
+  res.json(providers);
+});
+
+// PUT /api/admin/providers/:provider/credentials — save encrypted API key
+app.put('/api/admin/providers/:provider/credentials', auth.authenticate, requireAdmin, (req: any, res) => {
+  const { provider } = req.params;
+  if (!ALLOWED_PROVIDERS.includes(provider as AllowedProvider)) {
+    return res.status(400).json({ error: 'Provider inválido.' });
+  }
+  const { apiKey, baseUrl } = req.body;
+  if (!apiKey || typeof apiKey !== 'string' || apiKey.trim().length < 10) {
+    return res.status(400).json({ error: 'Chave API inválida (mínimo 10 caracteres).' });
+  }
+
+  let encrypted;
+  try {
+    encrypted = encryptSecret(apiKey.trim());
+  } catch (err: any) {
+    return res.status(500).json({ error: `Erro ao cifrar chave: ${err.message}` });
+  }
+
+  const keyLast4 = apiKey.trim().slice(-4);
+  db.prepare(`
+    INSERT INTO provider_credentials (provider, encrypted_key, iv, auth_tag, key_last4, base_url, updated_by, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    ON CONFLICT(provider) DO UPDATE SET
+      encrypted_key = excluded.encrypted_key,
+      iv            = excluded.iv,
+      auth_tag      = excluded.auth_tag,
+      key_last4     = excluded.key_last4,
+      base_url      = excluded.base_url,
+      updated_by    = excluded.updated_by,
+      updated_at    = CURRENT_TIMESTAMP
+  `).run(provider, encrypted.encrypted, encrypted.iv, encrypted.authTag, keyLast4, baseUrl || null, req.user?.id || null);
+
+  invalidateKeyCache(provider);
+  res.json({ ok: true, keyLast4 });
+});
+
+// DELETE /api/admin/providers/:provider/credentials — remove stored credentials
+app.delete('/api/admin/providers/:provider/credentials', auth.authenticate, requireAdmin, (req, res) => {
+  const { provider } = req.params;
+  if (!ALLOWED_PROVIDERS.includes(provider as AllowedProvider)) {
+    return res.status(400).json({ error: 'Provider inválido.' });
+  }
+  db.prepare('DELETE FROM provider_credentials WHERE provider = ?').run(provider);
+  invalidateKeyCache(provider);
+  res.json({ ok: true });
+});
+
+// POST /api/admin/providers/:provider/ping — validate key with a real API call
+app.post('/api/admin/providers/:provider/ping', auth.authenticate, requireAdmin, async (req, res) => {
+  const { provider } = req.params;
+  if (!ALLOWED_PROVIDERS.includes(provider as AllowedProvider)) {
+    return res.status(400).json({ error: 'Provider inválido.' });
+  }
+
+  let activeKey: { key: string; baseUrl?: string };
+  try {
+    activeKey = getActiveKey(provider);
+  } catch (err: any) {
+    return res.status(400).json({ ok: false, error: 'Nenhuma credencial configurada para este provider.' });
+  }
+
+  const start = Date.now();
+  try {
+    if (provider === 'google') {
+      const genAI = new GoogleGenerativeAI(activeKey.key);
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' }, { timeout: 10_000 });
+      await model.generateContent({ contents: [{ role: 'user', parts: [{ text: 'ping' }] }] });
+    } else if (provider === 'anthropic') {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': activeKey.key,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 1,
+          messages: [{ role: 'user', content: 'ping' }],
+        }),
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!resp.ok) {
+        const body = await resp.json().catch(() => ({})) as any;
+        throw new Error(body?.error?.message ?? `HTTP ${resp.status}`);
+      }
+    } else {
+      const baseURL = activeKey.baseUrl ?? 'https://api.openai.com/v1';
+      const resp = await fetch(`${baseURL}/models`, {
+        headers: { Authorization: `Bearer ${activeKey.key}` },
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!resp.ok) {
+        const body = await resp.json().catch(() => ({})) as any;
+        throw new Error(body?.error?.message ?? `HTTP ${resp.status}`);
+      }
+    }
+    res.json({ ok: true, latencyMs: Date.now() - start });
+  } catch (err: any) {
+    res.status(400).json({ ok: false, error: err.message ?? 'Falha na validação.' });
+  }
+});
+
+// ==================== ADMIN: AI MODELS ====================
+
+// GET /api/admin/models — list all models in the registry
+app.get('/api/admin/models', auth.authenticate, requireAdmin, (req, res) => {
+  const models = db.prepare('SELECT * FROM ai_models ORDER BY provider ASC, is_default DESC, id ASC').all();
+  res.json(models);
+});
+
+// PATCH /api/admin/models/:modelId — toggle enabled/set default/update costs
+app.patch('/api/admin/models/:modelId', auth.authenticate, requireAdmin, (req: any, res) => {
+  const { modelId } = req.params;
+  const { enabled, is_default, input_cost_per_1m, output_cost_per_1m, input_cached_cost_per_1m } = req.body;
+
+  const model = db.prepare('SELECT id FROM ai_models WHERE id = ?').get(modelId);
+  if (!model) return res.status(404).json({ error: 'Modelo não encontrado.' });
+
+  if (enabled !== undefined) {
+    db.prepare('UPDATE ai_models SET enabled = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ? WHERE id = ?')
+      .run(enabled ? 1 : 0, req.user?.id || null, modelId);
+  }
+  if (is_default) {
+    db.prepare('UPDATE ai_models SET is_default = 0').run();
+    db.prepare('UPDATE ai_models SET is_default = 1, updated_at = CURRENT_TIMESTAMP, updated_by = ? WHERE id = ?')
+      .run(req.user?.id || null, modelId);
+  }
+  if (input_cost_per_1m !== undefined || output_cost_per_1m !== undefined || input_cached_cost_per_1m !== undefined) {
+    const fields: string[] = [];
+    const vals: any[] = [];
+    if (input_cost_per_1m !== undefined) { fields.push('input_cost_per_1m = ?'); vals.push(input_cost_per_1m); }
+    if (input_cached_cost_per_1m !== undefined) { fields.push('input_cached_cost_per_1m = ?'); vals.push(input_cached_cost_per_1m); }
+    if (output_cost_per_1m !== undefined) { fields.push('output_cost_per_1m = ?'); vals.push(output_cost_per_1m); }
+    fields.push('updated_at = CURRENT_TIMESTAMP', 'updated_by = ?');
+    vals.push(req.user?.id || null, modelId);
+    db.prepare(`UPDATE ai_models SET ${fields.join(', ')} WHERE id = ?`).run(...vals);
+  }
+
+  const updated = db.prepare('SELECT * FROM ai_models WHERE id = ?').get(modelId);
+  res.json(updated);
 });
 
 // Serve static files in production

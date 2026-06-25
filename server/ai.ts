@@ -3,6 +3,7 @@ import OpenAI from 'openai';
 import db from './db.js';
 import { buildSystemPromptV3 } from './promptBuilder.js';
 import { getActiveKey, calcCredits } from './providers/registry.js';
+import { config } from './config.js';
 
 // Global state for Gemini traffic shaping (5 RPM / 250k TPM)
 let lastRequestTime = 0;
@@ -13,46 +14,57 @@ const TPM_WINDOW_MS = 60000;
 // GPT desabilitado temporariamente
 // const GPT_RATE = 1.3;
 
-/** Limites por tier: sem instituição = free, com instituição = base */
+/**
+ * Returns credit/project limits for a user.
+ * In self-hosted mode every user gets unlimited resources — the operator pays their own API bills.
+ * In cloud mode: users without an institution get the free tier; those with one get the base tier.
+ */
 export function getUserCreditLimit(userId: string): { creditLimit: number; projectLimit: number } {
+  if (config.isSelfHosted) {
+    return { creditLimit: Infinity, projectLimit: Infinity };
+  }
   const rows = db.prepare('SELECT institutionId FROM user_institutions WHERE userId = ?').all(userId) as { institutionId: string }[];
   return rows.length > 0
     ? { creditLimit: 1_000_000, projectLimit: 10 }
     : { creditLimit: 100_000,   projectLimit: 5  };
 }
 
-const toolDeclarations = [
+const baseFunctionDeclarations = [
   {
-    functionDeclarations: [
-      {
-        name: 'listar_disciplinas',
-        description: 'Lista as disciplinas disponíveis para o estudante no AVA.',
-        parameters: { type: 'OBJECT', properties: {} }
+    name: 'listar_disciplinas',
+    description: 'Lista as disciplinas disponíveis para o estudante no AVA.',
+    parameters: { type: 'OBJECT', properties: {} }
+  },
+  {
+    name: 'ler_conteudo_disciplina',
+    description: 'Lê o conteúdo programático completo de uma disciplina específica pelo seu ID. Use isso para buscar dados factuais sobre matérias didáticas e responder a perguntas do estudante com precisão.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        disciplinaId: { type: 'STRING', description: 'O ID da disciplina a ser lida.' }
       },
-      {
-        name: 'ler_conteudo_disciplina',
-        description: 'Lê o conteúdo programático completo de uma disciplina específica pelo seu ID. Use isso para buscar dados factuais sobre matérias didáticas e responder a perguntas do estudante com precisão.',
-        parameters: {
-          type: 'OBJECT',
-          properties: {
-            disciplinaId: { type: 'STRING', description: 'O ID da disciplina a ser lida.' }
-          },
-          required: ['disciplinaId']
-        }
-      },
-      {
-        name: 'listar_atividades',
-        description: 'Lista as atividades/tarefas registradas com título, descrição e prazo de entrega para a sala de aula do estudante.',
-        parameters: { type: 'OBJECT', properties: {} }
-      },
-      {
-        name: 'solicitar_contato_professor',
-        description: 'Gera e retorna o link de contato direto do WhatsApp do Professor Pedro, responsável pela plataforma. Chame esta ferramenta se o estudante expressar que precisa de ajuda direta de um humano, atendimento presencial, atendimento extra ou quiser o contato do professor Pedro.',
-        parameters: { type: 'OBJECT', properties: {} }
-      }
-    ]
-  }
+      required: ['disciplinaId']
+    }
+  },
+  {
+    name: 'listar_atividades',
+    description: 'Lista as atividades/tarefas registradas com título, descrição e prazo de entrega para a sala de aula do estudante.',
+    parameters: { type: 'OBJECT', properties: {} }
+  },
 ];
+
+// Only register the professor contact tool if a WhatsApp number is configured
+function buildToolDeclarations() {
+  const decls = [...baseFunctionDeclarations];
+  if (config.professorWhatsApp) {
+    decls.push({
+      name: 'solicitar_contato_professor',
+      description: 'Gera e retorna o link de contato direto do WhatsApp do professor responsável pela plataforma. Chame esta ferramenta se o estudante expressar que precisa de ajuda direta de um humano, atendimento presencial ou quiser o contato do professor.',
+      parameters: { type: 'OBJECT', properties: {} }
+    });
+  }
+  return [{ functionDeclarations: decls }];
+}
 
 function queryDisciplinas(userId: string) {
   const classrooms = db.prepare('SELECT classroomId FROM user_classrooms WHERE userId = ?').all(userId) as { classroomId: string }[];
@@ -188,10 +200,10 @@ async function _generateChatResponse(
       lastRequestTime = Date.now();
 
       const model = genAI.getGenerativeModel(
-        { 
-          model: 'gemini-2.5-flash', 
+        {
+          model: 'gemini-2.5-flash',
           systemInstruction,
-          tools: toolDeclarations
+          tools: buildToolDeclarations()
         },
         { timeout: 60_000 } // 60s for standard chat
       );
@@ -227,10 +239,13 @@ async function _generateChatResponse(
               const studentName = user ? user.name : 'Estudante';
               const textMessage = `Olá, sou o ${studentName} e preciso de ajuda com as atividades no Scaffl!`;
               const encodedText = encodeURIComponent(textMessage);
-              toolResult = {
-                whatsappUrl: `https://wa.me/5511914389212?text=${encodedText}`,
-                message: 'Link de contato direto do WhatsApp do Professor Pedro gerado. Você DEVE exibir este link no formato Markdown: [Clique aqui para falar com o Professor Pedro no WhatsApp](URL_WHATSAPP), onde URL_WHATSAPP é o link exato gerado no campo whatsappUrl.'
-              };
+              const waNumber = config.professorWhatsApp;
+              toolResult = waNumber
+                ? {
+                    whatsappUrl: `https://wa.me/${waNumber}?text=${encodedText}`,
+                    message: 'Link de contato direto do WhatsApp do professor gerado. Você DEVE exibir este link no formato Markdown: [Clique aqui para falar com o professor no WhatsApp](URL_WHATSAPP), onde URL_WHATSAPP é o link exato gerado no campo whatsappUrl.'
+                  }
+                : { error: 'Contato por WhatsApp não configurado nesta instância.' };
             } else {
               toolResult = { error: 'Ferramenta desconhecida.' };
             }

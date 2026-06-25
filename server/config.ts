@@ -16,6 +16,14 @@ export const config = {
   get allowedOrigins(): string[] {
     return process.env.ALLOWED_ORIGINS?.split(',').map(s => s.trim()) ?? [];
   },
+
+  // Cloud billing telemetry — only meaningful in cloud deployments, both default to 0
+  get spendCap(): number { return parseFloat(process.env.SCAFFL_SPEND_CAP ?? '0'); },
+  get externalInitialSpend(): number { return parseFloat(process.env.SCAFFL_EXTERNAL_SPEND ?? '0'); },
+
+  // Optional: professor WhatsApp contact tool (self-hosted operators set their own number)
+  // Format: international number without +, e.g. 5511999999999
+  get professorWhatsApp(): string { return process.env.PROFESSOR_WHATSAPP ?? ''; },
 };
 
 /**
