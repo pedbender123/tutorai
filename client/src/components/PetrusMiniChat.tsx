@@ -55,7 +55,7 @@ function MiniChatWidget({ navigate }: { navigate: ReturnType<typeof useNavigate>
     setLoading(true);
     setQueueWarning(false);
 
-    queueTimerRef.current = setTimeout(() => setQueueWarning(true), 15_000);
+    queueTimerRef.current = setTimeout(() => setQueueWarning(true), 30_000);
 
     try {
       const historyForApi = updatedHistory.slice(0, -1); // exclude the message we just added
@@ -207,7 +207,7 @@ function MiniChatWidget({ navigate }: { navigate: ReturnType<typeof useNavigate>
                   </div>
                   {queueWarning && (
                     <p className="text-[11px] text-amber-500 mt-1.5 leading-snug">
-                      Alto número de pedidos — não feche nem recarregue.
+                      Demorando mais que o esperado — aguarde, já está sendo processado.
                     </p>
                   )}
                 </div>

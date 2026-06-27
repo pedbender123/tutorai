@@ -733,7 +733,12 @@ app.post('/api/lab/projects/:id/messages', auth.authenticate, async (req: any, r
 
   } catch (err: any) {
     console.error(err);
-    const errorMessage = err.message?.includes('Limite') ? err.message : 'Falha ao gerar resposta do Lab Agent.';
+    const msg: string = err.message ?? '';
+    const errorMessage = msg.includes('Limite')
+      ? msg
+      : msg.includes('RECITATION')
+        ? 'O modelo bloqueou a resposta por semelhança com conteúdo protegido. Tente reformular seu pedido de forma diferente.'
+        : 'Falha ao gerar resposta do Lab Agent.';
     
     // Grava uma resposta de falha do assistente no banco de dados, para que a mensagem de input do aluno nunca seja descartada da pesquisa científica
     const assistantErrorMsgId = crypto.randomUUID();

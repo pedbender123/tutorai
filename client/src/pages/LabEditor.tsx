@@ -217,7 +217,7 @@ export default function LabEditor() {
     setLoadingStage('thinking');
 
     const stageTimer = setTimeout(() => setLoadingStage('coding'), 3000);
-    const queueWarningTimer = setTimeout(() => setQueueWarning(true), 15_000);
+    const queueWarningTimer = setTimeout(() => setQueueWarning(true), 40_000);
 
     let drawingScreenshotUrl: string | undefined = undefined;
 
@@ -430,7 +430,7 @@ export default function LabEditor() {
                 </div>
                 {queueWarning && (
                   <p className="text-[11px] text-amber-500 text-center mt-1">
-                    Alto número de pedidos simultâneos — não feche nem recarregue a página.
+                    O modelo está demorando para responder — aguarde, sua requisição já está sendo processada.
                   </p>
                 )}
               </div>
