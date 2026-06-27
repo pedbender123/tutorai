@@ -2,7 +2,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import crypto from 'crypto';
 import db from './db.js';
 import { buildSupportPrompt } from './promptBuilder.js';
-import { getActiveKey, calcCredits, getUserCreditLimit } from './providers/registry.js';
+import { getActiveKey, calcCredits } from './providers/registry.js';
+import { getUserCreditLimit } from './ai.js';
 import { config } from './config.js';
 import { checkPetrusQuota, recordPetrusCredits, logQuotaEvent } from './quota.js';
 
