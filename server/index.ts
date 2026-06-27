@@ -18,6 +18,7 @@ import { checkLabQuota, recordLabRequest, getQuotaSummary } from './quota.js';
 import { getQueueDepth } from './limiter.js';
 import { encryptSecret } from './crypto/secrets.js';
 import { getActiveKey, invalidateKeyCache } from './providers/registry.js';
+import { generateSupportResponse } from './petrusSupport.js';
 
 dotenv.config({ path: join(dirname(fileURLToPath(import.meta.url)), '../.env') });
 validateConfig();
@@ -451,6 +452,27 @@ app.post('/api/chats/:chatId/messages', auth.authenticate, limiter, async (req: 
     console.error(err);
     const errorMessage = err.message.includes('Limite') ? err.message : 'Falha ao gerar resposta do tutor.';
     res.status(500).json({ error: errorMessage });
+  }
+});
+
+// ==================== PETRUS SUPPORT ====================
+
+// POST /api/petrus/support — stateless support mini-chat (history kept client-side)
+app.post('/api/petrus/support', auth.authenticate, async (req: any, res) => {
+  const userId = req.user.id;
+  const { messages = [], newMessage, agenticMode = false } = req.body;
+
+  if (!newMessage || typeof newMessage !== 'string' || !newMessage.trim()) {
+    return res.status(400).json({ error: 'newMessage é obrigatório.' });
+  }
+
+  try {
+    const result = await generateSupportResponse(userId, messages, newMessage.trim(), !!agenticMode);
+    res.json({ text: result.text, creditsUsed: result.creditsUsed });
+  } catch (err: any) {
+    console.error('[Support] Error:', err);
+    const msg = (err.message || '').includes('Limite') ? err.message : 'Falha ao gerar resposta do Petrus.';
+    res.status(500).json({ error: msg });
   }
 });
 

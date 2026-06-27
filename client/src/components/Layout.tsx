@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, useNavigate, useLocation, useParams, Link } from 'react-router-dom';
+import PetrusMiniChat from './PetrusMiniChat';
 import { useAuth } from '../contexts/AuthContext';
 import { api, AppNotification } from '../lib/api';
 import {
@@ -432,6 +433,9 @@ export default function Layout() {
           <Outlet />
         </div>
       </main>
+
+      {/* Petrus Mega-Agent — mini chat flutuante (hidden on /chat routes) */}
+      <PetrusMiniChat />
 
       {/* Modal de Alerta Invasivo / Primeiras Notificações */}
       {alertNotifs.length > 0 && (

@@ -265,6 +265,19 @@ class ApiClient {
       delete: (id: string) => this.delete<void>(`/api/admin/users/${id}`),
     },
   };
+
+  // Petrus mega-agent — support surface (stateless, history kept client-side)
+  petrus = {
+    support: (
+      history: Array<{ role: 'user' | 'model'; content: string }>,
+      newMessage: string,
+      agenticMode: boolean,
+    ) => this.post<{ text: string; creditsUsed: number }>('/api/petrus/support', {
+      messages: history,
+      newMessage,
+      agenticMode,
+    }),
+  };
 }
 
 export const api = new ApiClient();
