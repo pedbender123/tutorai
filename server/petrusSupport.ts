@@ -5,7 +5,7 @@ import { buildSupportPrompt } from './promptBuilder.js';
 import { getActiveKey, calcCredits } from './providers/registry.js';
 import { getUserCreditLimit } from './ai.js';
 import { config } from './config.js';
-import { checkPetrusQuota, recordPetrusCredits, logQuotaEvent } from './quota.js';
+import { checkPetrusQuota, recordPetrusCredits, logQuotaEvent, getQuotaSummary } from './quota.js';
 
 export interface SupportMessage {
   role: 'user' | 'model';
@@ -49,6 +49,11 @@ const READ_TOOL_DECLS = [
     description: 'Lista as atividades/tarefas com título, descrição e prazo de entrega da sala do usuário.',
     parameters: { type: 'OBJECT', properties: {} },
   },
+  {
+    name: 'consultar_cotas',
+    description: 'Retorna o consumo atual e os limites de cota do usuário: requisições do Lab (hoje e na semana) e créditos do Petrus (esta semana). Use sempre que o usuário perguntar sobre saldo, cotas, limites, quantas mensagens restam ou quando sua cota renova.',
+    parameters: { type: 'OBJECT', properties: {} },
+  },
 ];
 
 const WRITE_TOOL_DECLS = [
@@ -86,6 +91,22 @@ function executeToolCall(name: string, args: any, userId: string): any {
       WHERE ac.classroomId IN (${ph})
       ORDER BY a.dueDate ASC
     `).all(...classrooms.map(c => c.classroomId));
+  }
+
+  if (name === 'consultar_cotas') {
+    const summary = getQuotaSummary(userId);
+    return {
+      tier: summary.tier,
+      lab: {
+        hoje: { usado: summary.lab.today, limite: summary.lab.dailyLimit, restante: summary.lab.dailyLimit - summary.lab.today },
+        semana: { usado: summary.lab.week, limite: summary.lab.weeklyLimit, restante: summary.lab.weeklyLimit - summary.lab.week },
+        renovacao: { diaria: 'meia-noite UTC', semanal: 'segunda-feira UTC' },
+      },
+      petrus: {
+        semana: { usado: summary.petrus.creditsWeek, limite: summary.petrus.weeklyLimit, restante: summary.petrus.weeklyLimit - summary.petrus.creditsWeek },
+        renovacao: 'segunda-feira UTC',
+      },
+    };
   }
 
   if (name === 'criar_projeto_lab') {
