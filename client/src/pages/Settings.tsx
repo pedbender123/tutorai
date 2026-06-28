@@ -249,44 +249,6 @@ export default function Settings() {
         {/* ===== USO ===== */}
         {activeTab === 'usage' && (
           <>
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary"><Zap size={20} /></div>
-              <div>
-                <h2 className="text-base font-bold">Consumo Mensal</h2>
-                <p className="text-xs text-slate-505">Acompanhamento do uso de créditos de IA.</p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between items-end">
-                <div className="space-y-0.5">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Créditos Gastos</span>
-                  <p className="text-2xl font-black text-primary">{creditsMonthly.toLocaleString()}</p>
-                </div>
-                <div className="text-right space-y-0.5">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Limite da Cota</span>
-                  <p className="text-lg font-bold text-slate-400">{limitMonthly.toLocaleString()}</p>
-                </div>
-              </div>
-              <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-700/50">
-                <motion.div initial={{ width: 0 }} animate={{ width: `${usageMonthly}%` }} className={cn("h-full rounded-full transition-all duration-500", usageMonthly > 90 ? "bg-red-500" : usageMonthly > 75 ? "bg-yellow-500" : "bg-primary")} />
-              </div>
-              <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 text-sm text-slate-500 dark:text-slate-400 leading-relaxed space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Plano</span>
-                  <span className={cn("text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg", hasInstitution ? "bg-primary/10 text-primary" : "bg-slate-200 dark:bg-slate-800 text-slate-500")}>
-                    {hasInstitution ? 'Institucional' : 'Gratuito'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Projetos no Lab</span>
-                  <span className="text-[10px] font-black text-slate-500">até {projectLimit} projetos</span>
-                </div>
-                <p className="text-[11px] pt-1 border-t border-slate-200 dark:border-slate-800">O SCAFFL opera em créditos de baixo custo (1 crédito = 1 token). Seu saldo é renovado automaticamente todo mês.</p>
-              </div>
-            </div>
-          </div>
-
           {/* ── Lab quota card ── */}
           {quota && (
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-5">
