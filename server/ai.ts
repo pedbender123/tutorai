@@ -1,10 +1,11 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import OpenAI from 'openai';
+import crypto from 'crypto';
 import db from './db.js';
 import { buildSystemPromptV3 } from './promptBuilder.js';
 import { getActiveKey, calcCredits } from './providers/registry.js';
 import { config } from './config.js';
-import { checkPetrusQuota, recordPetrusCredits, logQuotaEvent } from './quota.js';
+import { checkPetrusQuota, recordPetrusCredits, logQuotaEvent, getQuotaSummary } from './quota.js';
 
 // Global state for Gemini traffic shaping (5 RPM / 250k TPM)
 let lastRequestTime = 0;
@@ -56,8 +57,64 @@ const baseFunctionDeclarations = [
   },
 ];
 
-function buildToolDeclarations() {
-  return [{ functionDeclarations: baseFunctionDeclarations }];
+const agenticDeclarations = [
+  {
+    name: 'criar_projeto_lab',
+    description: 'Cria um novo projeto no Lab do usuário. Use quando o usuário pedir explicitamente para criar um simulador ou projeto. Retorna o id e a URL do projeto criado.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        title: { type: 'STRING', description: 'Título do projeto a ser criado.' },
+      },
+      required: ['title'],
+    },
+  },
+  {
+    name: 'consultar_cotas',
+    description: 'Retorna o consumo atual e os limites de cota do usuário: requisições do Lab (hoje e na semana) e créditos do Petrus (esta semana). Use quando o usuário perguntar sobre saldo, limites ou quando renova.',
+    parameters: { type: 'OBJECT', properties: {} },
+  },
+];
+
+function buildToolDeclarations(agenticMode = false) {
+  const decls = agenticMode
+    ? [...baseFunctionDeclarations, ...agenticDeclarations]
+    : baseFunctionDeclarations;
+  return [{ functionDeclarations: decls }];
+}
+
+function executeAgenticTool(name: string, args: any, userId: string): any {
+  if (name === 'consultar_cotas') {
+    const summary = getQuotaSummary(userId);
+    return {
+      tier: summary.tier,
+      lab: {
+        hoje:   { usado: summary.lab.today, limite: summary.lab.dailyLimit,  restante: summary.lab.dailyLimit  - summary.lab.today },
+        semana: { usado: summary.lab.week,  limite: summary.lab.weeklyLimit, restante: summary.lab.weeklyLimit - summary.lab.week  },
+        renovacao: { diaria: 'meia-noite UTC', semanal: 'segunda-feira UTC' },
+      },
+      petrus: {
+        semana: { usado: summary.petrus.creditsWeek, limite: summary.petrus.weeklyLimit, restante: summary.petrus.weeklyLimit - summary.petrus.creditsWeek },
+        renovacao: 'segunda-feira UTC',
+      },
+    };
+  }
+
+  if (name === 'criar_projeto_lab') {
+    const title = ((args?.title as string) || 'Novo Projeto').slice(0, 120);
+    const { projectLimit } = getUserCreditLimit(userId);
+    const { cnt } = db.prepare('SELECT COUNT(*) as cnt FROM lab_projects WHERE userId = ?').get(userId) as { cnt: number };
+    if (cnt >= projectLimit) {
+      return { error: `Limite de ${projectLimit} projetos atingido para este plano.` };
+    }
+    const instRow = db.prepare('SELECT institutionId FROM user_institutions WHERE userId = ? LIMIT 1').get(userId) as { institutionId: string } | undefined;
+    const institutionId = instRow?.institutionId ?? null;
+    const id = crypto.randomUUID();
+    db.prepare('INSERT INTO lab_projects (id, userId, institutionId, title, isPublic) VALUES (?, ?, ?, ?, ?)').run(id, userId, institutionId, title, institutionId ? 1 : 0);
+    return { id, title, url: `/lab/${id}` };
+  }
+
+  return { error: 'Ferramenta desconhecida.' };
 }
 
 function queryDisciplinas(userId: string) {
@@ -102,7 +159,8 @@ async function _generateChatResponse(
   chatId: string,
   userId: string,
   provider: 'google' | 'gpt' = 'google',
-  overrideSystemPrompt?: string
+  overrideSystemPrompt?: string,
+  agenticMode = false,
 ) {
   // Fetch credentials from registry (DB first, env fallback)
   const { key: googleKey } = getActiveKey('google');
@@ -189,7 +247,7 @@ async function _generateChatResponse(
         {
           model: 'gemini-2.5-flash',
           systemInstruction,
-          tools: buildToolDeclarations()
+          tools: buildToolDeclarations(agenticMode)
         },
         { timeout: 60_000 } // 60s for standard chat
       );
@@ -220,6 +278,8 @@ async function _generateChatResponse(
               toolResult = queryDisciplinaConteudo((args as any).disciplinaId);
             } else if (name === 'listar_atividades') {
               toolResult = queryAtividades(userId);
+            } else if (name === 'criar_projeto_lab' || name === 'consultar_cotas') {
+              toolResult = executeAgenticTool(name, args, userId);
             } else {
               toolResult = { error: 'Ferramenta desconhecida.' };
             }
@@ -306,10 +366,11 @@ export async function generateChatResponse(
   chatId: string,
   userId: string,
   provider: 'google' | 'gpt' = 'google',
-  overrideSystemPrompt?: string
+  overrideSystemPrompt?: string,
+  agenticMode = false,
 ) {
   const result = await (geminiQueue = geminiQueue
     .catch(() => {})
-    .then(() => _generateChatResponse(history, newMessage, chatId, userId, provider, overrideSystemPrompt)));
+    .then(() => _generateChatResponse(history, newMessage, chatId, userId, provider, overrideSystemPrompt, agenticMode)));
   return result;
 }

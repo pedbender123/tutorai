@@ -414,7 +414,7 @@ app.get('/api/chats/:chatId/messages', auth.authenticate, (req: any, res) => {
 
 app.post('/api/chats/:chatId/messages', auth.authenticate, limiter, async (req: any, res) => {
   const { chatId } = req.params;
-  const { content, provider = 'google' } = req.body;
+  const { content, provider = 'google', agenticMode = false } = req.body;
   const userId = req.user.id;
 
   try {
@@ -432,7 +432,7 @@ app.post('/api/chats/:chatId/messages', auth.authenticate, limiter, async (req: 
     const history = db.prepare('SELECT role, content FROM messages WHERE chatId = ? ORDER BY createdAt ASC').all(chatId) as any[];
 
     // Call AI with chatId to let it fetch persona/disciplina from DB
-    const response = await ai.generateChatResponse(history.slice(0, -1), content, chatId, userId, provider);
+    const response = await ai.generateChatResponse(history.slice(0, -1), content, chatId, userId, provider, undefined, !!agenticMode);
 
     // Store model response
     const modelMsgId = crypto.randomUUID();

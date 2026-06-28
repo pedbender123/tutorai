@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Send, Loader2, User as UserIcon, Plus, ChevronDown, Check } from 'lucide-react';
+import { Send, Loader2, User as UserIcon, Plus, ChevronDown, Check, Zap, ZapOff } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { cn } from '../lib/utils';
 import { api, Chat as ChatType, Message, Persona, Disciplina } from '../lib/api';
@@ -43,6 +43,7 @@ export default function Chat() {
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [agenticMode, setAgenticMode] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const switcherRef = useRef<HTMLDivElement>(null);
@@ -110,7 +111,7 @@ export default function Chat() {
     const tempId = crypto.randomUUID();
     setMessages(prev => [...prev, { id: tempId, chatId, userId: user.id, role: 'user', content: currentInput, createdAt: new Date().toISOString(), tokensUsed: 0, creditsUsed: 0 }]);
     try {
-      const { userMessage, modelMessage } = await api.post<any>(`/api/chats/${chatId}/messages`, { content: currentInput, provider: 'google' });
+      const { userMessage, modelMessage } = await api.post<any>(`/api/chats/${chatId}/messages`, { content: currentInput, provider: 'google', agenticMode });
       setMessages(prev => [...prev.filter(m => m.id !== tempId), userMessage, modelMessage]);
       await refreshUserData();
     } catch (error: any) {
@@ -350,22 +351,40 @@ export default function Chat() {
       <div className="px-4 py-4 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
         <div className="max-w-3xl mx-auto">
           <form onSubmit={handleSend} className="relative flex items-end gap-2">
-            <textarea
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e); } }}
-              placeholder={persona ? `Pergunte para ${persona.nome.split(' ')[0]}...` : 'Digite sua mensagem...'}
-              disabled={initializing || !chatId}
-              className="flex-1 max-h-40 min-h-[52px] bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-5 py-3.5 pr-14 resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all text-slate-900 dark:text-slate-100 text-sm leading-relaxed"
-              rows={1}
-            />
-            <button
-              type="submit"
-              disabled={!input.trim() || loading || initializing || !chatId}
-              className="absolute right-2 bottom-2 w-10 h-10 bg-primary text-primary-foreground rounded-xl flex items-center justify-center hover:opacity-90 active:scale-95 transition-all shadow-md shadow-primary/20 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <Send size={18} className="ml-0.5" />
-            </button>
+            <div className="relative flex-1">
+              <textarea
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e); } }}
+                placeholder={persona ? `Pergunte para ${persona.nome.split(' ')[0]}...` : 'Digite sua mensagem...'}
+                disabled={initializing || !chatId}
+                className="w-full max-h-40 min-h-[52px] bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-5 py-3.5 pr-24 resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all text-slate-900 dark:text-slate-100 text-sm leading-relaxed"
+                rows={1}
+              />
+              {/* Agentic toggle */}
+              <div className="absolute right-12 bottom-2 group">
+                <button
+                  type="button"
+                  onClick={() => setAgenticMode(v => !v)}
+                  title={agenticMode ? 'Modo Agêntico ativo — consome mais créditos' : 'Ativar Modo Agêntico (criar projetos, consultar cotas)'}
+                  className={cn(
+                    'w-10 h-10 rounded-xl flex items-center justify-center transition-all',
+                    agenticMode
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800',
+                  )}
+                >
+                  {agenticMode ? <Zap size={16} fill="currentColor" /> : <ZapOff size={16} />}
+                </button>
+              </div>
+              <button
+                type="submit"
+                disabled={!input.trim() || loading || initializing || !chatId}
+                className="absolute right-2 bottom-2 w-10 h-10 bg-primary text-primary-foreground rounded-xl flex items-center justify-center hover:opacity-90 active:scale-95 transition-all shadow-md shadow-primary/20 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Send size={18} className="ml-0.5" />
+              </button>
+            </div>
           </form>
         </div>
       </div>
