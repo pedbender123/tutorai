@@ -2,6 +2,12 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 
 const API_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:3001');
 
+export interface UserQuota {
+  tier: 'free_nonInst' | 'free_inst' | 'pro_nonInst';
+  lab: { today: number; dailyLimit: number; week: number; weeklyLimit: number };
+  petrus: { creditsWeek: number; weeklyLimit: number };
+}
+
 export interface UserData {
   id: string;
   name: string;
@@ -18,6 +24,7 @@ export interface UserData {
   lastResetColega: string;
   creditsMonthly: number;
   institutions: string[];
+  quota?: UserQuota;
 }
 
 interface AuthContextType {

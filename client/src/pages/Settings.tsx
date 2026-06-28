@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme, ACCENT_COLORS } from '../contexts/ThemeContext';
-import { Moon, Sun, Palette, Zap, Shield, Building2, Users, Plus, Mail, Globe, X, ShieldAlert, ChevronLeft, UserCheck, UserX, PanelRightOpen, PanelRightClose, Eye, EyeOff, ShieldCheck, Terminal, RefreshCw, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronRight, MoreVertical, QrCode, Edit3, Trash2, Copy, Check, Lock } from 'lucide-react';
+import { Moon, Sun, Palette, Zap, Shield, Building2, Users, Plus, Mail, Globe, X, ShieldAlert, ChevronLeft, UserCheck, UserX, PanelRightOpen, PanelRightClose, Eye, EyeOff, ShieldCheck, Terminal, RefreshCw, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronRight, MoreVertical, QrCode, Edit3, Trash2, Copy, Check, Lock, FlaskConical, Sparkles } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { api, Institution, UserAdmin } from '../lib/api';
 import { motion, AnimatePresence } from 'motion/react';
@@ -203,8 +203,20 @@ export default function Settings() {
   const creditsMonthly = userData.creditsMonthly || 0;
   const hasInstitution = (userData.institutions?.length || 0) > 0;
   const limitMonthly = hasInstitution ? 1_000_000 : 100_000;
-  const projectLimit = hasInstitution ? 10 : 5;
+  const projectLimit = userData.quota?.tier === 'free_inst' ? 10 : hasInstitution ? 10 : 5;
   const usageMonthly = Math.min((creditsMonthly / limitMonthly) * 100, 100);
+
+  const quota = userData.quota;
+  const labToday     = quota?.lab.today      ?? 0;
+  const labDayLimit  = quota?.lab.dailyLimit  ?? (hasInstitution ? 10 : 5);
+  const labWeek      = quota?.lab.week        ?? 0;
+  const labWeekLimit = quota?.lab.weeklyLimit ?? (hasInstitution ? 50 : 20);
+  const labDayPct    = Math.min((labToday / labDayLimit) * 100, 100);
+  const labWeekPct   = Math.min((labWeek  / labWeekLimit) * 100, 100);
+
+  const petrusWeek      = quota?.petrus.creditsWeek   ?? 0;
+  const petrusWeekLimit = quota?.petrus.weeklyLimit   ?? (hasInstitution ? 100_000 : 100_000);
+  const petrusPct       = Math.min((petrusWeek / petrusWeekLimit) * 100, 100);
 
   return (
     <div className="p-5 max-w-5xl mx-auto space-y-5">
@@ -236,6 +248,7 @@ export default function Settings() {
       <div className="space-y-6">
         {/* ===== USO ===== */}
         {activeTab === 'usage' && (
+          <>
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary"><Zap size={20} /></div>
@@ -273,6 +286,94 @@ export default function Settings() {
               </div>
             </div>
           </div>
+
+          {/* ── Lab quota card ── */}
+          {quota && (
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary"><FlaskConical size={20} /></div>
+                <div>
+                  <h2 className="text-base font-bold">Cota do Lab</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Requisições de geração de simuladores (Gemma 31B).</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {/* Daily */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hoje</span>
+                    <span className={cn("text-xs font-bold tabular-nums", labToday >= labDayLimit ? "text-red-500" : labToday >= labDayLimit * 0.8 ? "text-amber-500" : "text-slate-600 dark:text-slate-300")}>
+                      {labToday} / {labDayLimit} req.
+                    </span>
+                  </div>
+                  <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${labDayPct}%` }}
+                      className={cn("h-full rounded-full transition-all duration-500",
+                        labDayPct >= 100 ? "bg-red-500" : labDayPct >= 80 ? "bg-amber-500" : "bg-primary"
+                      )}
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-400">Renova à meia-noite UTC.</p>
+                </div>
+
+                {/* Weekly */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Esta semana</span>
+                    <span className={cn("text-xs font-bold tabular-nums", labWeek >= labWeekLimit ? "text-red-500" : labWeek >= labWeekLimit * 0.8 ? "text-amber-500" : "text-slate-600 dark:text-slate-300")}>
+                      {labWeek} / {labWeekLimit} req.
+                    </span>
+                  </div>
+                  <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${labWeekPct}%` }}
+                      className={cn("h-full rounded-full transition-all duration-500",
+                        labWeekPct >= 100 ? "bg-red-500" : labWeekPct >= 80 ? "bg-amber-500" : "bg-primary"
+                      )}
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-400">Renova toda segunda-feira UTC.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Petrus support quota card ── */}
+          {quota && (
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary"><Sparkles size={20} /></div>
+                <div>
+                  <h2 className="text-base font-bold">Petrus — Assistente</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Créditos do mini-chat de suporte (Gemini Flash).</p>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Esta semana</span>
+                  <span className={cn("text-xs font-bold tabular-nums", petrusPct >= 100 ? "text-red-500" : petrusPct >= 80 ? "text-amber-500" : "text-slate-600 dark:text-slate-300")}>
+                    {petrusWeek.toLocaleString()} / {petrusWeekLimit.toLocaleString()} cr.
+                  </span>
+                </div>
+                <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${petrusPct}%` }}
+                    className={cn("h-full rounded-full transition-all duration-500",
+                      petrusPct >= 100 ? "bg-red-500" : petrusPct >= 80 ? "bg-amber-500" : "bg-primary"
+                    )}
+                  />
+                </div>
+                <p className="text-[10px] text-slate-400">Renova toda segunda-feira UTC.</p>
+              </div>
+            </div>
+          )}
+
+          </>
         )}
 
         {/* ===== APARÊNCIA ===== */}
