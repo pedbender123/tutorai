@@ -918,9 +918,11 @@ app.post('/api/lab/projects/:id/messages', auth.authenticate, async (req: any, r
       locale: localeRow?.locale,
     });
 
-    // Record Lab credits against the shared pool (cloud only)
+    // Cota pessoal consome o valor equivalente (quotaCredits), não o custo real em R$
+    // (creditsUsed) — senão chamadas na chave gratuita nunca contariam pra cota do
+    // usuário e ele poderia gerar sem limite. O custo real em R$ continua 0 na mensagem.
     if (config.isCloud) {
-      recordToolCredits(userId, agentResult.creditsUsed);
+      recordToolCredits(userId, agentResult.quotaCredits);
     }
 
     // Salva resposta do assistente

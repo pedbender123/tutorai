@@ -54,6 +54,7 @@ export interface SimAgentResult {
   tokensIn: number;
   tokensOut: number;
   creditsUsed: number;
+  quotaCredits: number;
   modelUsed: string;
   usedFree: boolean;
 }
@@ -120,13 +121,19 @@ async function _callModel(params: {
     cleanedHtml = rawText.trim();
   }
 
-  // Free-key calls cost nothing for real — don't price them at the paid rate.
-  const creditsUsed = free ? 0 : calcCredits(modelId, chatResult.inputTokens, chatResult.cachedTokens, chatResult.outputTokens);
+  // quotaCredits = o que essa chamada valeria na tarifa paga do modelo — é isso que
+  // consome a cota semanal/mensal do usuário, mesmo quando a chave gratuita absorve o
+  // custo real. Sem isso, um usuário poderia gerar mensagens sem limite via chave
+  // gratuita sem nunca esbarrar na própria cota (só no limite compartilhado da
+  // plataforma). creditsUsed continua sendo o custo real em R$ (0 quando free) — é o
+  // que aparece por mensagem e no dashboard financeiro.
+  const quotaCredits = calcCredits(modelId, chatResult.inputTokens, chatResult.cachedTokens, chatResult.outputTokens);
+  const creditsUsed = free ? 0 : quotaCredits;
   const tokensIn = chatResult.inputTokens;
   const tokensOut = chatResult.outputTokens;
 
   console.log(
-    `[Lab Agent] Done. Model: ${modelId}${free ? ' (free)' : ''}, in=${tokensIn}, cached=${chatResult.cachedTokens}, out=${tokensOut}, credits=${creditsUsed}`
+    `[Lab Agent] Done. Model: ${modelId}${free ? ' (free)' : ''}, in=${tokensIn}, cached=${chatResult.cachedTokens}, out=${tokensOut}, credits=${creditsUsed}, quotaCredits=${quotaCredits}`
   );
 
   return {
@@ -141,6 +148,7 @@ async function _callModel(params: {
     tokensIn,
     tokensOut,
     creditsUsed,
+    quotaCredits,
     modelUsed: modelId,
     usedFree: !!free,
   };

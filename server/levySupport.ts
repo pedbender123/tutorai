@@ -175,7 +175,7 @@ export async function generateSupportResponse(
   }));
   baseContents.push({ role: 'user', parts: [{ text: newMessage }] });
 
-  async function attempt(free: boolean): Promise<{ text: string; creditsUsed: number; tokensIn: number; tokensOut: number; usedFree: boolean }> {
+  async function attempt(free: boolean): Promise<{ text: string; creditsUsed: number; quotaCredits: number; tokensIn: number; tokensOut: number; usedFree: boolean }> {
     const keyProvider = free ? 'google-free' : 'google';
     const { key: googleKey } = getActiveKey(keyProvider);
     const genAI = new GoogleGenerativeAI(googleKey);
@@ -221,12 +221,15 @@ export async function generateSupportResponse(
     const thoughtsTok = (response.usageMetadata as any)?.thoughtsTokenCount ?? 0;
     const outputTok = candidatesTok + thoughtsTok;
     const cachedTok = (response.usageMetadata as any)?.cachedContentTokenCount ?? 0;
-    // Free-key calls cost nothing for real — don't price them at the paid rate.
-    const creditsUsed = free ? 0 : calcCredits(LEVY_MODEL, inputTok, cachedTok, outputTok);
+    // quotaCredits = valor equivalente na tarifa paga — consome a cota pessoal do
+    // usuário mesmo em chamadas gratuitas (senão a cota nunca seria atingida via chave
+    // free). creditsUsed é o custo real em R$ (0 quando free), mostrado por mensagem.
+    const quotaCredits = calcCredits(LEVY_MODEL, inputTok, cachedTok, outputTok);
+    const creditsUsed = free ? 0 : quotaCredits;
 
     if (free) recordTPM(LEVY_FREE_LIMIT_KEY, inputTok + outputTok);
 
-    return { text, creditsUsed, tokensIn: inputTok, tokensOut: outputTok, usedFree: free };
+    return { text, creditsUsed, quotaCredits, tokensIn: inputTok, tokensOut: outputTok, usedFree: free };
   }
 
   // Try the free-tier key first (15 RPM / 500 RPD / 250k TPM per AI Studio), unless
@@ -242,7 +245,8 @@ export async function generateSupportResponse(
   if (outcome.usedFree) incrementRPD(LEVY_FREE_LIMIT_KEY);
 
   if (config.isCloud) {
-    recordLevyCredits(userId, outcome.creditsUsed);
+    // Cota pessoal consome o valor equivalente (quotaCredits), não o custo real em R$.
+    recordLevyCredits(userId, outcome.quotaCredits);
     logQuotaEvent({ userId, surface: 'levy', event: 'request', model: LEVY_MODEL, tokensIn: outcome.tokensIn, tokensOut: outcome.tokensOut, credits: outcome.creditsUsed, usedFree: outcome.usedFree });
   }
 
