@@ -10,7 +10,7 @@ import html2canvas from 'html2canvas';
 export default function LabEditor() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, refreshUserData } = useAuth();
 
   const [project, setProject] = useState<LabProject | null>(null);
   const [messages, setMessages] = useState<LabMessage[]>([]);
@@ -275,6 +275,7 @@ export default function LabEditor() {
     try {
       const { userMessage, assistantMessage, htmlContent: newHtml } = await api.lab.sendMessage(projectId!, currentInput, undefined, drawingScreenshotUrl);
       setMessages(prev => [...prev.filter(m => m.id !== tempId), userMessage, assistantMessage]);
+      refreshUserData().catch(() => {});
       if (newHtml !== htmlContent) {
         setHtmlContent(newHtml);
         setPreviewKey(k => k + 1);

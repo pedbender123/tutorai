@@ -11,7 +11,7 @@ import { cn } from '../lib/utils';
 export default function LevyChat() {
   const { chatId } = useParams<{ chatId: string }>();
   const navigate = useNavigate();
-  const { userData } = useAuth();
+  const { userData, refreshUserData } = useAuth();
 
   const [allChats, setAllChats] = useState<LevyChatType[]>([]);
   const [messages, setMessages] = useState<LevyMessage[]>([]);
@@ -100,6 +100,7 @@ export default function LevyChat() {
       const { userMessage, modelMessage, chatTitle } = await api.levy.chats.sendMessage(chatId, text, agenticMode);
       setMessages(prev => [...prev.filter(m => m.id !== tempId), userMessage, modelMessage]);
       setAllChats(prev => prev.map(c => c.id === chatId ? { ...c, title: chatTitle || c.title, hasUserMessage: 1, updatedAt: new Date().toISOString() } : c));
+      refreshUserData().catch(() => {});
       // Só o modo agentic pode ter criado um projeto no Lab — avisa páginas já montadas.
       if (agenticMode) notifyLabProjectsChanged();
     } catch (err: any) {
@@ -248,6 +249,13 @@ export default function LevyChat() {
                       </div>
                     ) : (
                       <p className="whitespace-pre-wrap font-medium">{msg.content}</p>
+                    )}
+                    {msg.role === 'model' && msg.creditsUsed > 0 && (
+                      <div className="flex justify-end mt-2">
+                        <span className="text-[9px] font-semibold text-slate-400/85 dark:text-slate-500/80 tracking-wide">
+                          Custo: {msg.creditsUsed.toLocaleString('pt-BR')} créditos
+                        </span>
+                      </div>
                     )}
                   </div>
                 </div>

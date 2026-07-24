@@ -44,7 +44,7 @@ function loadSavedSize(): { width: number; height: number } {
 }
 
 function MiniChatWidget({ navigate }: { navigate: ReturnType<typeof useNavigate> }) {
-  const { userData } = useAuth();
+  const { userData, refreshUserData } = useAuth();
   const [open, setOpen] = useState(false);
   const [institutionName, setInstitutionName] = useState<string | undefined>(undefined);
   const [messages, setMessages] = useState<ChatMessage[]>([GREETING]);
@@ -117,6 +117,7 @@ function MiniChatWidget({ navigate }: { navigate: ReturnType<typeof useNavigate>
       const historyForApi = updatedHistory.slice(0, -1); // exclude the message we just added
       const result = await api.levy.support(historyForApi, text, agenticMode);
       setMessages(prev => [...prev, { role: 'model', content: result.text }]);
+      refreshUserData().catch(() => {});
       // Só o modo agentic pode ter criado um projeto no Lab — avisa páginas já montadas.
       if (agenticMode) notifyLabProjectsChanged();
     } catch (err: any) {
