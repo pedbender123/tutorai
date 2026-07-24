@@ -2,10 +2,10 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import LandingPage from './pages/LandingPage';
-import Chat from './pages/Chat';
 import Settings from './pages/Settings';
 import PersonasPage from './pages/PersonasPage';
 import DisciplinasPage from './pages/DisciplinasPage';
@@ -15,6 +15,8 @@ import ClassPage from './pages/ClassPage';
 import ActivitiesAdminPage from './pages/ActivitiesAdminPage';
 import ClassroomsAdminPage from './pages/ClassroomsAdminPage';
 import IaUsageAdminPage from './pages/IaUsageAdminPage';
+import InstitutionPage from './pages/InstitutionPage';
+import LevyChat from './pages/LevyChat';
 import { Loader2 } from 'lucide-react';
 
 const Spinner = () => (
@@ -43,6 +45,7 @@ export default function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
+      <LanguageProvider>
         <BrowserRouter>
           <Routes>
             {/* Landing — pública */}
@@ -61,18 +64,24 @@ export default function App() {
             >
               <Route path="/mural"            element={<PersonasPage />} />
               <Route path="/disciplinas"       element={<DisciplinasPage />} />
-              <Route path="/chat"              element={<Chat />} />
-              <Route path="/chat/:chatId"      element={<Chat />} />
+              {/* Chat com professores/personas foi consolidado no Levy — /chat e /petrus redirecionam */}
+              <Route path="/chat"              element={<Navigate to="/levy" replace />} />
+              <Route path="/chat/:chatId"      element={<Navigate to="/levy" replace />} />
+              <Route path="/petrus"            element={<Navigate to="/levy" replace />} />
+              <Route path="/levy"              element={<LevyChat />} />
+              <Route path="/levy/:chatId"      element={<LevyChat />} />
               <Route path="/lab"               element={<LabMural />} />
               <Route path="/lab/:projectId"    element={<LabEditor />} />
               <Route path="/class"             element={<ClassPage />} />
               <Route path="/activities-admin"  element={<ActivitiesAdminPage />} />
               <Route path="/classrooms-admin"  element={<ClassroomsAdminPage />} />
               <Route path="/ia-usage-admin"    element={<IaUsageAdminPage />} />
+              <Route path="/institution"       element={<InstitutionPage />} />
               <Route path="/settings"          element={<Settings />} />
             </Route>
           </Routes>
         </BrowserRouter>
+      </LanguageProvider>
       </ThemeProvider>
     </AuthProvider>
   );

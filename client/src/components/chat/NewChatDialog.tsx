@@ -73,10 +73,10 @@ export default function NewChatDialog({ isOpen, onClose, onStartChat }: NewChatD
  initial={{ scale: 0.9, opacity: 0, y: 20 }}
  animate={{ scale: 1, opacity: 1, y: 0 }}
  exit={{ scale: 0.9, opacity: 0, y: 20 }}
- className="relative bg-white dark:bg-zinc-900 w-full max-w-2xl overflow-hidden rounded-[2.5rem] shadow-2xl border border-zinc-200 dark:border-zinc-800"
+ className="relative glass-panel w-full max-w-2xl overflow-hidden rounded-[2.5rem] shadow-2xl"
  >
  {/* Header */}
- <div className="p-6 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+ <div className="p-6 border-b border-white/10 flex items-center justify-between">
  <div>
  <h2 className="text-xl font-black text-zinc-900 dark:text-white tracking-tight">
  {step === 'persona' ? 'Escolha o Professor' : 'Selecione a Disciplina'}
@@ -89,7 +89,7 @@ export default function NewChatDialog({ isOpen, onClose, onStartChat }: NewChatD
  </div>
  <button 
  onClick={onClose}
- className="p-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 rounded-2xl hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+ className="p-2 glasscard text-zinc-500 rounded-2xl transition-colors"
  >
  <X size={20} />
  </button>
@@ -109,7 +109,7 @@ export default function NewChatDialog({ isOpen, onClose, onStartChat }: NewChatD
  <button
  key={persona.id}
  onClick={() => handleSelectPersona(persona)}
- className="group flex flex-col p-6 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-[2rem] hover:border-primary/50 hover:bg-white dark:hover:bg-zinc-900 transition-all text-left"
+ className="group flex flex-col p-6 glasscard rounded-[2rem] hover:border-primary/50 transition-all text-left"
  >
  <div className="w-12 h-12 rounded-2xl bg-primary/10 overflow-hidden flex items-center justify-center text-primary mb-4 group-hover:scale-110 transition-transform shrink-0">
  {persona.imageUrl
@@ -127,11 +127,12 @@ export default function NewChatDialog({ isOpen, onClose, onStartChat }: NewChatD
  <button
  key={disciplina.id}
  onClick={() => setSelectedDisciplina(disciplina)}
+ style={selectedDisciplina?.id === disciplina.id ? { backgroundImage: 'linear-gradient(120deg, var(--color-a1), var(--color-a2), var(--color-a3))' } : undefined}
  className={clsx(
  "flex items-center gap-4 p-5 rounded-[1.5rem] border transition-all text-left",
  selectedDisciplina?.id === disciplina.id
- ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/30"
- : "bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-primary/30"
+ ? "text-white border-transparent shadow-lg shadow-primary/30"
+ : "bg-white/40 dark:bg-white/5 border-white/10 text-zinc-700 dark:text-zinc-300 hover:border-primary/30"
 )}
  >
  <div className={clsx(
@@ -162,7 +163,7 @@ export default function NewChatDialog({ isOpen, onClose, onStartChat }: NewChatD
  </div>
 
  {/* Footer */}
- <div className="p-6 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 flex items-center justify-between">
+ <div className="p-6 border-t border-white/10 flex items-center justify-between">
  {step === 'disciplina' && (
  <button
  onClick={() => setStep('persona')}
@@ -175,7 +176,8 @@ export default function NewChatDialog({ isOpen, onClose, onStartChat }: NewChatD
  {step === 'disciplina' && selectedDisciplina && (
  <button
  onClick={() => onStartChat(selectedPersona!.id, selectedDisciplina.id)}
- className="flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground rounded-2xl font-black text-sm shadow-xl shadow-primary/20 hover:opacity-90 active:scale-95 transition-all"
+ style={{ backgroundImage: 'linear-gradient(120deg, var(--color-a1), var(--color-a2), var(--color-a3))' }}
+ className="flex items-center gap-2 px-8 py-3 text-white rounded-2xl font-black text-sm shadow-xl shadow-primary/20 active:scale-95 transition-all"
  >
  Iniciar Conversa
  <ArrowRight size={18} />

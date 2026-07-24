@@ -26,7 +26,7 @@ export default function ProfessorCard({ professor, isActive, variant = 'gallery'
           'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all',
           isActive
             ? 'bg-primary/10 text-primary ring-1 ring-primary/30'
-            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50'
+            : 'text-slate-600 dark:text-slate-400 hover:bg-white/40 dark:hover:bg-white/5'
         )}
       >
         <div className={cn(
@@ -51,7 +51,7 @@ export default function ProfessorCard({ professor, isActive, variant = 'gallery'
         'group flex flex-col items-center gap-4 p-6 rounded-2xl border-2 text-center transition-all hover:shadow-lg',
         isActive
           ? 'border-primary bg-primary/5 shadow-md'
-          : 'border-slate-200 dark:border-slate-800 hover:border-primary/50 bg-white dark:bg-slate-900'
+          : 'glasscard hover:border-primary/50'
       )}
     >
       <div className={cn(
@@ -67,12 +67,14 @@ export default function ProfessorCard({ professor, isActive, variant = 'gallery'
           "{professor.frase_destaque}"
         </p>
       </div>
-      <span className={cn(
-        'text-xs px-3 py-1.5 rounded-full font-medium transition-colors',
-        isActive
-          ? 'bg-primary text-primary-foreground'
-          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-primary/10 group-hover:text-primary'
-      )}>
+      <span
+        style={isActive ? { backgroundImage: 'linear-gradient(120deg, var(--color-a1), var(--color-a2), var(--color-a3))' } : undefined}
+        className={cn(
+          'text-xs px-3 py-1.5 rounded-full font-medium transition-colors',
+          isActive
+            ? 'text-white'
+            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-primary/10 group-hover:text-primary'
+        )}>
         {isActive ? 'Conversando' : 'Conversar'}
       </span>
     </button>

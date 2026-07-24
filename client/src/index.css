@@ -6,13 +6,20 @@
 @theme {
   --color-primary: var(--color-primary);
   --color-primary-foreground: var(--color-primary-foreground);
+  --color-a1: var(--color-a1);
+  --color-a2: var(--color-a2);
+  --color-a3: var(--color-a3);
   --font-sans: 'Inter', sans-serif;
-  --font-display: 'Plus Jakarta Sans', sans-serif;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
 
 :root {
-  --color-primary: #38bdf8;
+  --color-primary: #60a5fa;
   --color-primary-foreground: #ffffff;
+  --color-a1: #93c5fd;
+  --color-a2: #60a5fa;
+  --color-a3: #3b82f6;
 }
 
 body {
@@ -34,3 +41,93 @@ h1, h2, h3, h4, h5, h6 {
   display: inline-block;
 }
 
+/* ── Aurora — utilitários visuais compartilhados (cloud) ───────────────────── */
+
+.aurora-bg {
+  background-color: #080c18;
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+    radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.025) 0px, rgba(255, 255, 255, 0.025) 1px, transparent 1px, transparent 64px);
+  background-size: 28px 28px, 14px 14px, 90px 90px;
+  background-position: 0 0, 7px 7px, 0 0;
+}
+:root:not(.dark) .aurora-bg {
+  background-color: #f8fafc;
+  background-image:
+    radial-gradient(rgba(15, 23, 42, 0.065) 1px, transparent 1px),
+    radial-gradient(rgba(15, 23, 42, 0.035) 1px, transparent 1px),
+    repeating-linear-gradient(115deg, rgba(15, 23, 42, 0.025) 0px, rgba(15, 23, 42, 0.025) 1px, transparent 1px, transparent 64px);
+  background-size: 28px 28px, 14px 14px, 90px 90px;
+  background-position: 0 0, 7px 7px, 0 0;
+}
+
+.aurora-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.13;
+  background: var(--color-a2);
+  pointer-events: none;
+}
+
+.glasscard {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 16px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: transform 0.2s, border-color 0.2s;
+}
+.dark .glasscard { background: rgba(255, 255, 255, 0.045); border-color: rgba(255, 255, 255, 0.09); }
+:root:not(.dark) .glasscard { background: rgba(255, 255, 255, 0.6); border-color: rgba(15, 23, 42, 0.08); }
+.glasscard:hover { border-color: color-mix(in srgb, var(--color-a2) 40%, transparent); }
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 20px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+:root:not(.dark) .glass-panel { background: rgba(255, 255, 255, 0.55); border-color: rgba(15, 23, 42, 0.08); }
+
+.aurora-progress {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.aurora-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(120deg, var(--color-a1), var(--color-a2), var(--color-a3));
+}
+
+.font-mono-data {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Scrollbar fina, com a cor do tema ativo — usada em toda a plataforma via
+   .custom-scrollbar. Sem isso o navegador cai no scrollbar nativo (grosso,
+   cinza, destoando do resto do visual). */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-a2) 40%, transparent) transparent;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--color-a2) 40%, transparent);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--color-a2) 65%, transparent);
+}

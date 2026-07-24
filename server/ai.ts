@@ -5,7 +5,8 @@ import db from './db.js';
 import { buildSystemPromptV3 } from './promptBuilder.js';
 import { getActiveKey, calcCredits } from './providers/registry.js';
 import { config } from './config.js';
-import { checkPetrusQuota, recordPetrusCredits, logQuotaEvent, getQuotaSummary } from './quota.js';
+import { checkLevyQuota, recordLevyCredits, logQuotaEvent, getQuotaSummary, getUserTier, TIER_CONFIG } from './quota.js';
+import { checkEmailVerified } from './emailVerification.js';
 
 // Global state for Gemini traffic shaping (5 RPM / 250k TPM)
 let lastRequestTime = 0;
@@ -17,20 +18,18 @@ const TPM_WINDOW_MS = 60000;
 // const GPT_RATE = 1.3;
 
 /**
- * Returns project limits for a user.
- * Credit limits are now managed by quota.ts (weekly, per-surface).
+ * Returns project limits for a user. Tier is resolved by quota.ts's getUserTier — the
+ * single source of truth (this used to have its own slightly different tier logic,
+ * which could silently drift from quota.ts's; now both read the same TIER_CONFIG).
  * In self-hosted mode every user gets unlimited resources.
  */
 export function getUserCreditLimit(userId: string): { creditLimit: number; projectLimit: number } {
   if (config.isSelfHosted) {
     return { creditLimit: Infinity, projectLimit: Infinity };
   }
-  const rows = db.prepare('SELECT institutionId FROM user_institutions WHERE userId = ?').all(userId) as { institutionId: string }[];
-  const user = db.prepare("SELECT plan FROM users WHERE id = ?").get(userId) as { plan: string } | undefined;
-  const isPro = user?.plan === 'pro';
-  return rows.length > 0 || isPro
-    ? { creditLimit: 1_000_000, projectLimit: 10 }
-    : { creditLimit: 100_000,   projectLimit: 5  };
+  const tier = getUserTier(userId);
+  const cfg = TIER_CONFIG[tier];
+  return { creditLimit: cfg.monthlyCredits, projectLimit: cfg.projectLimit };
 }
 
 const baseFunctionDeclarations = [
@@ -71,7 +70,7 @@ const agenticDeclarations = [
   },
   {
     name: 'consultar_cotas',
-    description: 'Retorna o consumo atual e os limites de cota do usuário: requisições do Lab (hoje e na semana) e créditos do Petrus (esta semana). Use quando o usuário perguntar sobre saldo, limites ou quando renova.',
+    description: 'Retorna o consumo atual e os limites de cota do usuário: requisições do Lab (hoje e na semana) e créditos do Levy (esta semana). Use quando o usuário perguntar sobre saldo, limites ou quando renova.',
     parameters: { type: 'OBJECT', properties: {} },
   },
 ];
@@ -86,16 +85,13 @@ function buildToolDeclarations(agenticMode = false) {
 function executeAgenticTool(name: string, args: any, userId: string): any {
   if (name === 'consultar_cotas') {
     const summary = getQuotaSummary(userId);
+    // Single shared credit pool for Lab + Levy + chat normal.
     return {
       tier: summary.tier,
-      lab: {
-        hoje:   { usado: summary.lab.today, limite: summary.lab.dailyLimit,  restante: summary.lab.dailyLimit  - summary.lab.today },
-        semana: { usado: summary.lab.week,  limite: summary.lab.weeklyLimit, restante: summary.lab.weeklyLimit - summary.lab.week  },
-        renovacao: { diaria: 'meia-noite UTC', semanal: 'segunda-feira UTC' },
-      },
-      petrus: {
-        semana: { usado: summary.petrus.creditsWeek, limite: summary.petrus.weeklyLimit, restante: summary.petrus.weeklyLimit - summary.petrus.creditsWeek },
-        renovacao: 'segunda-feira UTC',
+      creditos: {
+        semana: { usado: summary.credits.week,  limite: summary.credits.weeklyLimit,  restante: summary.credits.weeklyLimit  - summary.credits.week },
+        mes:    { usado: summary.credits.month, limite: summary.credits.monthlyLimit, restante: summary.credits.monthlyLimit - summary.credits.month },
+        renovacao: { semanal: 'segunda-feira UTC', mensal: 'dia 1 do mês (UTC)' },
       },
     };
   }
@@ -173,9 +169,12 @@ async function _generateChatResponse(
     throw new Error('Limite de 50k tokens por requisição excedido.');
   }
 
-  // 2. Weekly Petrus credit quota
+  // 2. Weekly Levy credit quota
   if (config.isCloud) {
-    const quotaCheck = checkPetrusQuota(userId);
+    const verifyCheck = checkEmailVerified(userId);
+    if (!verifyCheck.allowed) throw new Error(verifyCheck.reason);
+
+    const quotaCheck = checkLevyQuota(userId);
     if (!quotaCheck.allowed) {
       throw new Error(quotaCheck.reason ?? 'Limite de créditos atingido.');
     }
@@ -198,15 +197,16 @@ async function _generateChatResponse(
       disciplina = db.prepare('SELECT * FROM disciplinas WHERE id = ?').get(chat.disciplinaId) as any;
     }
 
-    const user = db.prepare('SELECT name FROM users WHERE id = ?').get(userId) as { name: string } | undefined;
-    const studentName = user ? user.name : 'Estudante';
+    // Nunca interpolar o nome real do aluno no prompt — ver PII_TAGS em promptBuilder.ts.
+    const user = db.prepare('SELECT locale FROM users WHERE id = ?').get(userId) as { locale?: string } | undefined;
 
     systemInstruction = buildSystemPromptV3(
       persona.nome,
       persona.documentoPedagogico,
       persona.isGenerico === 1,
       disciplina ? { nome: disciplina.nome, conteudo: disciplina.conteudo } : undefined,
-      studentName
+      true,
+      user?.locale
     );
   }
 
@@ -311,7 +311,10 @@ async function _generateChatResponse(
 
       text = response.text();
       inputTokFinal  = response.usageMetadata?.promptTokenCount    ?? Math.ceil((historyText.length + newMessage.length) / 4);
-      outputTokFinal = response.usageMetadata?.candidatesTokenCount ?? Math.ceil(text.length / 4);
+      // Thought tokens are billed as output by Google — must be included or credits undercount real spend.
+      const candidatesTokFinal = response.usageMetadata?.candidatesTokenCount ?? Math.ceil(text.length / 4);
+      const thoughtsTokFinal = (response.usageMetadata as any)?.thoughtsTokenCount ?? 0;
+      outputTokFinal = candidatesTokFinal + thoughtsTokFinal;
       tokensUsed = inputTokFinal + outputTokFinal;
       tokenHistory.push({ timestamp: Date.now(), tokens: tokensUsed });
       cachedTok = (response.usageMetadata as any)?.cachedContentTokenCount ?? 0;
@@ -345,8 +348,8 @@ async function _generateChatResponse(
     console.log(`[AI] Request completed. Chat: ${chatId}, Model: ${modelId}, Credits: ${creditsUsed} (cached: ${cachedTok}, input: ${inputTokFinal}, output: ${outputTokFinal})`);
 
     if (config.isCloud) {
-      recordPetrusCredits(userId, creditsUsed);
-      logQuotaEvent({ userId, surface: 'petrus', event: 'request', model: modelId, credits: creditsUsed });
+      recordLevyCredits(userId, creditsUsed);
+      logQuotaEvent({ userId, surface: 'levy', event: 'request', model: modelId, credits: creditsUsed });
     }
 
     return { text, tokensUsed, creditsUsed };

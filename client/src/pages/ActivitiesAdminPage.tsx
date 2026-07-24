@@ -137,7 +137,7 @@ export default function ActivitiesAdminPage() {
 
   if (!userData?.isAdmin) {
     return (
-      <div className="h-full flex items-center justify-center p-8 bg-white dark:bg-slate-950">
+      <div className="h-full flex items-center justify-center p-8">
         <div className="text-center max-w-sm">
           <AlertCircle size={40} className="text-rose-500 mx-auto mb-4" />
           <h2 className="text-xl font-black text-slate-800 dark:text-white mb-2">Acesso Negado</h2>
@@ -150,12 +150,12 @@ export default function ActivitiesAdminPage() {
   }
 
   return (
-    <div className="min-h-full p-6 bg-white dark:bg-slate-950">
+    <div className="min-h-full p-6">
       
       {/* Top Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white">
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white font-display">
             Painel de Atividades
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-450 mt-1">
@@ -165,7 +165,8 @@ export default function ActivitiesAdminPage() {
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-5 py-3 rounded-2xl font-bold text-sm shadow-lg shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer self-start md:self-auto"
+          style={{ backgroundImage: 'linear-gradient(120deg, var(--color-a1), var(--color-a2), var(--color-a3))' }}
+          className="flex items-center gap-2 text-white px-5 py-3 rounded-2xl font-bold text-sm shadow-lg shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer self-start md:self-auto"
         >
           <Plus size={16} />
           <span>Criar Nova Atividade</span>
@@ -178,7 +179,7 @@ export default function ActivitiesAdminPage() {
           <div className="w-10 h-10 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
         </div>
       ) : activities.length === 0 ? (
-        <div className="p-12 rounded-3xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center max-w-lg mx-auto select-none">
+        <div className="p-12 rounded-3xl glasscard text-center max-w-lg mx-auto select-none">
           <Calendar size={48} className="mx-auto mb-4 text-slate-400 dark:text-slate-650" />
           <h3 className="text-lg font-black text-slate-800 dark:text-white mb-2">Nenhuma Atividade Encontrada</h3>
           <p className="text-sm text-slate-500 dark:text-slate-450 leading-relaxed mb-6">
@@ -190,7 +191,7 @@ export default function ActivitiesAdminPage() {
           {activities.map(act => (
             <div 
               key={act.id}
-              className="p-6 rounded-3xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between hover:border-slate-350 dark:hover:border-slate-700 transition-colors h-64"
+              className="p-6 rounded-3xl glasscard flex flex-col justify-between hover:border-primary/30 transition-colors h-64"
             >
               <div>
                 <div className="flex justify-between items-start gap-2 mb-2">
@@ -235,7 +236,7 @@ export default function ActivitiesAdminPage() {
       {/* Modal Criar Atividade */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fadeIn">
-          <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-slideUp">
+          <div className="relative w-full max-w-lg glass-panel shadow-2xl overflow-hidden animate-slideUp">
             
             {/* Modal Header */}
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
@@ -285,7 +286,7 @@ export default function ActivitiesAdminPage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Ex: Entrega do Relatório de Oxirredução"
-                  className="w-full text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 focus:outline-none focus:border-primary text-slate-800 dark:text-slate-100"
+                  className="w-full text-sm bg-white/50 dark:bg-white/5 border border-white/20 rounded-2xl px-4 py-3 focus:outline-none focus:border-primary text-slate-800 dark:text-slate-100"
                   required
                 />
               </div>
@@ -297,7 +298,7 @@ export default function ActivitiesAdminPage() {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Instruções sobre o envio, objetivos e materiais recomendados..."
-                  className="w-full text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 focus:outline-none focus:border-primary text-slate-800 dark:text-slate-100 h-24 resize-none"
+                  className="w-full text-sm bg-white/50 dark:bg-white/5 border border-white/20 rounded-2xl px-4 py-3 focus:outline-none focus:border-primary text-slate-800 dark:text-slate-100 h-24 resize-none"
                 />
               </div>
 
@@ -308,7 +309,7 @@ export default function ActivitiesAdminPage() {
                   type="datetime-local" 
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 focus:outline-none focus:border-primary text-slate-800 dark:text-slate-100"
+                  className="w-full text-sm bg-white/50 dark:bg-white/5 border border-white/20 rounded-2xl px-4 py-3 focus:outline-none focus:border-primary text-slate-800 dark:text-slate-100"
                   required
                 />
               </div>
@@ -319,7 +320,7 @@ export default function ActivitiesAdminPage() {
                 <select 
                   value={selectedInstId}
                   onChange={handleInstChange}
-                  className="w-full text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 focus:outline-none focus:border-primary text-slate-800 dark:text-slate-100"
+                  className="w-full text-sm bg-white/50 dark:bg-white/5 border border-white/20 rounded-2xl px-4 py-3 focus:outline-none focus:border-primary text-slate-800 dark:text-slate-100"
                   required
                 >
                   <option value="">Selecione uma instituição...</option>
@@ -338,7 +339,7 @@ export default function ActivitiesAdminPage() {
                     Nenhuma sala cadastrada nesta instituição. Cadastre uma sala nas configurações primeiro.
                   </p>
                 ) : (
-                  <div className="grid grid-cols-2 gap-3 max-h-32 overflow-y-auto p-2 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-850">
+                  <div className="grid grid-cols-2 gap-3 max-h-32 overflow-y-auto p-2 bg-white/30 dark:bg-white/[0.03] rounded-2xl border border-white/10">
                     {classrooms.map(c => {
                       const isSelected = selectedClassroomIds.includes(c.id);
                       return (
@@ -348,7 +349,7 @@ export default function ActivitiesAdminPage() {
                           className={`p-3 rounded-xl border flex items-center gap-2 cursor-pointer select-none transition-all ${
                             isSelected 
                               ? 'bg-primary/10 border-primary text-primary font-bold' 
-                              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
+                              : 'bg-white/40 dark:bg-white/5 border-white/10 text-slate-700 dark:text-slate-300 hover:border-primary/30'
                           }`}
                         >
                           <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
@@ -365,7 +366,7 @@ export default function ActivitiesAdminPage() {
               </div>
 
               {/* Modal Actions */}
-              <div className="pt-4 flex gap-3 justify-end border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+              <div className="pt-4 flex gap-3 justify-end border-t border-white/10">
                 <button 
                   type="button"
                   onClick={() => setIsModalOpen(false)}
@@ -376,7 +377,8 @@ export default function ActivitiesAdminPage() {
                 <button 
                   type="submit"
                   disabled={loading}
-                  className="px-5 py-2.5 rounded-2xl bg-primary hover:bg-primary-dark text-white text-xs font-bold shadow-lg shadow-primary/15 transition-all cursor-pointer disabled:opacity-50"
+                  style={{ backgroundImage: 'linear-gradient(120deg, var(--color-a1), var(--color-a2), var(--color-a3))' }}
+                  className="px-5 py-2.5 rounded-2xl text-white text-xs font-bold shadow-lg shadow-primary/15 transition-all cursor-pointer disabled:opacity-50"
                 >
                   {loading ? 'Salvando...' : 'Salvar Atividade'}
                 </button>

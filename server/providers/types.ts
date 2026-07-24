@@ -13,6 +13,8 @@ export interface ChatParams {
   /** Optional base64-encoded image for vision-capable models. */
   imageBase64?: string;
   imageMimeType?: string;
+  /** Gemini-specific: controls reasoning-token spend. Ignored by other providers. */
+  thinkingConfig?: { thinkingBudget?: number; thinkingLevel?: string };
 }
 
 /** Token usage and generated text returned by a provider. */

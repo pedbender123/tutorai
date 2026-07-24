@@ -135,6 +135,27 @@ db.exec(`
     FOREIGN KEY (projectId) REFERENCES lab_projects(id) ON DELETE CASCADE,
     FOREIGN KEY (userId) REFERENCES users(id)
   );
+
+  CREATE TABLE IF NOT EXISTS levy_chats (
+    id TEXT PRIMARY KEY,
+    userId TEXT NOT NULL,
+    title TEXT NOT NULL DEFAULT 'Nova conversa',
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (userId) REFERENCES users(id)
+  );
+
+  -- content de mensagens 'model' fica em forma tokenizada (ex: contém o literal
+  -- "<nome>") — nunca o valor real do usuário. Ver PII_TAGS em promptBuilder.ts.
+  CREATE TABLE IF NOT EXISTS levy_messages (
+    id TEXT PRIMARY KEY,
+    chatId TEXT NOT NULL,
+    role TEXT NOT NULL,
+    content TEXT NOT NULL,
+    creditsUsed INTEGER DEFAULT 0,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (chatId) REFERENCES levy_chats(id) ON DELETE CASCADE
+  );
 `);
 
 // Create classrooms table
@@ -345,6 +366,22 @@ if (modelCount === 0) {
   }
 }
 
+// Idempotent addition of models introduced after the initial seed (existing installs
+// don't re-run the seed block above since ai_models is already non-empty there).
+db.prepare(`
+  INSERT OR IGNORE INTO ai_models
+    (id, provider, display_name, input_cost_per_1m, input_cached_cost_per_1m, output_cost_per_1m, currency, enabled, is_default)
+  VALUES
+    ('gemini-3.5-flash-lite', 'google', 'Gemini 3.5 Flash-Lite', 1.65, 0.165, 13.75, 'BRL', 1, 0)
+`).run();
+db.prepare(`
+  INSERT OR IGNORE INTO ai_models
+    (id, provider, display_name, input_cost_per_1m, input_cached_cost_per_1m, output_cost_per_1m, currency, enabled, is_default)
+  VALUES
+    ('gemini-3.1-flash-lite', 'google', 'Gemini 3.1 Flash-Lite', 1.375, 0.1375, 8.25, 'BRL', 1, 0)
+`).run();
+db.prepare(`UPDATE ai_models SET enabled = 0 WHERE id IN ('gemma-4-31b-it', 'gemma-4-26b-a4b-it')`).run();
+
 // SimAgent migration: add new columns idempotently
 import { runSimAgentMigration } from './migrations/add_simagent_columns.js';
 runSimAgentMigration(db);
@@ -359,7 +396,23 @@ const _quotaMigrations: { name: string; sql: string }[] = [
   { name: 'lab_req_week_reset',      sql: "ALTER TABLE users ADD COLUMN lab_req_week_reset TEXT" },
   { name: 'petrus_credits_week',     sql: "ALTER TABLE users ADD COLUMN petrus_credits_week INTEGER DEFAULT 0" },
   { name: 'petrus_credits_week_reset', sql: "ALTER TABLE users ADD COLUMN petrus_credits_week_reset TEXT" },
+  // Note: petrus_credits_week(_reset) is now the SHARED weekly credit pool for Lab + Levy +
+  // chat normal (kept the old column name to avoid a rename migration — see quota.ts).
+  { name: 'credits_month',           sql: "ALTER TABLE users ADD COLUMN credits_month INTEGER DEFAULT 0" },
+  { name: 'credits_month_reset',     sql: "ALTER TABLE users ADD COLUMN credits_month_reset TEXT" },
+  // Reforma pública: cadastro individual + verificação de e-mail (atrás de flag, ver config.ts)
+  { name: 'emailVerified',              sql: "ALTER TABLE users ADD COLUMN emailVerified INTEGER DEFAULT 0" },
+  { name: 'email_verification_token',   sql: "ALTER TABLE users ADD COLUMN email_verification_token TEXT" },
+  { name: 'email_verification_expires', sql: "ALTER TABLE users ADD COLUMN email_verification_expires TEXT" },
+  // Reforma Aurora: idioma preferido do usuário (interface traduzida + resposta dos agentes)
+  { name: 'locale', sql: "ALTER TABLE users ADD COLUMN locale TEXT DEFAULT 'pt'" },
 ];
+
+// Reforma pública: papel de admin por instituição (delegação de gestão interna, distinto do isAdmin global)
+const _userInstCols = db.prepare("PRAGMA table_info(user_institutions)").all() as any[];
+if (!_userInstCols.find((c: any) => c.name === 'role')) {
+  db.exec("ALTER TABLE user_institutions ADD COLUMN role TEXT NOT NULL DEFAULT 'member'");
+}
 for (const m of _quotaMigrations) {
   if (!_quotaCols.find((c: any) => c.name === m.name)) db.exec(m.sql);
 }
@@ -419,10 +472,10 @@ if (superEmail && superPassword) {
   );
 }
 
-// Update Petrus instructions with Tool WhatsApp Redirection & Lab Simulators Guidelines
+// Update Levy (legacy persona row 'petrus') instructions with Tool WhatsApp Redirection & Lab Simulators Guidelines
 db.prepare(`
   UPDATE personas
-  SET documentoPedagogico = 'Você é o Petrus, um tutor de IA amigável e direto da plataforma Scaffl. Seu objetivo principal é guiar o aprendizado de forma ativa: nunca dê a resposta pronta ao aluno. Em vez disso, valide brevemente a iniciativa dele, explique conceitos complexos usando analogias simples do cotidiano e termine sempre com uma pergunta socrática que o estimule a dar o próximo passo sozinho. Se o aluno errar, não o corrija de forma seca; use o erro como oportunidade de reflexão, sugerindo uma nova perspectiva. Mantenha suas interações extremamente concisas, respondendo em no máximo dois ou três parágrafos curtos e objetivos. Se o aluno estiver precisando de suporte humano, travado nas tarefas, solicitar contato direto com o professor ou ajuda extra, acione a ferramenta "solicitar_contato_professor" para obter o link do WhatsApp do Professor Pedro e exiba o link retornado em formato Markdown para o estudante na conversa. Além disso, você tem conhecimento de que os alunos constroem simuladores interativos de ciências na aba Laboratório através da IA escritora de código do Scaffl. Quando um aluno pedir ajuda sobre como projetar, estruturar ou formular prompts para criar bons simuladores, oriente-o a fazer pedidos curtos e em etapas incrementais no chat do lab (por exemplo, pedir para criar o esqueleto básico, depois adicionar a animação física e por fim aplicar os estilos). Guie-o a especificar claramente: 1) O fenômeno físico ou químico exato (ex: termodinâmica, combustão); 2) Controles que deseja (sliders para alterar variáveis, botões de disparar/reiniciar, checkboxes); 3) Como deve ser a visualização gráfica no canvas (movimento fluido de partículas, vetores de força e rastros de trajetórias coloridas); e 4) Pedir um visual moderno com fundo escuro elegante.'
+  SET documentoPedagogico = 'Você é o Levy, um tutor de IA amigável e direto da plataforma Scaffl. Seu objetivo principal é guiar o aprendizado de forma ativa: nunca dê a resposta pronta ao aluno. Em vez disso, valide brevemente a iniciativa dele, explique conceitos complexos usando analogias simples do cotidiano e termine sempre com uma pergunta socrática que o estimule a dar o próximo passo sozinho. Se o aluno errar, não o corrija de forma seca; use o erro como oportunidade de reflexão, sugerindo uma nova perspectiva. Mantenha suas interações extremamente concisas, respondendo em no máximo dois ou três parágrafos curtos e objetivos. Se o aluno estiver precisando de suporte humano, travado nas tarefas, solicitar contato direto com o professor ou ajuda extra, acione a ferramenta "solicitar_contato_professor" para obter o link do WhatsApp do Professor Pedro e exiba o link retornado em formato Markdown para o estudante na conversa. Além disso, você tem conhecimento de que os alunos constroem simuladores interativos de ciências na aba Laboratório através da IA escritora de código do Scaffl. Quando um aluno pedir ajuda sobre como projetar, estruturar ou formular prompts para criar bons simuladores, oriente-o a fazer pedidos curtos e em etapas incrementais no chat do lab (por exemplo, pedir para criar o esqueleto básico, depois adicionar a animação física e por fim aplicar os estilos). Guie-o a especificar claramente: 1) O fenômeno físico ou químico exato (ex: termodinâmica, combustão); 2) Controles que deseja (sliders para alterar variáveis, botões de disparar/reiniciar, checkboxes); 3) Como deve ser a visualização gráfica no canvas (movimento fluido de partículas, vetores de força e rastros de trajetórias coloridas); e 4) Pedir um visual moderno com fundo escuro elegante.'
   WHERE id = 'petrus'
 `).run();
 

@@ -170,13 +170,14 @@ export default function PersonasPage() {
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Mural de Personas</h1>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight font-display">Mural de Personas</h1>
           <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">Gerencie os perfis didáticos dos seus professores virtuais.</p>
         </div>
         {userData?.isAdmin && (
           <button
             onClick={() => handleOpenModal()}
-            className="flex items-center gap-2 px-6 py-3 bg-primary hover:opacity-90 text-primary-foreground rounded-xl font-semibold transition-all shadow-lg shadow-primary/20 active:scale-95"
+            style={{ backgroundImage: 'linear-gradient(120deg, var(--color-a1), var(--color-a2), var(--color-a3))' }}
+            className="flex items-center gap-2 px-6 py-3 text-white rounded-xl font-semibold transition-all shadow-lg shadow-primary/20 active:scale-95"
           >
             <Plus size={20} />
             Nova Persona
@@ -196,7 +197,7 @@ export default function PersonasPage() {
               key={persona.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300"
+              className="group relative glasscard rounded-3xl p-6 hover:shadow-xl hover:border-primary/30 transition-all duration-300"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="relative">
@@ -263,7 +264,7 @@ export default function PersonasPage() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800"
+              className="relative glass-panel w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl"
             >
               <form onSubmit={handleSubmit} className="p-6">
                 <div className="flex justify-between items-center mb-6">
@@ -314,7 +315,7 @@ export default function PersonasPage() {
                       <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Instituição</label>
                       <select
                         required
-                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-slate-900 dark:text-white appearance-none"
+                        className="w-full px-4 py-3 bg-white/50 dark:bg-white/5 border border-white/20 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-slate-900 dark:text-white appearance-none"
                         value={formData.institutionId}
                         onChange={e => setFormData({ ...formData, institutionId: e.target.value })}
                       >
@@ -331,7 +332,7 @@ export default function PersonasPage() {
                     <input
                       required
                       type="text"
-                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-slate-900 dark:text-white"
+                      className="w-full px-4 py-3 bg-white/50 dark:bg-white/5 border border-white/20 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-slate-900 dark:text-white"
                       value={formData.nome}
                       onChange={e => setFormData({ ...formData, nome: e.target.value })}
                       placeholder="Ex: Professor Agostinho Serrano"
@@ -342,7 +343,7 @@ export default function PersonasPage() {
                     <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Descrição Curta</label>
                     <input
                       type="text"
-                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-slate-900 dark:text-white"
+                      className="w-full px-4 py-3 bg-white/50 dark:bg-white/5 border border-white/20 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-slate-900 dark:text-white"
                       value={formData.descricao}
                       onChange={e => setFormData({ ...formData, descricao: e.target.value })}
                       placeholder="Breve resumo para o card do mural"
@@ -354,7 +355,7 @@ export default function PersonasPage() {
                     <input
                       required
                       type="text"
-                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-slate-900 dark:text-white"
+                      className="w-full px-4 py-3 bg-white/50 dark:bg-white/5 border border-white/20 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-slate-900 dark:text-white"
                       value={formData.saudacao}
                       onChange={e => setFormData({ ...formData, saudacao: e.target.value })}
                       placeholder="Olá! Eu sou o assistente do..."
@@ -366,7 +367,7 @@ export default function PersonasPage() {
                     <textarea
                       required
                       rows={8}
-                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-slate-900 dark:text-white font-mono text-sm"
+                      className="w-full px-4 py-3 bg-white/50 dark:bg-white/5 border border-white/20 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-slate-900 dark:text-white font-mono text-sm"
                       value={formData.documentoPedagogico}
                       onChange={e => setFormData({ ...formData, documentoPedagogico: e.target.value })}
                       placeholder="Descreva o MÉTODO de ensino: tom, ritmo, analogias, bordões..."
@@ -411,7 +412,8 @@ export default function PersonasPage() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-2 px-10 py-3 bg-primary text-primary-foreground rounded-xl font-bold hover:opacity-90 transition-colors shadow-lg shadow-primary/20"
+                    style={{ backgroundImage: 'linear-gradient(120deg, var(--color-a1), var(--color-a2), var(--color-a3))' }}
+                    className="flex-2 px-10 py-3 text-white rounded-xl font-bold transition-colors shadow-lg shadow-primary/20"
                   >
                     {editingPersona ? 'Salvar Alterações' : 'Criar Persona'}
                   </button>

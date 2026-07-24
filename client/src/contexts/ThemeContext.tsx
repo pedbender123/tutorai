@@ -10,12 +10,28 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+// Mesmos 4 temas da landing page (client/src/pages/LandingPage.tsx THEMES) — manter em sincronia.
 export const ACCENT_COLORS = {
-  cyberSky: '#38bdf8', // Cyber Sky (Acento de IA)
-  quantumGreen: '#10b981', // Quantum Green (Acento de Ciência)
-  auraViolet: '#a78bfa', // Aura Violet (Acento de Insight)
-  white: '#ffffff',
+  teal:    { a1: '#22D3EE', a2: '#14B8A6', a3: '#10B981' },
+  lilac:   { a1: '#DDD6FE', a2: '#A78BFA', a3: '#8B5CF6' },
+  blue:    { a1: '#93C5FD', a2: '#60A5FA', a3: '#3B82F6' },
+  neutral: { a1: '#CBD5E1', a2: '#94A3B8', a3: '#475569' },
 };
+
+// Remapeamento 1:1 dos valores antigos (esquema cyberSky/quantumGreen/auraViolet/white),
+// inclusive o default de banco 'blue' que não batia com nenhuma chave válida antes desta troca.
+const LEGACY_ACCENT_REMAP: Record<string, keyof typeof ACCENT_COLORS> = {
+  cyberSky: 'blue',
+  quantumGreen: 'teal',
+  auraViolet: 'lilac',
+  white: 'neutral',
+};
+
+function normalizeAccent(color: string | undefined): keyof typeof ACCENT_COLORS {
+  if (color && color in ACCENT_COLORS) return color as keyof typeof ACCENT_COLORS;
+  if (color && color in LEGACY_ACCENT_REMAP) return LEGACY_ACCENT_REMAP[color];
+  return 'blue';
+}
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { userData, updateUserData } = useAuth();
@@ -26,11 +42,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return (val === 'light' || val === 'dark') ? val : 'dark';
   });
   const [localAccentColor, setLocalAccentColor] = useState<string>(() => {
-    return localStorage.getItem('tutorai_temp_accent') || 'cyberSky';
+    return localStorage.getItem('tutorai_temp_accent') || 'blue';
   });
 
   const themeMode = userData ? userData.themeMode : localThemeMode;
-  const accentColor = userData ? userData.accentColor : localAccentColor;
+  const accentColor = normalizeAccent(userData ? userData.accentColor : localAccentColor);
 
   // Sincroniza as configurações temporárias para as configs reais do usuário após logar
   useEffect(() => {
@@ -52,9 +68,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, [userData, updateUserData]);
 
+  // Migra automaticamente uma conta com valor de acento no esquema antigo pro novo, uma vez.
+  useEffect(() => {
+    if (userData && userData.accentColor && !(userData.accentColor in ACCENT_COLORS)) {
+      const remapped = normalizeAccent(userData.accentColor);
+      updateUserData({ accentColor: remapped as any }).catch(err => {
+        console.error('Falha ao migrar cor de acento antiga:', err);
+      });
+    }
+  }, [userData, updateUserData]);
+
   useEffect(() => {
     const root = window.document.documentElement;
-    
+
     // Configura o tema dark/light
     if (themeMode === 'dark') {
       root.classList.add('dark');
@@ -62,15 +88,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.classList.remove('dark');
     }
 
-    // Configura a cor de destaque
-    const hexColor = ACCENT_COLORS[accentColor as keyof typeof ACCENT_COLORS] || ACCENT_COLORS.cyberSky;
-    root.style.setProperty('--color-primary', hexColor);
-    
-    // Lida com o contraste do acento branco
-    if (accentColor === 'white' && themeMode === 'light') {
+    // Configura os 3 stops do gradiente de acento + --color-primary derivado (= a2),
+    // mantido por compatibilidade com as ~300 classes bg-primary/text-primary/border-primary já em uso.
+    const theme = ACCENT_COLORS[accentColor];
+    root.style.setProperty('--color-a1', theme.a1);
+    root.style.setProperty('--color-a2', theme.a2);
+    root.style.setProperty('--color-a3', theme.a3);
+    root.style.setProperty('--color-primary', theme.a2);
+
+    // Contraste do acento neutro (antigo "white"): preto no claro, branco no escuro.
+    if (accentColor === 'neutral' && themeMode === 'light') {
       root.style.setProperty('--color-primary', '#000000');
       root.style.setProperty('--color-primary-foreground', '#ffffff');
-    } else if (accentColor === 'white' && themeMode === 'dark') {
+    } else if (accentColor === 'neutral' && themeMode === 'dark') {
       root.style.setProperty('--color-primary', '#ffffff');
       root.style.setProperty('--color-primary-foreground', '#000000');
     } else {

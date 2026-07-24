@@ -20,15 +20,17 @@ export default function Login() {
   const [inviteInfo, setInviteInfo] = useState<{ className: string; instName: string } | null>(null);
   const [checkingInvite, setCheckingInvite] = useState(!!inviteCode);
 
-  const { login, register } = useAuth();
+  const { login, register, userData, joinInstitution } = useAuth();
+  const [joining, setJoining] = useState(false);
+  const [joined, setJoined] = useState<string | null>(null);
   const { themeMode, accentColor, setThemeMode, setAccentColor } = useTheme();
   const navigate = useNavigate();
 
   const colorNames: Record<string, string> = {
-    cyberSky: 'Cyber Sky',
-    quantumGreen: 'Quantum Green',
-    auraViolet: 'Aura Violet',
-    white: 'Branco',
+    teal: 'Teal',
+    lilac: 'Lilac',
+    blue: 'Blue',
+    neutral: 'Neutral',
   };
 
   // Buscar informações do convite se houver código na URL
@@ -56,6 +58,19 @@ export default function Login() {
     fetchInviteInfo();
   }, [inviteCode]);
 
+  const handleJoin = async () => {
+    setError('');
+    setJoining(true);
+    try {
+      const result = await joinInstitution(inviteCode);
+      setJoined(result.classroomName);
+    } catch (err: any) {
+      setError(err.message || 'Não foi possível vincular esta conta ao convite.');
+    } finally {
+      setJoining(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -76,12 +91,12 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex bg-zinc-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50 transition-colors duration-200">
-      
+    <div className="min-h-screen flex aurora-bg text-slate-900 dark:text-slate-50 transition-colors duration-200">
+
       {/* PAINEL ESQUERDO: Manifesto e Branding SCAFFL (Somente em telas médias/grandes) */}
-      <div 
-        className="hidden lg:flex lg:w-1/2 relative border-r border-slate-200 dark:border-slate-800 flex-col justify-between p-12 overflow-hidden animate-in fade-in duration-500"
-        style={{ background: 'linear-gradient(135deg, #047857 0%, #10b981 25%, #06b6d4 50%, #3b82f6 75%, #8b5cf6 100%)' }}
+      <div
+        className="hidden lg:flex lg:w-1/2 relative border-r border-white/10 flex-col justify-between p-12 overflow-hidden animate-in fade-in duration-500"
+        style={{ backgroundImage: 'linear-gradient(135deg, var(--color-a1), var(--color-a2), var(--color-a3))' }}
       >
         {/* Background Grafismos (Andaime Cognitivo) */}
         <div className="absolute inset-0 opacity-15 pointer-events-none">
@@ -103,7 +118,7 @@ export default function Login() {
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 border border-white/20 rounded-full text-[11px] font-medium text-white tracking-wider uppercase">
             <Sparkles size={12} className="text-cyan-300 animate-pulse" /> Andaime Cognitivo Científico
           </div>
-          <h1 className="text-4xl font-extrabold text-white leading-tight font-display">
+          <h1 className="text-4xl font-extrabold text-white leading-tight font-display tracking-tight">
             A ciência não é feita para ser assistida. É feita para ser construída.
           </h1>
           <p className="text-slate-100/90 leading-relaxed text-sm">
@@ -120,7 +135,7 @@ export default function Login() {
       {/* PAINEL DIREITO: Formulário de Autenticação */}
       <div className="w-full lg:w-1/2 flex flex-col justify-between p-8 sm:p-12 md:p-16 relative">
         {/* Controles de Aparência no Topo Direito */}
-        <div className="absolute top-4 right-4 flex items-center gap-3 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-200/50 dark:border-slate-800/50 shadow-sm z-10">
+        <div className="absolute top-4 right-4 flex items-center gap-3 glasscard rounded-full px-3 py-1.5 shadow-sm z-10">
           {/* Botão de Tema */}
           <button
             type="button"
@@ -136,24 +151,24 @@ export default function Login() {
 
           {/* Seletor de Cores */}
           <div className="flex gap-1.5">
-            {Object.entries(ACCENT_COLORS).map(([name, hex]) => (
+            {Object.entries(ACCENT_COLORS).map(([name, theme]) => (
               <button
                 key={name}
                 type="button"
                 onClick={() => setAccentColor(name)}
                 className={cn(
                   "w-4 h-4 rounded-full transition-all border hover:scale-110 active:scale-90 relative cursor-pointer",
-                  accentColor === name 
-                    ? "border-primary scale-110 ring-2 ring-primary/20" 
+                  accentColor === name
+                    ? "border-primary scale-110 ring-2 ring-primary/20"
                     : "border-slate-300 dark:border-slate-700"
                 )}
-                style={{ backgroundColor: hex }}
+                style={{ backgroundImage: `linear-gradient(135deg, ${theme.a1}, ${theme.a2}, ${theme.a3})` }}
                 title={colorNames[name] || name}
               >
                 {accentColor === name && (
                   <span className={cn(
                     "absolute inset-0.5 rounded-full",
-                    name === 'white' ? "bg-black" : "bg-white"
+                    name === 'neutral' ? "bg-black" : "bg-white"
                   )} />
                 )}
               </button>
@@ -182,6 +197,45 @@ export default function Login() {
             </p>
           </div>
 
+          {userData && inviteCode ? (
+            <div className="space-y-5">
+              {joined ? (
+                <div className="bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 flex gap-3 items-start">
+                  <div className="p-1 rounded-lg bg-emerald-500/20 text-emerald-500 shrink-0"><Sparkles size={16} /></div>
+                  <div className="text-xs">
+                    <p className="font-bold text-emerald-600 dark:text-emerald-400">Conta vinculada!</p>
+                    <p className="text-slate-500 dark:text-slate-400 mt-0.5">Você agora faz parte da sala <strong className="text-slate-800 dark:text-slate-200">{joined}</strong>.</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {inviteInfo && (
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      Você está logado como <strong className="text-slate-800 dark:text-slate-200">{userData.name}</strong>. Quer vincular esta conta à sala <strong className="text-slate-800 dark:text-slate-200">{inviteInfo.className}</strong> de <strong className="text-slate-800 dark:text-slate-200">{inviteInfo.instName}</strong>?
+                    </p>
+                  )}
+                  {error && (
+                    <div className="bg-red-500/5 dark:bg-red-500/10 border border-red-500/25 rounded-2xl p-4 flex gap-3 text-sm text-red-600 dark:text-red-400">
+                      <ShieldAlert size={20} className="shrink-0 text-red-500" />
+                      <p className="text-xs">{error}</p>
+                    </div>
+                  )}
+                  <button
+                    onClick={handleJoin}
+                    disabled={joining}
+                    style={{ backgroundImage: 'linear-gradient(120deg, var(--color-a1), var(--color-a2), var(--color-a3))' }}
+                    className="w-full py-3 text-white rounded-xl font-bold active:scale-[0.99] transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20 disabled:opacity-50 cursor-pointer"
+                  >
+                    {joining ? <Loader2 className="animate-spin" size={18} /> : <span>Vincular minha conta a esta sala</span>}
+                  </button>
+                </>
+              )}
+              <button onClick={() => navigate('/')} className="w-full text-center text-sm text-slate-500 dark:text-slate-400 hover:underline cursor-pointer">
+                Voltar pra plataforma
+              </button>
+            </div>
+          ) : (
+          <>
           {/* Banner do Código de Convite ativo */}
           {inviteInfo && !isLogin && (
             <div className="bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 flex gap-3 items-start animate-in fade-in slide-in-from-top-4 duration-300">
@@ -224,7 +278,7 @@ export default function Login() {
                       required
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-white/20 bg-white/50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm"
                       placeholder="Ex: João Silva"
                     />
                   </div>
@@ -240,7 +294,7 @@ export default function Login() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-white/20 bg-white/50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm"
                     placeholder="nome@exemplo.com"
                   />
                 </div>
@@ -255,7 +309,7 @@ export default function Login() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-white/20 bg-white/50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm"
                     placeholder="••••••••"
                     minLength={6}
                   />
@@ -283,24 +337,15 @@ export default function Login() {
           {!checkingInvite && (
             <div className="text-center text-sm pt-4 border-t border-slate-200 dark:border-slate-900">
               {isLogin ? (
-                inviteCode ? (
-                  <>
-                    <span className="text-slate-500 dark:text-slate-400">Usando o link de convite?</span>{' '}
-                    <button
-                      onClick={() => setIsLogin(false)}
-                      className="text-primary font-bold hover:underline cursor-pointer"
-                    >
-                      Cadastre-se agora
-                    </button>
-                  </>
-                ) : (
-                  <div className="bg-slate-500/5 dark:bg-slate-500/10 border border-slate-200 dark:border-slate-900 p-4 rounded-2xl text-xs text-slate-500 dark:text-slate-400 text-left">
-                    <p className="font-bold flex items-center gap-1.5 text-slate-700 dark:text-slate-300 mb-1">
-                      <Lock size={12} /> Cadastro Restrito
-                    </p>
-                    O auto-cadastro público está desabilitado. Para se registrar na plataforma, você precisa utilizar o link ou ler o QR Code fornecido pela sua instituição de ensino.
-                  </div>
-                )
+                <>
+                  <span className="text-slate-500 dark:text-slate-400">{inviteCode ? 'Usando o link de convite?' : 'Ainda não tem conta?'}</span>{' '}
+                  <button
+                    onClick={() => setIsLogin(false)}
+                    className="text-primary font-bold hover:underline cursor-pointer"
+                  >
+                    Cadastre-se agora
+                  </button>
+                </>
               ) : (
                 <>
                   <span className="text-slate-500 dark:text-slate-400">Já possui uma conta?</span>{' '}
@@ -313,6 +358,8 @@ export default function Login() {
                 </>
               )}
             </div>
+          )}
+          </>
           )}
 
         </div>

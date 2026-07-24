@@ -6,7 +6,7 @@ export function createGoogleProvider(apiKey: string): AIProvider {
   return {
     id: 'google',
 
-    async chat({ messages, systemPrompt, modelId, imageBase64, imageMimeType }: ChatParams): Promise<ChatResult> {
+    async chat({ messages, systemPrompt, modelId, imageBase64, imageMimeType, thinkingConfig }: ChatParams): Promise<ChatResult> {
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel(
         {
@@ -29,14 +29,23 @@ export function createGoogleProvider(apiKey: string): AIProvider {
         });
       }
 
-      const result = await model.generateContent({ contents });
+      const result = await model.generateContent({
+        contents,
+        ...(thinkingConfig ? { generationConfig: { thinkingConfig } as any } : {}),
+      });
       const response = result.response;
       const text = response.text();
 
+      // Google bills "thought" (reasoning) tokens as output — must be added in, or credits
+      // undercount real spend whenever thinking is engaged (default-on models, fallback
+      // paths, or any model where thinkingConfig doesn't fully disable it).
+      const candidatesTokens = response.usageMetadata?.candidatesTokenCount ?? Math.ceil(text.length / 4);
+      const thoughtsTokens = (response.usageMetadata as any)?.thoughtsTokenCount ?? 0;
+
       return {
         text,
-        inputTokens:  response.usageMetadata?.promptTokenCount     ?? 0,
-        outputTokens: response.usageMetadata?.candidatesTokenCount ?? Math.ceil(text.length / 4),
+        inputTokens:  response.usageMetadata?.promptTokenCount ?? 0,
+        outputTokens: candidatesTokens + thoughtsTokens,
         cachedTokens: (response.usageMetadata as any)?.cachedContentTokenCount ?? 0,
       };
     },

@@ -167,7 +167,7 @@ export default function IaUsageAdminPage() {
       {/* Cabeçalho */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+          <h1 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2 font-display">
             <Coins className="text-primary" size={28} />
             Consumo e Custos de IA (Gemini)
           </h1>
@@ -177,7 +177,7 @@ export default function IaUsageAdminPage() {
         </div>
         <button
           onClick={fetchData}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-200 transition-all cursor-pointer"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 glasscard rounded-2xl font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-200 transition-all cursor-pointer"
         >
           <RefreshCw size={14} />
           Atualizar Dados
@@ -206,7 +206,7 @@ export default function IaUsageAdminPage() {
         </div>
 
         {/* Card 2: Consumo da API */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl relative overflow-hidden flex flex-col justify-between min-h-[140px]">
+        <div className="glasscard p-6 rounded-3xl relative overflow-hidden flex flex-col justify-between min-h-[140px]">
           <div className="flex justify-between items-start">
             <span className="text-xs font-black uppercase tracking-widest text-slate-450 dark:text-slate-500">Uso no Servidor (BD)</span>
             <div className="p-1.5 bg-primary/10 rounded-lg text-primary">
@@ -222,7 +222,7 @@ export default function IaUsageAdminPage() {
         </div>
 
         {/* Card 3: Chat vs Lab */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl relative overflow-hidden flex flex-col justify-between min-h-[140px]">
+        <div className="glasscard p-6 rounded-3xl relative overflow-hidden flex flex-col justify-between min-h-[140px]">
           <div className="flex justify-between items-start">
             <span className="text-xs font-black uppercase tracking-widest text-slate-450 dark:text-slate-500">Chats vs Simuladores</span>
             <div className="p-1.5 bg-emerald-500/10 rounded-lg text-emerald-500">
@@ -242,7 +242,7 @@ export default function IaUsageAdminPage() {
         </div>
 
         {/* Card 4: Limite Mensal */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl relative overflow-hidden flex flex-col justify-between min-h-[140px]">
+        <div className="glasscard p-6 rounded-3xl relative overflow-hidden flex flex-col justify-between min-h-[140px]">
           <div className="flex justify-between items-start">
             <span className="text-xs font-black uppercase tracking-widest text-slate-450 dark:text-slate-500">Teto Financeiro</span>
             <div className="p-1.5 bg-amber-500/10 rounded-lg text-amber-500">
@@ -266,7 +266,7 @@ export default function IaUsageAdminPage() {
       </div>
 
       {/* Seção Gráfica e Histórico */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
+      <div className="glasscard rounded-3xl p-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
             <h3 className="text-sm font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
@@ -274,14 +274,14 @@ export default function IaUsageAdminPage() {
             </h3>
             <p className="text-xs text-slate-450 mt-0.5">Valores acumulados em Reais (BRL)</p>
           </div>
-          <div className="flex bg-slate-100 dark:bg-slate-950 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 self-start">
+          <div className="flex glasscard p-1.5 rounded-2xl self-start">
             {(['h24', 'd7', 'd30'] as const).map(range => (
               <button
                 key={range}
                 onClick={() => setTimeRange(range)}
                 className={`px-3 py-1.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
                   timeRange === range
-                    ? 'bg-white dark:bg-slate-850 shadow text-primary dark:text-white'
+                    ? 'bg-white/70 dark:bg-white/10 shadow text-primary dark:text-white'
                     : 'text-slate-500 dark:text-slate-450 hover:text-slate-750'
                 }`}
               >
@@ -372,7 +372,7 @@ export default function IaUsageAdminPage() {
       {/* Tabelas de Divisão de Custo */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Custos por Instituição */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6">
+        <div className="glasscard rounded-3xl p-6">
           <h3 className="text-sm font-black uppercase tracking-wider text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
             <School size={16} className="text-primary" />
             Custos por Instituição
@@ -402,7 +402,7 @@ export default function IaUsageAdminPage() {
         </div>
 
         {/* Custos por Sala de Aula */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6">
+        <div className="glasscard rounded-3xl p-6">
           <h3 className="text-sm font-black uppercase tracking-wider text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
             <Users2 size={16} className="text-primary" />
             Custos por Sala de Aula
@@ -433,8 +433,8 @@ export default function IaUsageAdminPage() {
       </div>
 
       {/* Tabela dos Alunos Maiores Consumidores */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
-        <div className="p-6 border-b border-slate-200 dark:border-slate-800">
+      <div className="glasscard rounded-3xl overflow-hidden">
+        <div className="p-6 border-b border-white/10">
           <h3 className="text-sm font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
             Ranking de Alunos (Maiores Consumidores)
           </h3>
@@ -442,7 +442,7 @@ export default function IaUsageAdminPage() {
         </div>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left text-xs font-medium text-slate-600 dark:text-slate-300">
-            <thead className="bg-slate-50 dark:bg-slate-950/50 uppercase tracking-widest text-[9px] font-black text-slate-450 dark:text-slate-550 border-b border-slate-200 dark:border-slate-800">
+            <thead className="bg-white/30 dark:bg-white/[0.03] uppercase tracking-widest text-[9px] font-black text-slate-450 dark:text-slate-550 border-b border-white/10 font-mono">
               <tr>
                 <th className="px-6 py-4">Nome</th>
                 <th className="px-6 py-4">E-mail</th>
@@ -452,14 +452,14 @@ export default function IaUsageAdminPage() {
                 <th className="px-6 py-4 text-right">Custo em BRL</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
+            <tbody className="divide-y divide-white/10">
               {topUsers.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-slate-450">Nenhum registro de uso computado.</td>
                 </tr>
               ) : (
                 topUsers.map(u => (
-                  <tr key={u.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-850/10 transition-colors">
+                  <tr key={u.id} className="hover:bg-white/20 dark:hover:bg-white/5 transition-colors">
                     <td className="px-6 py-4 font-bold text-slate-800 dark:text-slate-150">{u.name}</td>
                     <td className="px-6 py-4 font-mono text-[10px] text-slate-500 dark:text-slate-450">{u.email}</td>
                     <td className="px-6 py-4 text-center">{(u.chatCredits).toLocaleString('pt-BR')}</td>

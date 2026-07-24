@@ -151,6 +151,27 @@ export function listEnabledModels(): ModelInfo[] {
   return rows.map(rowToModelInfo);
 }
 
+// ── Thinking config ──────────────────────────────────────────────────────────
+
+/**
+ * Per-model thinking (reasoning-token) config, verified empirically per model —
+ * NOT a clean "2.x vs 3.x" rule. Gemini 2.x models take `thinkingBudget` (0 = fully off).
+ * Gemini 3.5 Flash-Lite rejects `thinkingBudget: 0` (400 invalid argument) and only
+ * accepts `thinkingLevel` (floor is 'MINIMAL', can't fully disable). Gemini 3.1 Flash-Lite
+ * accepts both, but `thinkingBudget: 0` fully disables it while `thinkingLevel: 'LOW'` doesn't —
+ * so it's listed under the budget scheme here, not the level one.
+ */
+const THINKING_CONFIG_BY_MODEL: Record<string, { thinkingBudget?: number; thinkingLevel?: string }> = {
+  'gemini-2.5-flash':      { thinkingBudget: 0 },
+  'gemini-2.5-flash-lite': { thinkingBudget: 0 },
+  'gemini-3.1-flash-lite': { thinkingBudget: 0 },
+  'gemini-3.5-flash-lite': { thinkingLevel: 'MINIMAL' },
+};
+
+export function getThinkingConfig(modelId: string): { thinkingBudget?: number; thinkingLevel?: string } | undefined {
+  return THINKING_CONFIG_BY_MODEL[modelId];
+}
+
 // ── Credit calculation ───────────────────────────────────────────────────────
 
 /**

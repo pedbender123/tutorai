@@ -1,13 +1,15 @@
 /**
- * Per-model request queue + RPD (requests-per-day) tracking for free-tier models.
- *
- * Free models (Gemma 4 31B / 26B):
- *   - 15 RPM → 4 500 ms minimum gap between requests in the same model queue
- *   - 1 500 RPD → hard daily cap tracked in memory, seeded from quota_metrics on startup
+ * Per-model request queue + RPD (requests-per-day) + TPM (tokens-per-minute) tracking.
  *
  * Paid models (Gemini Flash, etc.):
  *   - 1 000 ms minimum gap (conservative; API limits are much higher)
- *   - No RPD cap enforced here (handled by spend caps / billing)
+ *   - No RPD/TPM cap enforced here (handled by spend caps / billing)
+ *
+ * Free-tier keys for gemini-3.1-flash-lite / gemini-3.5-flash-lite (per AI Studio,
+ * confirmed by the user — each model has its OWN separate bucket):
+ *   15 RPM, 500 RPD, 250k TPM. Tracked under a synthetic key ("<modelId>:free"),
+ * distinct from the real modelId, so the paid fallback attempt for the same model
+ * isn't wrongly rate-limited by the free bucket's counters.
  */
 
 import db from './db.js';
@@ -15,20 +17,47 @@ import db from './db.js';
 // ── Model-specific rate-limit config ─────────────────────────────────────────
 
 interface ModelLimits {
-  gapMs: number;        // min ms between consecutive requests in the queue
-  rpdLimit: number;     // daily request cap (Infinity = no cap)
+  gapMs: number;         // min ms between consecutive requests in the queue
+  rpdLimit: number;      // daily request cap (Infinity = no cap)
+  tpmLimit: number;      // tokens-per-minute cap (Infinity = no cap)
 }
 
-const FREE_GAP_MS = 4_500;  // 15 RPM = 1 per 4s → +500 ms safety margin
 const PAID_GAP_MS = 1_000;
+const FREE_LITE_GAP_MS = 4_200; // 15 RPM = 1 per 4s → +200ms safety margin
 
 const MODEL_LIMITS: Record<string, ModelLimits> = {
-  'gemma-4-31b-it':     { gapMs: FREE_GAP_MS, rpdLimit: 1_500 },
-  'gemma-4-26b-a4b-it': { gapMs: FREE_GAP_MS, rpdLimit: 1_500 },
+  'gemini-3.5-flash-lite:free': { gapMs: FREE_LITE_GAP_MS, rpdLimit: 500, tpmLimit: 250_000 },
+  'gemini-3.1-flash-lite:free': { gapMs: FREE_LITE_GAP_MS, rpdLimit: 500, tpmLimit: 250_000 },
 };
 
 function getLimits(modelId: string): ModelLimits {
-  return MODEL_LIMITS[modelId] ?? { gapMs: PAID_GAP_MS, rpdLimit: Infinity };
+  return MODEL_LIMITS[modelId] ?? { gapMs: PAID_GAP_MS, rpdLimit: Infinity, tpmLimit: Infinity };
+}
+
+// ── TPM in-memory tracker (sliding 60s window) ───────────────────────────────
+
+const tpmHistory = new Map<string, Array<{ timestamp: number; tokens: number }>>();
+const TPM_WINDOW_MS = 60_000;
+
+function getTPMUsage(key: string): number {
+  const history = tpmHistory.get(key);
+  if (!history) return 0;
+  const cutoff = Date.now() - TPM_WINDOW_MS;
+  while (history.length > 0 && history[0].timestamp < cutoff) history.shift();
+  return history.reduce((sum, e) => sum + e.tokens, 0);
+}
+
+export function recordTPM(key: string, tokens: number): void {
+  const history = tpmHistory.get(key) ?? [];
+  history.push({ timestamp: Date.now(), tokens });
+  tpmHistory.set(key, history);
+}
+
+/** Best-effort pre-check using the estimated input size — real output tokens aren't known yet. */
+export function wouldExceedTPM(key: string, estimatedTokens: number): boolean {
+  const { tpmLimit } = getLimits(key);
+  if (tpmLimit === Infinity) return false;
+  return getTPMUsage(key) + estimatedTokens > tpmLimit;
 }
 
 // ── RPD in-memory tracker ─────────────────────────────────────────────────────

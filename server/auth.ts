@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import db from './db.js';
 import { config } from './config.js';
+import { sendVerificationEmail, isVerificationEnforced } from './emailVerification.js';
 import { Request, Response, NextFunction } from 'express';
 
 export interface AuthRequest extends Request {
@@ -64,13 +65,9 @@ export const register = async (req: AuthRequest, res: Response) => {
   const { name, email, password, inviteCode } = req.body;
   if (!name || !email || !password) return res.status(400).json({ error: 'Missing fields' });
 
-  const isAdminCreation = req.user && (req.user.role === 'admin' || (req.user as any).isAdmin);
-
-  if (!isAdminCreation) {
-    if (!inviteCode) {
-      return res.status(403).json({ error: 'O cadastro só é permitido através de um convite/QR code de sala de aula.' });
-    }
-    // Verificar se a sala existe
+  // Cadastro individual é livre (plataforma pública) — convite só é obrigatório
+  // pra entrar vinculado a uma instituição/sala. Se um código vier, precisa ser válido.
+  if (inviteCode) {
     const classroom = db.prepare('SELECT * FROM classrooms WHERE id = ?').get(inviteCode) as any;
     if (!classroom) {
       return res.status(400).json({ error: 'Código de convite inválido ou sala não encontrada.' });
@@ -124,7 +121,11 @@ export const register = async (req: AuthRequest, res: Response) => {
     delete user.password;
 
     const token = jwt.sign({ id: user.id, email: user.email, role: user.role, isAdmin: !!user.isAdmin }, config.jwtSecret, { expiresIn: '7d' });
-    res.json({ user, token });
+
+    // Best-effort, non-blocking — a mail failure must never break signup.
+    sendVerificationEmail(userId, name, user.email).catch(() => {});
+
+    res.json({ user, token, emailVerificationRequired: isVerificationEnforced() });
   } catch (err: any) {
     if (err.message.includes('UNIQUE constraint failed')) {
       return res.status(400).json({ error: 'Email already exists' });
@@ -138,7 +139,7 @@ export const updateUserData = async (req: AuthRequest, res: Response) => {
   if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
   
   const updates = req.body;
-  const allowedFields = ['name', 'themeMode', 'accentColor', 'tokensProfessor', 'lastResetProfessor', 'tokensTutor', 'lastResetTutor', 'tokensColega', 'lastResetColega'];
+  const allowedFields = ['name', 'themeMode', 'accentColor', 'locale', 'tokensProfessor', 'lastResetProfessor', 'tokensTutor', 'lastResetTutor', 'tokensColega', 'lastResetColega'];
   
   const filteredUpdates: any = {};
   for (const field of allowedFields) {

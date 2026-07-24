@@ -28,8 +28,8 @@ function c(color: keyof typeof ANSI, text: string) {
   return `${ANSI[color]}${text}${ANSI.reset}`;
 }
 
-async function loginAs(email: string, password: string): Promise<string> {
-  const res = await fetch(`${BASE_URL}/api/auth/login`, {
+async function loginAs(email: string, password: string, baseUrl: string = BASE_URL): Promise<string> {
+  const res = await fetch(`${baseUrl}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
@@ -39,10 +39,10 @@ async function loginAs(email: string, password: string): Promise<string> {
   return data.token;
 }
 
-async function setupTestUser(inviteCode: string): Promise<{ token: string; userId: string; email: string }> {
+async function setupTestUser(inviteCode: string, baseUrl: string = BASE_URL): Promise<{ token: string; userId: string; email: string }> {
   const email = `sectest_runner_${Date.now()}@ucs.br`;
   const password = 'SecTest!9876';
-  const regRes = await fetch(`${BASE_URL}/api/auth/register`, {
+  const regRes = await fetch(`${baseUrl}/api/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name: 'Security Test User', email, password, inviteCode }),
@@ -52,8 +52,8 @@ async function setupTestUser(inviteCode: string): Promise<{ token: string; userI
   return { token: data.token, userId: data.user.id, email };
 }
 
-async function setupTestProject(token: string): Promise<string> {
-  const res = await fetch(`${BASE_URL}/api/lab/projects`, {
+async function setupTestProject(token: string, baseUrl: string = BASE_URL): Promise<string> {
+  const res = await fetch(`${baseUrl}/api/lab/projects`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify({ title: 'Security Test Project (auto-cleanup)' }),
@@ -104,17 +104,17 @@ const SEVERITY_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2
 const STATUS_ICON: Record<string, string> = { pass: '✔', fail: '✖', warn: '⚠', error: '?' };
 const STATUS_COLOR: Record<string, keyof typeof ANSI> = { pass: 'green', fail: 'red', warn: 'yellow', error: 'yellow' };
 
-async function main() {
+export async function runSecurityTests(baseUrl: string = BASE_URL): Promise<{ runId: string; results: TestResult[] }> {
   console.log(`\n${c('bold', '═══════════════════════════════════════════════')}`);
   console.log(`${c('cyan', '  TutorAI Security Test Runner')}`);
-  console.log(`${c('gray', `  Target: ${BASE_URL}`)}`);
+  console.log(`${c('gray', `  Target: ${baseUrl}`)}`);
   console.log(`${'═'.repeat(47)}\n`);
 
   // ── Setup context ──────────────────────────────
   let adminToken = '';
   if (ADMIN_EMAIL && ADMIN_PASSWORD) {
     try {
-      adminToken = await loginAs(ADMIN_EMAIL, ADMIN_PASSWORD);
+      adminToken = await loginAs(ADMIN_EMAIL, ADMIN_PASSWORD, baseUrl);
       console.log(c('green', `  ✔ Admin autenticado (${ADMIN_EMAIL})`));
     } catch (e: any) {
       console.log(c('yellow', `  ⚠ Admin login falhou: ${e.message}`));
@@ -150,11 +150,11 @@ async function main() {
   let userId = '';
   let projectId = '';
   try {
-    const u = await setupTestUser(testClassroomId);
+    const u = await setupTestUser(testClassroomId, baseUrl);
     userToken = u.token;
     userId = u.userId;
     console.log(c('green', `  ✔ Usuário de teste criado (${u.email})`));
-    projectId = await setupTestProject(userToken);
+    projectId = await setupTestProject(userToken, baseUrl);
     if (projectId) console.log(c('green', `  ✔ Projeto de teste criado (${projectId})`));
   } catch (e: any) {
     console.log(c('yellow', `  ⚠ Setup de usuário de teste falhou: ${e.message}`));
@@ -171,7 +171,7 @@ async function main() {
     process.stdout.write(`  ${c('gray', test.id.padEnd(12))} ${test.name.padEnd(45)} `);
     let result: TestResult;
     try {
-      result = await test.run(BASE_URL, ctx);
+      result = await test.run(baseUrl, ctx);
     } catch (e: any) {
       result = {
         testId: test.id, name: test.name, category: test.category, severity: test.severity,
@@ -214,10 +214,23 @@ async function main() {
   console.log(c('gray', '  Recursos de teste removidos do DB.'));
 
   console.log(`\n${'═'.repeat(47)}\n`);
+
+  return { runId, results };
+}
+
+async function main() {
+  const { results } = await runSecurityTests(BASE_URL);
+  const failed = results.filter(r => r.status === 'fail').length;
   process.exit(failed > 0 ? 1 : 0);
 }
 
-main().catch(e => {
-  console.error('Runner error:', e);
-  process.exit(1);
-});
+// Só roda o suite + process.exit quando este arquivo é executado diretamente
+// (tsx security/runner.ts) — sem essa guarda, importar runSecurityTests de outro
+// módulo (ex: aetherLink.ts) disparava o suite inteiro e matava o processo no boot.
+const isDirectRun = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+if (isDirectRun) {
+  main().catch(e => {
+    console.error('Runner error:', e);
+    process.exit(1);
+  });
+}

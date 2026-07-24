@@ -9,6 +9,40 @@ const personasPath = join(__dirname, 'personas.json');
 const require = createRequire(import.meta.url);
 const personas: Persona[] = require(personasPath);
 
+// ── Idioma de resposta ───────────────────────────────────────────────────────
+
+const LOCALE_LABELS: Record<string, string> = {
+  pt: 'português do Brasil',
+  en: 'English',
+  es: 'español',
+};
+
+/** Instrução de idioma a injetar na camada base de qualquer prompt de agente. */
+export function localeInstruction(locale?: string): string {
+  const label = LOCALE_LABELS[locale ?? 'pt'] ?? LOCALE_LABELS.pt;
+  return `Responda sempre em ${label}, independentemente do idioma da pergunta do usuário.`;
+}
+
+// ── Tags de PII (privacidade) ────────────────────────────────────────────────
+//
+// Dados pessoais do usuário (nome, instituição, etc.) NUNCA são interpolados como
+// texto literal em nenhum prompt enviado a uma API externa de LLM. Em vez disso, o
+// modelo recebe uma instrução para usar um token literal (ex: <nome>) sempre que
+// quiser se referir a esse dado — a própria IA nunca vê o valor real. A substituição
+// do token pelo valor real acontece só no cliente, na hora de renderizar a mensagem
+// pro usuário, usando o dado que o cliente já tem localmente (nunca uma ida e volta
+// pela API externa). Isso também protege o histórico da conversa: como o texto
+// resposta do modelo enviado de volta como contexto continua tokenizado, o nome real
+// nunca "vaza" de volta pro modelo em turnos futuros.
+export const PII_TAGS = { nome: '<nome>', instituicao: '<instituicao>' } as const;
+
+function piiTagInstruction(): string {
+  return `PRIVACIDADE DE DADOS PESSOAIS (regra inviolável):
+- Você NÃO recebe o nome real nem o nome da instituição do usuário — por design, essa informação não é enviada para você.
+- Se quiser se referir ao usuário pelo nome, ou à instituição dele, escreva literalmente os tokens ${PII_TAGS.nome} e ${PII_TAGS.instituicao} no seu texto — o sistema do cliente substitui pelo valor real antes de exibir, você nunca vê nem precisa saber qual é.
+- Nunca pergunte o nome real ao usuário, nunca invente um nome, nunca tente adivinhar.`;
+}
+
 export interface Persona {
   id: string;
   identidade: {
@@ -189,18 +223,18 @@ Antes de gerar sua resposta, analise internamente — sem escrever esta análise
   return [camada1, camada2, camada3, camada4].join('\n');
 }
 
-// ── Support prompt (Petrus mega-agent) ──────────────────────────────────────
+// ── Support prompt (Levy mega-agent) ──────────────────────────────────────
 
 export interface SupportPromptContext {
-  userName: string;
-  institution?: string;
+  hasInstitution: boolean;
   labProjects: Array<{ id: string; title: string; updatedAt?: string }>;
   labProjectCount: number;
   agenticMode: boolean;
+  locale?: string;
 }
 
 /**
- * Builds the system prompt for Petrus in Support / mini-chat mode.
+ * Builds the system prompt for Levy in Support / mini-chat mode.
  * Style: direct, executor, Kodee-inspired. No Socratic approach.
  */
 export function buildSupportPrompt(ctx: SupportPromptContext): string {
@@ -224,7 +258,11 @@ MODO AGENTIC ATIVO:
 MODO AGENTIC: desativado.
 - Para ações de escrita (criar/editar projetos), informe ao usuário que ele pode ativar o Modo Agentic no painel.`;
 
-  return `Você é o Petrus, assistente de suporte da plataforma Scaffl — o sistema de tutoria e laboratório de simuladores.
+  return `Você é o Levy, o guia pedagógico da plataforma Scaffl — inspirado em Lev Vygotsky. Mais do que um assistente que responde perguntas, você existe para ensinar o aluno a pensar: identifique exatamente onde ele está travado e construa a ponte (o andaime, o "scaffolding") até a compreensão, em vez de apenas entregar a resposta pronta quando o pedido for de natureza conceitual/pedagógica. Para pedidos operacionais da plataforma (cotas, projetos, navegação), aja direto — ver REGRAS CRÍTICAS abaixo.
+
+${localeInstruction(ctx.locale)}
+
+${piiTagInstruction()}
 
 REGRAS CRÍTICAS (violá-las é proibido):
 1. NUNCA diga que não tem acesso a dados do usuário quando existe uma ferramenta que pode buscá-los. Use a ferramenta.
@@ -239,17 +277,17 @@ PERSONALIDADE E ESTILO:
 - Nunca invente funcionalidades ou URLs que não existam.
 
 CONTEXTO DO USUÁRIO ATUAL:
-- Nome: ${ctx.userName}
-${ctx.institution ? `- Instituição vinculada: ${ctx.institution}` : '- Sem instituição vinculada'}
+- Nome: ${PII_TAGS.nome} (use este token se quiser se dirigir a ele pelo nome)
+${ctx.hasInstitution ? `- Instituição vinculada: ${PII_TAGS.instituicao} (use este token se quiser citar o nome dela)` : '- Sem instituição vinculada'}
 - Projetos no Lab (${ctx.labProjectCount}):
 ${projectList}
 
 COMO A PLATAFORMA FUNCIONA (use isso para responder perguntas — nunca invente):
-- **Lab (Simuladores)**: o usuário envia pedidos em linguagem natural e um agente de IA gera/edita código HTML do simulador. O consumo é medido em **requisições** (não créditos): há um limite diário e um semanal que renovam automaticamente. Usuários institucionais têm 10 req/dia e 50 req/semana; usuários sem instituição têm 5/dia e 20/semana.
-- **Chat com Tutor (/chat)**: conversa com personas de professores (ex.: Petrus). Consumo medido em créditos de token (entrada + saída).
-- **Petrus Assistente (este mini-chat)**: usa Gemini Flash. Consumo medido em créditos semanais (100k/semana).
+- **Lab (Simuladores)**: o usuário envia pedidos em linguagem natural e um agente de IA gera/edita código HTML do simulador.
+- **Levy (você)**: disponível como página de chat completa (/levy) e como mini-chat flutuante em qualquer outra página.
 - **Sala de Aula (/class)**: AVA com atividades, materiais e prazos postados pelo professor.
-- **Renovação de cotas**: limites diários do Lab renovam à meia-noite UTC; limites semanais (Lab + Petrus) renovam toda segunda-feira UTC.
+- **Cotas de IA**: Lab, chat e Levy dividem um único saldo de créditos (o consumo real de cada geração/mensagem, não uma contagem de requisições). Existe um teto semanal e um mensal — o semanal é só um freio contra gastar tudo de uma vez; o mensal é o limite real. Usuários free (com ou sem instituição) têm 500k créditos/semana e 2M/mês.
+- **Renovação de cotas**: o limite semanal renova toda segunda-feira UTC; o mensal renova no dia 1 do mês (UTC).
 
 FERRAMENTAS DISPONÍVEIS:
 - Use 'listar_projetos_lab' para dados atualizados dos projetos do usuário.
@@ -260,7 +298,7 @@ ${agenticSection}
 NAVEGAÇÃO DA PLATAFORMA (rotas que você conhece):
 - /lab → mural de simuladores
 - /lab/{id} → editor de um simulador específico
-- /chat → chat com tutores (Petrus/personagens)
+- /levy → esta conversa, em página cheia
 - /class → mural AVA (atividades e disciplinas)
 - /settings → configurações de conta (aba Uso mostra cotas em tempo real)`;
 }
@@ -275,9 +313,14 @@ export function buildSystemPromptV3(
   documentoPedagogico: string,
   isGenerico: boolean,
   disciplina?: { nome: string; conteudo: string },
-  studentName?: string
+  hasStudent?: boolean,
+  locale?: string
 ): string {
   const camada1 = `Você é um tutor virtual educacional que replica o estilo de ensino de um professor real.
+
+${localeInstruction(locale)}
+
+${piiTagInstruction()}
 
 REGRAS FUNDAMENTAIS:
 - Você está em uma CONVERSA individual com um único aluno — não há sala, não há turma.
@@ -308,11 +351,10 @@ O documento acima pode descrever comportamentos do professor em sala de aula (tu
 - NUNCA responda como uma IA genérica que lista opções e pergunta "qual te interessou mais?". Engaje ativamente com o conteúdo, como o professor faria em uma monitoria ou plantão de dúvidas com um aluno só.`;
 
   let infoEstudante = '';
-  if (studentName) {
+  if (hasStudent) {
     infoEstudante = `
 ## INFORMAÇÕES DO ESTUDANTE ATIVO
-O nome do estudante com quem você está conversando neste momento é: ${studentName}.
-Use o nome dele de forma amigável e natural no diálogo quando julgar adequado, e use-o para preencher e formatar links de contato (como links do WhatsApp) se as instruções da sua persona solicitarem isso.`;
+Use o token ${PII_TAGS.nome} de forma amigável e natural no diálogo quando quiser se dirigir a ele pelo nome, e para preencher e formatar links de contato (como links do WhatsApp) se as instruções da sua persona solicitarem isso — o token é substituído pelo nome real no cliente, você nunca recebe o valor.`;
   }
 
   let camada3 = '';

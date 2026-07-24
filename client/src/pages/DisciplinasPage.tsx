@@ -101,13 +101,14 @@ export default function DisciplinasPage() {
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Gestão de Disciplinas</h1>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight font-display">Gestão de Disciplinas</h1>
           <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">Organize os conteúdos acadêmicos e vincule-os aos professores.</p>
         </div>
         {userData?.isAdmin && (
           <button
             onClick={() => handleOpenModal()}
-            className="flex items-center gap-2 px-6 py-3 bg-primary hover:opacity-90 text-primary-foreground rounded-xl font-semibold transition-all shadow-lg shadow-primary/20 active:scale-95"
+            style={{ backgroundImage: 'linear-gradient(120deg, var(--color-a1), var(--color-a2), var(--color-a3))' }}
+            className="flex items-center gap-2 px-6 py-3 text-white rounded-xl font-semibold transition-all shadow-lg shadow-primary/20 active:scale-95"
           >
             <Plus size={20} />
             Nova Disciplina
@@ -127,7 +128,7 @@ export default function DisciplinasPage() {
               key={disc.id}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300"
+              className="group relative glasscard rounded-3xl p-6 hover:shadow-xl hover:border-primary/30 transition-all duration-300"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
@@ -196,7 +197,7 @@ export default function DisciplinasPage() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800"
+              className="relative glass-panel w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl"
             >
               <form onSubmit={handleSubmit} className="p-6">
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">
@@ -208,7 +209,7 @@ export default function DisciplinasPage() {
                     <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Instituição</label>
                     <select
                       required
-                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary appearance-none outline-none text-slate-900 dark:text-white"
+                      className="w-full px-4 py-3 bg-white/50 dark:bg-white/5 border border-white/20 rounded-xl focus:ring-2 focus:ring-primary appearance-none outline-none text-slate-900 dark:text-white"
                       value={formData.institutionId}
                       onChange={e => setFormData({ ...formData, institutionId: e.target.value })}
                     >
@@ -224,7 +225,7 @@ export default function DisciplinasPage() {
                     <input
                       required
                       type="text"
-                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary outline-none text-slate-900 dark:text-white"
+                      className="w-full px-4 py-3 bg-white/50 dark:bg-white/5 border border-white/20 rounded-xl focus:ring-2 focus:ring-primary outline-none text-slate-900 dark:text-white"
                       value={formData.nome}
                       onChange={e => setFormData({ ...formData, nome: e.target.value })}
                       placeholder="Ex: Física Mecânica I"
@@ -236,7 +237,7 @@ export default function DisciplinasPage() {
                     <textarea
                       required
                       rows={10}
-                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary outline-none text-slate-900 dark:text-white text-sm leading-relaxed"
+                      className="w-full px-4 py-3 bg-white/50 dark:bg-white/5 border border-white/20 rounded-xl focus:ring-2 focus:ring-primary outline-none text-slate-900 dark:text-white text-sm leading-relaxed"
                       value={formData.conteudo}
                       onChange={e => setFormData({ ...formData, conteudo: e.target.value })}
                       placeholder="Cole aqui o conteúdo programático, textos, fórmulas ou lições que a IA deve saber..."
@@ -255,7 +256,7 @@ export default function DisciplinasPage() {
                             "flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all border",
                             formData.professores_vinculados.includes(p.id)
                               ? "bg-primary/10 border-primary text-primary"
-                              : "bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-505"
+                              : "bg-white/40 dark:bg-white/5 border-white/20 text-slate-505"
                           )}
                         >
                           <div className={clsx("w-2 h-2 rounded-full", formData.professores_vinculados.includes(p.id) ? "bg-primary" : "bg-slate-300")} />
@@ -276,7 +277,8 @@ export default function DisciplinasPage() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-2 px-10 py-3 bg-primary text-primary-foreground rounded-xl font-bold hover:opacity-90 transition-colors shadow-lg shadow-primary/20"
+                    style={{ backgroundImage: 'linear-gradient(120deg, var(--color-a1), var(--color-a2), var(--color-a3))' }}
+                    className="flex-2 px-10 py-3 text-white rounded-xl font-bold transition-colors shadow-lg shadow-primary/20"
                   >
                     {editingDisciplina ? 'Salvar Alterações' : 'Criar Disciplina'}
                   </button>

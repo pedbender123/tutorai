@@ -5,6 +5,7 @@ import { api, LabProject } from '../lib/api';
 import { FlaskConical, Plus, Clock, User, Trash2, Loader2, Building2, Star } from 'lucide-react';
 import { cn } from '../lib/utils';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { LAB_PROJECTS_CHANGED } from '../lib/events';
 
 export default function LabMural() {
   const navigate = useNavigate();
@@ -17,10 +18,13 @@ export default function LabMural() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
-    api.lab.getProjects()
-      .then(setProjects)
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    const fetchProjects = () => api.lab.getProjects().then(setProjects).catch(console.error);
+    fetchProjects().finally(() => setLoading(false));
+
+    // Levy pode criar um projeto via ferramenta enquanto esta página já está
+    // montada (mini-chat flutuante) — sem isso a lista só atualizaria após F5.
+    window.addEventListener(LAB_PROJECTS_CHANGED, fetchProjects);
+    return () => window.removeEventListener(LAB_PROJECTS_CHANGED, fetchProjects);
   }, []);
 
   const handleCreate = () => setConfirmCreate(true);
@@ -70,9 +74,9 @@ export default function LabMural() {
 
   return (
     <>
-    <div className="min-h-full bg-slate-50 dark:bg-slate-950 font-sans">
+    <div className="min-h-full font-sans">
       {/* Header */}
-      <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-8 py-5">
+      <div className="border-b border-white/10 backdrop-blur-xl bg-white/60 dark:bg-white/[0.03] px-8 py-5">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-4">
@@ -80,20 +84,24 @@ export default function LabMural() {
                 <FlaskConical size={24} />
               </div>
               <div>
-                <h1 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Lab</h1>
+                <h1 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight font-display">Lab</h1>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Simuladores e experiências pedagógicas interativas</p>
               </div>
             </div>
             {tab === 'mine' && (
               <div className="flex items-center gap-3">
-                <span className="text-xs font-bold text-slate-400">
+                <span className="text-xs font-bold text-slate-400 font-mono">
                   {myProjects.length}/{projectLimit} projetos
                 </span>
                 <button
                   onClick={handleCreate}
                   disabled={creating || atLimit}
                   title={atLimit ? `Limite de ${projectLimit} projetos atingido` : undefined}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-2xl font-black text-sm shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={!(creating || atLimit) ? { backgroundImage: 'linear-gradient(120deg, var(--color-a1), var(--color-a2), var(--color-a3))' } : undefined}
+                  className={cn(
+                    'flex items-center gap-2 px-5 py-2.5 text-white rounded-2xl font-black text-sm shadow-lg shadow-primary/20 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed',
+                    (creating || atLimit) && 'bg-primary',
+                  )}
                 >
                   {creating ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
                   Novo Projeto
@@ -103,13 +111,13 @@ export default function LabMural() {
           </div>
 
           {/* Tabs */}
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-fit">
+          <div className="flex items-center gap-1 glasscard p-1 rounded-xl w-fit">
             <button
               onClick={() => setTab('mine')}
               className={cn(
-                'px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all',
+                'px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all font-mono',
                 tab === 'mine'
-                  ? 'bg-white dark:bg-slate-700 text-primary shadow-sm'
+                  ? 'bg-white/70 dark:bg-white/10 text-primary shadow-sm'
                   : 'text-slate-400 hover:text-slate-650 dark:hover:text-slate-300'
               )}
             >
@@ -119,9 +127,9 @@ export default function LabMural() {
               <button
                 onClick={() => setTab('institution')}
                 className={cn(
-                  'flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all',
+                  'flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all font-mono',
                   tab === 'institution'
-                    ? 'bg-white dark:bg-slate-700 text-primary shadow-sm'
+                    ? 'bg-white/70 dark:bg-white/10 text-primary shadow-sm'
                     : 'text-slate-400 hover:text-slate-650 dark:hover:text-slate-300'
                 )}
               >
@@ -149,7 +157,7 @@ export default function LabMural() {
               <div
                 onClick={!atLimit ? handleCreate : undefined}
                 className={cn(
-                  'border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl p-16 flex flex-col items-center justify-center gap-4',
+                  'border-2 border-dashed border-white/20 rounded-3xl p-16 flex flex-col items-center justify-center gap-4',
                   !atLimit && 'cursor-pointer hover:border-primary hover:bg-primary/5 transition-all group'
                 )}
               >
@@ -176,7 +184,7 @@ export default function LabMural() {
                   <button
                     onClick={handleCreate}
                     disabled={creating}
-                    className="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl p-8 flex flex-col items-center justify-center gap-3 hover:border-primary hover:bg-primary/5 transition-all group disabled:opacity-40"
+                    className="border-2 border-dashed border-white/20 rounded-3xl p-8 flex flex-col items-center justify-center gap-3 hover:border-primary hover:bg-primary/5 transition-all group disabled:opacity-40"
                   >
                     <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-all">
                       <Plus size={20} />
@@ -193,7 +201,7 @@ export default function LabMural() {
         {tab === 'institution' && hasInstitution && (
           <div>
             {othersProjects.length === 0 ? (
-              <div className="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl p-16 flex flex-col items-center justify-center gap-4 text-center">
+              <div className="border-2 border-dashed border-white/20 rounded-3xl p-16 flex flex-col items-center justify-center gap-4 text-center">
                 <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
                   <Building2 size={32} />
                 </div>
@@ -308,9 +316,9 @@ function ProjectCard({
   return (
     <div
       onClick={onClick}
-      className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl overflow-hidden cursor-pointer hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50 hover:-translate-y-1 transition-all group"
+      className="glasscard rounded-3xl overflow-hidden cursor-pointer hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50 hover:-translate-y-1 transition-all group"
     >
-      <div className="h-36 bg-slate-50 dark:bg-slate-800 relative overflow-hidden border-b border-slate-100 dark:border-slate-800">
+      <div className="h-36 bg-slate-50 dark:bg-white/5 relative overflow-hidden border-b border-white/10">
         {hasPreview ? (
           <iframe
             srcDoc={project.htmlContent}
@@ -367,7 +375,7 @@ function ProjectCard({
               }
             }}
           />
-          {project.feedbackCreator !== 0 && (
+          {!!project.feedbackCreator && (
             <div className={cn(
               "text-[9px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded-md",
               project.feedbackCreator === 1 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"

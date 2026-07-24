@@ -31,10 +31,10 @@ export default function UpdateNotification() {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/40 backdrop-blur-sm animate-in fade-in duration-500">
-      <div className="relative w-full max-w-lg bg-white dark:bg-zinc-900 rounded-[2.5rem] shadow-2xl border border-white/20 dark:border-zinc-800 overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-10 duration-500">
+      <div className="relative w-full max-w-lg glass-panel rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-10 duration-500">
         
         {/* Banner Decorativo */}
-        <div className="h-32 bg-gradient-to-br from-primary via-primary/80 to-indigo-600 relative overflow-hidden">
+        <div className="h-32 relative overflow-hidden" style={{ backgroundImage: 'linear-gradient(120deg, var(--color-a1), var(--color-a2), var(--color-a3))' }}>
           <div className="absolute inset-0 opacity-20">
             <div className="absolute top-0 left-0 w-40 h-40 bg-white rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
             <div className="absolute bottom-0 right-0 w-60 h-60 bg-indigo-400 rounded-full blur-3xl translate-x-1/3 translate-y-1/3" />
@@ -83,7 +83,8 @@ export default function UpdateNotification() {
           {showClose && (
             <button
               onClick={handleClose}
-              className="mt-10 w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-black py-4 rounded-2xl hover:opacity-90 active:scale-[0.98] transition-all shadow-lg shadow-zinc-900/10 dark:shadow-white/5 animate-in fade-in slide-in-from-bottom-2 duration-700"
+              style={{ backgroundImage: 'linear-gradient(120deg, var(--color-a1), var(--color-a2), var(--color-a3))' }}
+              className="mt-10 w-full text-white font-black py-4 rounded-2xl active:scale-[0.98] transition-all shadow-lg shadow-primary/20 animate-in fade-in slide-in-from-bottom-2 duration-700"
             >
               Começar a explorar
             </button>
@@ -117,7 +118,7 @@ export default function UpdateNotification() {
 function UpdateItem({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
   return (
     <div className="flex gap-4 items-start group">
-      <div className="w-10 h-10 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 flex items-center justify-center shrink-0 border border-zinc-100 dark:border-zinc-800 group-hover:scale-110 transition-transform">
+      <div className="w-10 h-10 rounded-xl glasscard flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
         {icon}
       </div>
       <div className="space-y-0.5">

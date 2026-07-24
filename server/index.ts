@@ -14,11 +14,14 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { compressProjectContext } from './labContextCompressor.js';
 import { getUserCreditLimit } from './ai.js';
 import { validateConfig, config } from './config.js';
-import { checkLabQuota, recordLabRequest, getQuotaSummary } from './quota.js';
+import { checkLabQuota, recordToolCredits, getQuotaSummary } from './quota.js';
+import { confirmVerificationToken, resendVerificationEmail, checkEmailVerified } from './emailVerification.js';
 import { getQueueDepth } from './limiter.js';
 import { encryptSecret } from './crypto/secrets.js';
 import { getActiveKey, invalidateKeyCache } from './providers/registry.js';
-import { generateSupportResponse } from './petrusSupport.js';
+import { generateSupportResponse, LEVY_GREETING } from './levySupport.js';
+import { generateChatTitle } from './chatTitler.js';
+import { startAetherLink } from './aetherLink.js';
 
 dotenv.config({ path: join(dirname(fileURLToPath(import.meta.url)), '../.env') });
 validateConfig();
@@ -46,12 +49,61 @@ const limiter = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req) => 'global_app_limiter', // Global limit for the whole app
 });
+
+// Register rate limiter: per-IP, protects the now-open public signup from mass account creation
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hora
+  limit: 5,
+  message: { error: 'Muitas tentativas de cadastro deste endereço. Tente novamente mais tarde.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 const requireAdmin = (req: any, res: express.Response, next: express.NextFunction) => {
   if (!req.user?.isAdmin) {
     return res.status(403).json({ error: 'Acesso negado. Apenas administradores podem realizar esta ação.' });
   }
   next();
 };
+
+// Reforma pública: papel de admin por instituição — delega gestão interna (salas,
+// disciplinas, personas, atividades, membros) sem exigir isAdmin global. Criar/excluir
+// a instituição em si continua exclusivo do admin global.
+function isInstitutionAdmin(userId: string, institutionId: string): boolean {
+  const row = db.prepare(
+    "SELECT 1 FROM user_institutions WHERE userId = ? AND institutionId = ? AND role = 'admin'"
+  ).get(userId, institutionId);
+  return !!row;
+}
+function institutionIdOfClassroom(classroomId: string): string | undefined {
+  const row = db.prepare('SELECT institutionId FROM classrooms WHERE id = ?').get(classroomId) as { institutionId: string } | undefined;
+  return row?.institutionId;
+}
+function requireInstitutionAccess(getInstitutionId: (req: any) => string | undefined) {
+  return (req: any, res: express.Response, next: express.NextFunction) => {
+    if (req.user?.isAdmin) return next();
+    const institutionId = getInstitutionId(req);
+    if (institutionId && req.user?.id && isInstitutionAdmin(req.user.id, institutionId)) return next();
+    return res.status(403).json({ error: 'Acesso negado. Você precisa ser admin desta instituição (ou admin global).' });
+  };
+}
+
+// Papel "teacher" real: escopo de UMA sala (não a instituição inteira).
+function isTeacherOfClassroom(userId: string, classroomId: string): boolean {
+  const row = db.prepare("SELECT 1 FROM user_classrooms WHERE userId = ? AND classroomId = ? AND role = 'teacher'").get(userId, classroomId);
+  return !!row;
+}
+// Admin global, admin da instituição da sala, OU professor daquela sala especificamente.
+function requireClassroomManage(getClassroomId: (req: any) => string | undefined) {
+  return (req: any, res: express.Response, next: express.NextFunction) => {
+    if (req.user?.isAdmin) return next();
+    const classroomId = getClassroomId(req);
+    if (!classroomId) return res.status(400).json({ error: 'Sala inválida.' });
+    const institutionId = institutionIdOfClassroom(classroomId);
+    if (institutionId && isInstitutionAdmin(req.user.id, institutionId)) return next();
+    if (isTeacherOfClassroom(req.user.id, classroomId)) return next();
+    return res.status(403).json({ error: 'Você precisa ser professor desta sala, admin da instituição ou admin global.' });
+  };
+}
 
 // Helper to get user's institution IDs
 const getUserInstitutionIds = (userId: string): string[] => {
@@ -60,8 +112,22 @@ const getUserInstitutionIds = (userId: string): string[] => {
 };
 
 // Auth Routes
-app.post('/api/auth/register', auth.register);
+app.post('/api/auth/register', registerLimiter, auth.register);
 app.post('/api/auth/login', auth.login);
+
+// GET /api/auth/verify-email/:token — confirma o e-mail (link clicado no e-mail)
+app.get('/api/auth/verify-email/:token', (req, res) => {
+  const result = confirmVerificationToken(req.params.token);
+  if (!result.ok) return res.status(400).json({ error: result.error });
+  res.json({ ok: true });
+});
+
+// POST /api/auth/resend-verification — reenvia o e-mail de verificação (usuário autenticado)
+app.post('/api/auth/resend-verification', auth.authenticate, async (req: any, res) => {
+  const result = await resendVerificationEmail(req.user.id);
+  if (!result.ok) return res.status(400).json({ error: result.error });
+  res.json({ ok: true });
+});
 app.get('/api/auth/me', auth.authenticate, (req: any, res) => {
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id) as any;
   if (!user) return res.status(404).json({ error: 'User not found' });
@@ -72,6 +138,11 @@ app.get('/api/auth/me', auth.authenticate, (req: any, res) => {
   user.creditsMonthly = (chatCredits?.total || 0) + (labCredits?.total || 0);
 
   user.institutions = getUserInstitutionIds(user.id);
+  const institutionRoles = db.prepare(
+    'SELECT institutionId, role FROM user_institutions WHERE userId = ?'
+  ).all(user.id) as { institutionId: string; role: string }[];
+  user.institutionRoles = institutionRoles;
+  user.isInstitutionAdmin = institutionRoles.some(r => r.role === 'admin');
   if (config.isCloud) {
     user.quota = getQuotaSummary(req.user.id);
   }
@@ -103,7 +174,7 @@ app.get('/api/admin/users', auth.authenticate, requireAdmin, (req, res) => {
   res.json(users);
 });
 
-app.post('/api/admin/users/:userId/institutions', auth.authenticate, requireAdmin, (req, res) => {
+app.post('/api/admin/users/:userId/institutions', auth.authenticate, requireInstitutionAccess((req) => req.body.institutionId), (req, res) => {
   const { userId } = req.params;
   const { institutionId } = req.body;
   try {
@@ -114,20 +185,33 @@ app.post('/api/admin/users/:userId/institutions', auth.authenticate, requireAdmi
   }
 });
 
-app.delete('/api/admin/users/:userId/institutions/:institutionId', auth.authenticate, requireAdmin, (req, res) => {
+app.delete('/api/admin/users/:userId/institutions/:institutionId', auth.authenticate, requireInstitutionAccess((req) => req.params.institutionId), (req, res) => {
   const { userId, institutionId } = req.params;
   db.prepare('DELETE FROM user_institutions WHERE userId = ? AND institutionId = ?').run(userId, institutionId);
   res.json({ success: true });
 });
 
+// PATCH /api/admin/users/:userId/institutions/:institutionId/role — promove/rebaixa admin de instituição
+// (delegação de gestão interna — global admin ou um admin já existente daquela instituição)
+app.patch('/api/admin/users/:userId/institutions/:institutionId/role', auth.authenticate, requireInstitutionAccess((req) => req.params.institutionId), (req, res) => {
+  const { userId, institutionId } = req.params;
+  const { role } = req.body;
+  if (!['member', 'admin'].includes(role)) {
+    return res.status(400).json({ error: "role deve ser 'member' ou 'admin'." });
+  }
+  const result = db.prepare('UPDATE user_institutions SET role = ? WHERE userId = ? AND institutionId = ?').run(role, userId, institutionId);
+  if (result.changes === 0) return res.status(404).json({ error: 'Usuário não está vinculado a esta instituição.' });
+  res.json({ ok: true, userId, institutionId, role });
+});
+
 // Admin: Classrooms Management
-app.get('/api/admin/institutions/:institutionId/classrooms', auth.authenticate, requireAdmin, (req, res) => {
+app.get('/api/admin/institutions/:institutionId/classrooms', auth.authenticate, requireInstitutionAccess((req) => req.params.institutionId), (req, res) => {
   const { institutionId } = req.params;
   const classrooms = db.prepare('SELECT * FROM classrooms WHERE institutionId = ? ORDER BY name ASC').all(institutionId);
   res.json(classrooms);
 });
 
-app.post('/api/admin/institutions/:institutionId/classrooms', auth.authenticate, requireAdmin, (req, res) => {
+app.post('/api/admin/institutions/:institutionId/classrooms', auth.authenticate, requireInstitutionAccess((req) => req.params.institutionId), (req, res) => {
   const { institutionId } = req.params;
   const { name } = req.body;
   if (!name) return res.status(400).json({ error: 'Nome da sala é obrigatório' });
@@ -136,7 +220,7 @@ app.post('/api/admin/institutions/:institutionId/classrooms', auth.authenticate,
   res.json({ id, name, institutionId });
 });
 
-app.patch('/api/admin/classrooms/:classroomId', auth.authenticate, requireAdmin, (req, res) => {
+app.patch('/api/admin/classrooms/:classroomId', auth.authenticate, requireClassroomManage((req) => req.params.classroomId), (req, res) => {
   const { classroomId } = req.params;
   const { name } = req.body;
   if (!name) return res.status(400).json({ error: 'Nome da sala é obrigatório' });
@@ -144,7 +228,7 @@ app.patch('/api/admin/classrooms/:classroomId', auth.authenticate, requireAdmin,
   res.json({ id: classroomId, name });
 });
 
-app.delete('/api/admin/classrooms/:classroomId', auth.authenticate, requireAdmin, (req, res) => {
+app.delete('/api/admin/classrooms/:classroomId', auth.authenticate, requireInstitutionAccess((req) => institutionIdOfClassroom(req.params.classroomId)), (req, res) => {
   const { classroomId } = req.params;
   db.prepare('DELETE FROM classrooms WHERE id = ?').run(classroomId);
   res.json({ success: true });
@@ -156,6 +240,38 @@ app.get('/api/auth/invite/:inviteCode', (req, res) => {
   const classroom = db.prepare('SELECT c.name as className, i.name as instName FROM classrooms c JOIN institutions i ON c.institutionId = i.id WHERE c.id = ?').get(inviteCode) as any;
   if (!classroom) return res.status(404).json({ error: 'Código de convite inválido ou sala não encontrada.' });
   res.json(classroom);
+});
+
+// POST /api/institutions/join — vincula a conta JÁ LOGADA a uma instituição/sala pelo
+// mesmo código de convite usado no cadastro (segundo modo do convite: não recria conta).
+app.post('/api/institutions/join', auth.authenticate, (req: any, res) => {
+  const { inviteCode } = req.body;
+  const userId = req.user.id;
+  if (!inviteCode) return res.status(400).json({ error: 'Código de convite é obrigatório.' });
+
+  const classroom = db.prepare('SELECT * FROM classrooms WHERE id = ?').get(inviteCode) as { id: string; institutionId: string; name: string } | undefined;
+  if (!classroom) return res.status(400).json({ error: 'Código de convite inválido ou sala não encontrada.' });
+
+  const alreadyInClass = db.prepare('SELECT 1 FROM user_classrooms WHERE userId = ? AND classroomId = ?').get(userId, classroom.id);
+  if (alreadyInClass) return res.status(400).json({ error: 'Você já faz parte desta sala.' });
+
+  db.prepare('INSERT OR IGNORE INTO user_institutions (userId, institutionId) VALUES (?, ?)').run(userId, classroom.institutionId);
+  db.prepare('INSERT OR IGNORE INTO user_classrooms (userId, classroomId, role) VALUES (?, ?, ?)').run(userId, classroom.id, 'student');
+
+  res.json({ ok: true, institutionId: classroom.institutionId, classroomId: classroom.id, classroomName: classroom.name });
+});
+
+// GET /api/institutions/mine — instituições do usuário logado, com o papel dele em cada
+// uma (usado pra decidir se mostra a seção "Institucional" no menu e o que ela pode fazer).
+app.get('/api/institutions/mine', auth.authenticate, (req: any, res) => {
+  const rows = db.prepare(`
+    SELECT i.id, i.name, i.domain, ui.role
+    FROM user_institutions ui
+    JOIN institutions i ON i.id = ui.institutionId
+    WHERE ui.userId = ?
+    ORDER BY i.name ASC
+  `).all(req.user.id);
+  res.json(rows);
 });
 
 // Personas Routes (Filtered by user institutions)
@@ -188,7 +304,7 @@ app.get('/api/personas', auth.authenticate, (req: any, res) => {
   res.json(personas);
 });
 
-app.post('/api/personas', auth.authenticate, requireAdmin, (req: any, res) => {
+app.post('/api/personas', auth.authenticate, requireInstitutionAccess((req) => req.body.isGenerico ? undefined : req.body.institutionId), (req: any, res) => {
   const { nome, descricao, saudacao, documentoPedagogico, isGenerico, institutionId, imageUrl } = req.body;
   if (!isGenerico && !institutionId) return res.status(400).json({ error: 'Instituição é obrigatória para este tipo de persona.' });
 
@@ -202,7 +318,10 @@ app.post('/api/personas', auth.authenticate, requireAdmin, (req: any, res) => {
   res.json(persona);
 });
 
-app.put('/api/personas/:id', auth.authenticate, requireAdmin, (req: any, res) => {
+app.put('/api/personas/:id', auth.authenticate, requireInstitutionAccess((req) => {
+  const p = db.prepare('SELECT institutionId FROM personas WHERE id = ?').get(req.params.id) as { institutionId: string } | undefined;
+  return p?.institutionId ?? undefined;
+}), (req: any, res) => {
   const { id } = req.params;
   const { nome, descricao, saudacao, documentoPedagogico, isGenerico, institutionId, imageUrl } = req.body;
   db.prepare(`
@@ -286,7 +405,7 @@ app.get('/api/disciplinas', auth.authenticate, (req: any, res) => {
   res.json(disciplinas);
 });
 
-app.post('/api/disciplinas', auth.authenticate, requireAdmin, (req: any, res) => {
+app.post('/api/disciplinas', auth.authenticate, requireInstitutionAccess((req) => req.body.institutionId), (req: any, res) => {
   const { nome, conteudo, professores_vinculados, institutionId } = req.body;
   if (!institutionId) return res.status(400).json({ error: 'Instituição é obrigatória.' });
 
@@ -308,7 +427,10 @@ app.post('/api/disciplinas', auth.authenticate, requireAdmin, (req: any, res) =>
   res.json(disciplina);
 });
 
-app.put('/api/disciplinas/:id', auth.authenticate, requireAdmin, (req: any, res) => {
+app.put('/api/disciplinas/:id', auth.authenticate, requireInstitutionAccess((req) => {
+  const d = db.prepare('SELECT institutionId FROM disciplinas WHERE id = ?').get(req.params.id) as { institutionId: string } | undefined;
+  return d?.institutionId ?? undefined;
+}), (req: any, res) => {
   const { id } = req.params;
   const { nome, conteudo, professores_vinculados = [] } = req.body;
   
@@ -362,7 +484,13 @@ app.delete('/api/disciplinas/:id', auth.authenticate, (req: any, res) => {
 
 // Chat Routes
 app.get('/api/chats', auth.authenticate, (req: any, res) => {
-  const chats = db.prepare('SELECT * FROM chats WHERE userId = ? ORDER BY updatedAt DESC').all(req.user.id);
+  const chats = db.prepare(`
+    SELECT c.*,
+           EXISTS(SELECT 1 FROM messages m WHERE m.chatId = c.id AND m.role = 'user') as hasUserMessage
+    FROM chats c
+    WHERE c.userId = ?
+    ORDER BY c.updatedAt DESC
+  `).all(req.user.id);
   res.json(chats);
 });
 
@@ -431,8 +559,19 @@ app.post('/api/chats/:chatId/messages', auth.authenticate, limiter, async (req: 
     // Get previous messages for context (excluding the one just inserted)
     const history = db.prepare('SELECT role, content FROM messages WHERE chatId = ? ORDER BY createdAt ASC').all(chatId) as any[];
 
-    // Call AI with chatId to let it fetch persona/disciplina from DB
-    const response = await ai.generateChatResponse(history.slice(0, -1), content, chatId, userId, provider, undefined, !!agenticMode);
+    // Título automático: só na primeira mensagem real do usuário no chat (não recontar em re-envios)
+    const userMsgCount = (db.prepare(
+      "SELECT COUNT(*) as cnt FROM messages WHERE chatId = ? AND role = 'user'"
+    ).get(chatId) as { cnt: number }).cnt;
+    const isFirstUserMessage = userMsgCount === 1;
+    const userLocale = (db.prepare('SELECT locale FROM users WHERE id = ?').get(userId) as { locale?: string } | undefined)?.locale;
+
+    // Call AI with chatId to let it fetch persona/disciplina from DB — roda em paralelo com a
+    // geração (barata, best-effort) do título automático do chat.
+    const [response, generatedTitle] = await Promise.all([
+      ai.generateChatResponse(history.slice(0, -1), content, chatId, userId, provider, undefined, !!agenticMode),
+      isFirstUserMessage ? generateChatTitle(content, userLocale) : Promise.resolve(null),
+    ]);
 
     // Store model response
     const modelMsgId = crypto.randomUUID();
@@ -441,12 +580,17 @@ app.post('/api/chats/:chatId/messages', auth.authenticate, limiter, async (req: 
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `).run(modelMsgId, chatId, userId, 'model', response.text, response.tokensUsed, response.creditsUsed);
 
-    // Update chat updatedAt
-    db.prepare('UPDATE chats SET updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run(chatId);
+    // Update chat updatedAt (+ título automático, se gerado)
+    if (generatedTitle) {
+      db.prepare('UPDATE chats SET title = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run(generatedTitle, chatId);
+    } else {
+      db.prepare('UPDATE chats SET updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run(chatId);
+    }
 
     res.json({
       userMessage: db.prepare('SELECT * FROM messages WHERE id = ?').get(userMsgId),
-      modelMessage: db.prepare('SELECT * FROM messages WHERE id = ?').get(modelMsgId)
+      modelMessage: db.prepare('SELECT * FROM messages WHERE id = ?').get(modelMsgId),
+      chatTitle: generatedTitle,
     });
   } catch (err: any) {
     console.error(err);
@@ -455,10 +599,10 @@ app.post('/api/chats/:chatId/messages', auth.authenticate, limiter, async (req: 
   }
 });
 
-// ==================== PETRUS SUPPORT ====================
+// ==================== LEVY SUPPORT ====================
 
-// POST /api/petrus/support — stateless support mini-chat (history kept client-side)
-app.post('/api/petrus/support', auth.authenticate, async (req: any, res) => {
+// POST /api/levy/support — stateless support mini-chat (history kept client-side)
+app.post('/api/levy/support', auth.authenticate, async (req: any, res) => {
   const userId = req.user.id;
   const { messages = [], newMessage, agenticMode = false } = req.body;
 
@@ -471,7 +615,97 @@ app.post('/api/petrus/support', auth.authenticate, async (req: any, res) => {
     res.json({ text: result.text, creditsUsed: result.creditsUsed });
   } catch (err: any) {
     console.error('[Support] Error:', err);
-    const msg = (err.message || '').includes('Limite') ? err.message : 'Falha ao gerar resposta do Petrus.';
+    const msg = (err.message || '').includes('Limite') ? err.message : 'Falha ao gerar resposta do Levy.';
+    res.status(500).json({ error: msg });
+  }
+});
+
+// ==================== LEVY CHATS (persistentes, retomáveis) ====================
+
+// GET /api/levy/chats — lista as conversas do usuário com o Levy
+app.get('/api/levy/chats', auth.authenticate, (req: any, res) => {
+  const chats = db.prepare(`
+    SELECT c.*,
+           EXISTS(SELECT 1 FROM levy_messages m WHERE m.chatId = c.id AND m.role = 'user') as hasUserMessage
+    FROM levy_chats c
+    WHERE c.userId = ?
+    ORDER BY c.updatedAt DESC
+  `).all(req.user.id);
+  res.json(chats);
+});
+
+// POST /api/levy/chats — cria uma nova conversa com o Levy (com saudação inicial)
+app.post('/api/levy/chats', auth.authenticate, (req: any, res) => {
+  const chatId = crypto.randomUUID();
+  db.prepare(`INSERT INTO levy_chats (id, userId, title) VALUES (?, ?, ?)`).run(chatId, req.user.id, 'Nova conversa');
+
+  const greetingId = crypto.randomUUID();
+  db.prepare(`INSERT INTO levy_messages (id, chatId, role, content) VALUES (?, ?, 'model', ?)`).run(greetingId, chatId, LEVY_GREETING);
+
+  const chat = db.prepare('SELECT * FROM levy_chats WHERE id = ?').get(chatId);
+  res.json({ chat, greetingMessage: db.prepare('SELECT * FROM levy_messages WHERE id = ?').get(greetingId) });
+});
+
+// GET /api/levy/chats/:chatId/messages
+app.get('/api/levy/chats/:chatId/messages', auth.authenticate, (req: any, res) => {
+  const { chatId } = req.params;
+  const chat = db.prepare('SELECT id FROM levy_chats WHERE id = ? AND userId = ?').get(chatId, req.user.id);
+  if (!chat) return res.status(404).json({ error: 'Conversa não encontrada.' });
+  const messages = db.prepare('SELECT * FROM levy_messages WHERE chatId = ? ORDER BY createdAt ASC').all(chatId);
+  res.json(messages);
+});
+
+// POST /api/levy/chats/:chatId/messages — envia mensagem e persiste a troca
+app.post('/api/levy/chats/:chatId/messages', auth.authenticate, limiter, async (req: any, res) => {
+  const { chatId } = req.params;
+  const { content, agenticMode = false } = req.body;
+  const userId = req.user.id;
+
+  if (!content || typeof content !== 'string' || !content.trim()) {
+    return res.status(400).json({ error: 'content é obrigatório.' });
+  }
+
+  try {
+    const chat = db.prepare('SELECT * FROM levy_chats WHERE id = ? AND userId = ?').get(chatId, userId) as any;
+    if (!chat) return res.status(404).json({ error: 'Conversa não encontrada.' });
+
+    const userMsgId = crypto.randomUUID();
+    db.prepare(`INSERT INTO levy_messages (id, chatId, role, content) VALUES (?, ?, 'user', ?)`).run(userMsgId, chatId, content.trim());
+
+    // Histórico pra contexto do modelo — mensagens 'model' aqui já estão tokenizadas (nunca PII real).
+    const history = (db.prepare('SELECT role, content FROM levy_messages WHERE chatId = ? ORDER BY createdAt ASC').all(chatId) as any[])
+      .slice(0, -1);
+
+    const userMsgCount = (db.prepare(
+      "SELECT COUNT(*) as cnt FROM levy_messages WHERE chatId = ? AND role = 'user'"
+    ).get(chatId) as { cnt: number }).cnt;
+    const isFirstUserMessage = userMsgCount === 1;
+    const userLocale = (db.prepare('SELECT locale FROM users WHERE id = ?').get(userId) as { locale?: string } | undefined)?.locale;
+
+    const [result, generatedTitle] = await Promise.all([
+      generateSupportResponse(userId, history, content.trim(), !!agenticMode),
+      isFirstUserMessage ? generateChatTitle(content.trim(), userLocale) : Promise.resolve(null),
+    ]);
+
+    const modelMsgId = crypto.randomUUID();
+    db.prepare(`
+      INSERT INTO levy_messages (id, chatId, role, content, creditsUsed) VALUES (?, ?, 'model', ?, ?)
+    `).run(modelMsgId, chatId, result.text, result.creditsUsed);
+
+    if (generatedTitle) {
+      db.prepare('UPDATE levy_chats SET title = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run(generatedTitle, chatId);
+    } else {
+      db.prepare('UPDATE levy_chats SET updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run(chatId);
+    }
+
+    res.json({
+      userMessage: db.prepare('SELECT * FROM levy_messages WHERE id = ?').get(userMsgId),
+      modelMessage: db.prepare('SELECT * FROM levy_messages WHERE id = ?').get(modelMsgId),
+      chatTitle: generatedTitle,
+    });
+  } catch (err: any) {
+    console.error('[Levy Chat] Error:', err);
+    const msg = (err.message || '').includes('Limite') ? err.message : 'Falha ao gerar resposta do Levy.';
     res.status(500).json({ error: msg });
   }
 });
@@ -617,8 +851,11 @@ app.post('/api/lab/projects/:id/messages', auth.authenticate, async (req: any, r
   if (!rawProject) return res.status(404).json({ error: 'Projeto não encontrado.' });
   if (rawProject.userId !== userId) return res.status(403).json({ error: 'Apenas o dono pode editar o projeto.' });
 
-  // Lab quota check (request-based, daily + weekly) — cloud only
+  // Lab quota check (crédito compartilhado) — cloud only
   if (config.isCloud) {
+    const verifyCheck = checkEmailVerified(userId);
+    if (!verifyCheck.allowed) return res.status(403).json({ error: verifyCheck.reason });
+
     const quotaCheck = checkLabQuota(userId);
     if (!quotaCheck.allowed) {
       return res.status(402).json({ error: quotaCheck.reason });
@@ -670,6 +907,7 @@ app.post('/api/lab/projects/:id/messages', auth.authenticate, async (req: any, r
   ).run(userMsgId, projectId, userId, content.trim(), savedImageUrl);
 
   try {
+    const localeRow = db.prepare('SELECT locale FROM users WHERE id = ?').get(userId) as { locale?: string } | undefined;
     const agentResult = await runSimAgent({
       project,
       userMessage: content.trim(),
@@ -677,11 +915,12 @@ app.post('/api/lab/projects/:id/messages', auth.authenticate, async (req: any, r
       modelToUse,
       userImageUrl,
       userId,
+      locale: localeRow?.locale,
     });
 
-    // Record successful Lab request against quota (cloud only)
+    // Record Lab credits against the shared pool (cloud only)
     if (config.isCloud) {
-      recordLabRequest(userId);
+      recordToolCredits(userId, agentResult.creditsUsed);
     }
 
     // Salva resposta do assistente
@@ -1226,7 +1465,7 @@ app.get('/api/classrooms/:classroomId/mural', auth.authenticate, (req: any, res)
 });
 
 // GET /api/admin/classrooms/:classroomId/users — Listar usuários de uma sala e elegíveis
-app.get('/api/admin/classrooms/:classroomId/users', auth.authenticate, requireAdmin, (req, res) => {
+app.get('/api/admin/classrooms/:classroomId/users', auth.authenticate, requireClassroomManage((req) => req.params.classroomId), (req, res) => {
   const { classroomId } = req.params;
 
   const classroom = db.prepare('SELECT * FROM classrooms WHERE id = ?').get(classroomId) as { id: string, institutionId: string } | undefined;
@@ -1254,7 +1493,7 @@ app.get('/api/admin/classrooms/:classroomId/users', auth.authenticate, requireAd
 });
 
 // POST /api/admin/classrooms/:classroomId/users — Vincular usuário à sala
-app.post('/api/admin/classrooms/:classroomId/users', auth.authenticate, requireAdmin, (req, res) => {
+app.post('/api/admin/classrooms/:classroomId/users', auth.authenticate, requireClassroomManage((req) => req.params.classroomId), (req, res) => {
   const { classroomId } = req.params;
   const { userId, role } = req.body;
 
@@ -1269,15 +1508,24 @@ app.post('/api/admin/classrooms/:classroomId/users', auth.authenticate, requireA
 });
 
 // DELETE /api/admin/classrooms/:classroomId/users/:userId — Desvincular usuário da sala
-app.delete('/api/admin/classrooms/:classroomId/users/:userId', auth.authenticate, requireAdmin, (req, res) => {
+app.delete('/api/admin/classrooms/:classroomId/users/:userId', auth.authenticate, requireClassroomManage((req) => req.params.classroomId), (req, res) => {
   const { classroomId, userId } = req.params;
 
   db.prepare('DELETE FROM user_classrooms WHERE userId = ? AND classroomId = ?').run(userId, classroomId);
   res.json({ success: true });
 });
 
-// POST /api/activities — Criar atividade (Admin apenas)
-app.post('/api/activities', auth.authenticate, requireAdmin, (req: any, res) => {
+// POST /api/activities — Criar atividade (admin global, admin da instituição, ou professor de
+// TODAS as salas selecionadas — papel teacher agora tem poder real, escopo só da própria sala)
+app.post('/api/activities', auth.authenticate, (req: any, res, next) => {
+  const { institutionId, classroomIds } = req.body;
+  if (req.user.isAdmin) return next();
+  if (institutionId && isInstitutionAdmin(req.user.id, institutionId)) return next();
+  if (Array.isArray(classroomIds) && classroomIds.length > 0 && classroomIds.every((cId: string) => isTeacherOfClassroom(req.user.id, cId))) {
+    return next();
+  }
+  return res.status(403).json({ error: 'Você precisa ser professor de todas as salas selecionadas (ou admin da instituição/global).' });
+}, (req: any, res) => {
   const { title, description, dueDate, institutionId, classroomIds } = req.body;
 
   if (!title || !dueDate || !institutionId || !classroomIds || !Array.isArray(classroomIds)) {
@@ -1356,7 +1604,10 @@ app.get('/api/activities', auth.authenticate, (req: any, res) => {
 });
 
 // DELETE /api/activities/:id — Remover atividade (Admin apenas)
-app.delete('/api/activities/:id', auth.authenticate, requireAdmin, (req: any, res) => {
+app.delete('/api/activities/:id', auth.authenticate, requireInstitutionAccess((req) => {
+  const a = db.prepare('SELECT institutionId FROM activities WHERE id = ?').get(req.params.id) as { institutionId: string } | undefined;
+  return a?.institutionId ?? undefined;
+}), (req: any, res) => {
   const { id } = req.params;
   db.prepare('DELETE FROM activities WHERE id = ?').run(id);
   db.prepare('DELETE FROM activity_classrooms WHERE activityId = ?').run(id);
@@ -1517,7 +1768,7 @@ app.post('/api/admin/providers/:provider/ping', auth.authenticate, requireAdmin,
   try {
     if (provider === 'google') {
       const genAI = new GoogleGenerativeAI(activeKey.key);
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' }, { timeout: 10_000 });
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' }, { timeout: 10_000 });
       await model.generateContent({ contents: [{ role: 'user', parts: [{ text: 'ping' }] }] });
     } else if (provider === 'anthropic') {
       const resp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -1606,4 +1857,5 @@ if (process.env.NODE_ENV === 'production') {
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+  startAetherLink();
 });

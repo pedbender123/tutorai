@@ -6,7 +6,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const dbPath = join(__dirname, 'tutorai.db');
 const db = new Database(dbPath);
 
-console.log('Iniciando atualização corretiva dos chats do Petrus...');
+console.log('Iniciando atualização corretiva dos chats do Levy...');
 
 const res = db.prepare(`
   UPDATE chats

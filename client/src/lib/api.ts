@@ -11,6 +11,7 @@ export interface Classroom {
   id: string;
   name: string;
   institutionId: string;
+  institutionName?: string;
   createdAt: string;
 }
 
@@ -21,7 +22,7 @@ export interface User {
   role: string;
   isAdmin: boolean;
   themeMode: 'light' | 'dark';
-  accentColor: string;
+  accentColor: 'teal' | 'lilac' | 'blue' | 'neutral';
   tokensProfessor: number;
   tokensTutor: number;
   tokensColega: number;
@@ -68,6 +69,7 @@ export interface Chat {
   disciplinaId?: string;
   createdAt: string;
   updatedAt: string;
+  hasUserMessage?: number;
 }
 
 export interface Message {
@@ -77,6 +79,24 @@ export interface Message {
   role: 'user' | 'model';
   content: string;
   tokensUsed: number;
+  creditsUsed: number;
+  createdAt: string;
+}
+
+export interface LevyChat {
+  id: string;
+  userId: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  hasUserMessage?: number;
+}
+
+export interface LevyMessage {
+  id: string;
+  chatId: string;
+  role: 'user' | 'model';
+  content: string;
   creditsUsed: number;
   createdAt: string;
 }
@@ -102,6 +122,7 @@ export interface Activity {
   description: string;
   dueDate: string;
   institutionId: string;
+  institutionName?: string;
   createdAt: string;
   classroomsList?: string;
 }
@@ -127,7 +148,7 @@ export interface LabMessage {
   tokensUsed: number;
   creditsUsed: number;
   createdAt: string;
-  edit_scope?: 'full_rewrite' | 'surgical' | null;
+  edit_scope?: 'full_rewrite' | 'surgical' | 'error' | null;
   patched_functions?: string | null;
   imageUrl?: string | null;
 }
@@ -233,6 +254,12 @@ class ApiClient {
     deleteActivity: (id: string) => this.delete<{ ok: boolean }>(`/api/activities/${id}`),
   };
 
+  // Institutions — self-scoped (não exige admin global)
+  institutions = {
+    mine: () => this.get<Array<{ id: string; name: string; domain: string; role: 'member' | 'admin' }>>('/api/institutions/mine'),
+    join: (inviteCode: string) => this.post<{ ok: boolean; institutionId: string; classroomId: string; classroomName: string }>('/api/institutions/join', { inviteCode }),
+  };
+
   // Notifications
   notifications = {
     getAll: () => this.get<AppNotification[]>('/api/notifications'),
@@ -244,10 +271,11 @@ class ApiClient {
   admin = {
     institutions: {
       getAll: () => this.get<Institution[]>('/api/admin/institutions'),
-      getById: (id: string) => this.get<Institution>(`/api/admin/institutions/${id}`),
       create: (data: Omit<Institution, 'id' | 'createdAt'>) => this.post<Institution>('/api/admin/institutions', data),
-      update: (id: string, data: Partial<Omit<Institution, 'id' | 'createdAt'>>) => this.patch<Institution>(`/api/admin/institutions/${id}`, data),
-      delete: (id: string) => this.delete<void>(`/api/admin/institutions/${id}`),
+      setUserRole: (userId: string, institutionId: string, role: 'member' | 'admin') =>
+        this.patch<{ ok: boolean; userId: string; institutionId: string; role: string }>(
+          `/api/admin/users/${userId}/institutions/${institutionId}/role`, { role }
+        ),
     },
     classrooms: {
       getByInstitution: (institutionId: string) => this.get<Classroom[]>(`/api/admin/institutions/${institutionId}/classrooms`),
@@ -266,17 +294,28 @@ class ApiClient {
     },
   };
 
-  // Petrus mega-agent — support surface (stateless, history kept client-side)
-  petrus = {
+  // Levy mega-agent — support surface (stateless, history kept client-side)
+  levy = {
     support: (
       history: Array<{ role: 'user' | 'model'; content: string }>,
       newMessage: string,
       agenticMode: boolean,
-    ) => this.post<{ text: string; creditsUsed: number }>('/api/petrus/support', {
+    ) => this.post<{ text: string; creditsUsed: number }>('/api/levy/support', {
       messages: history,
       newMessage,
       agenticMode,
     }),
+
+    // Conversas persistentes e retomáveis com o Levy (página cheia /levy)
+    chats: {
+      getAll: () => this.get<LevyChat[]>('/api/levy/chats'),
+      create: () => this.post<{ chat: LevyChat; greetingMessage: LevyMessage }>('/api/levy/chats', {}),
+      getMessages: (chatId: string) => this.get<LevyMessage[]>(`/api/levy/chats/${chatId}/messages`),
+      sendMessage: (chatId: string, content: string, agenticMode: boolean) =>
+        this.post<{ userMessage: LevyMessage; modelMessage: LevyMessage; chatTitle: string | null }>(
+          `/api/levy/chats/${chatId}/messages`, { content, agenticMode }
+        ),
+    },
   };
 }
 

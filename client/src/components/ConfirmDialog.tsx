@@ -26,7 +26,7 @@ export default function ConfirmDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-slideUp">
+      <div className="relative w-full max-w-sm glass-panel shadow-2xl overflow-hidden animate-slideUp">
         <button
           onClick={onCancel}
           className="absolute right-4 top-4 p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer"
@@ -54,16 +54,17 @@ export default function ConfirmDialog({
         <div className="flex gap-3 px-6 pb-6">
           <button
             onClick={onCancel}
-            className="flex-1 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer"
+            className="flex-1 py-2.5 rounded-2xl glasscard text-sm font-bold text-slate-600 dark:text-slate-300 transition-all cursor-pointer"
           >
             {cancelLabel}
           </button>
           <button
             onClick={onConfirm}
+            style={!danger ? { backgroundImage: 'linear-gradient(120deg, var(--color-a1), var(--color-a2), var(--color-a3))' } : undefined}
             className={`flex-1 py-2.5 rounded-2xl text-sm font-bold text-white transition-all cursor-pointer shadow-lg ${
               danger
                 ? 'bg-red-500 hover:bg-red-600 shadow-red-500/20'
-                : 'bg-primary hover:opacity-90 shadow-primary/20'
+                : 'shadow-primary/20'
             }`}
           >
             {confirmLabel}

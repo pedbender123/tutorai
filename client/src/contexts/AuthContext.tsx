@@ -4,8 +4,8 @@ const API_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'ht
 
 export interface UserQuota {
   tier: 'free_nonInst' | 'free_inst' | 'pro_nonInst';
-  lab: { today: number; dailyLimit: number; week: number; weeklyLimit: number };
-  petrus: { creditsWeek: number; weeklyLimit: number };
+  /** Single shared credit pool across Lab + Levy + chat normal. */
+  credits: { week: number; weeklyLimit: number; month: number; monthlyLimit: number };
 }
 
 export interface UserData {
@@ -15,7 +15,8 @@ export interface UserData {
   role: 'admin' | 'user';
   isAdmin: boolean;
   themeMode: 'light' | 'dark';
-  accentColor: 'blue' | 'purple' | 'yellow' | 'white' | 'green' | 'red' | 'pink';
+  accentColor: 'teal' | 'lilac' | 'blue' | 'neutral';
+  locale: 'pt' | 'en' | 'es';
   tokensProfessor: number;
   lastResetProfessor: string;
   tokensTutor: number;
@@ -24,6 +25,8 @@ export interface UserData {
   lastResetColega: string;
   creditsMonthly: number;
   institutions: string[];
+  institutionRoles: { institutionId: string; role: 'member' | 'admin' }[];
+  isInstitutionAdmin: boolean;
   quota?: UserQuota;
 }
 
@@ -36,6 +39,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateUserData: (data: Partial<UserData>) => Promise<void>;
   refreshUserData: () => Promise<void>;
+  joinInstitution: (inviteCode: string) => Promise<{ classroomName: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -110,6 +114,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUserData(loggedInUser);
   };
 
+  const joinInstitution = async (inviteCode: string) => {
+    const token = localStorage.getItem('tutorai_token');
+    const res = await fetch(`${API_URL}/api/institutions/join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ inviteCode }),
+    });
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'Falha ao vincular à instituição.');
+    }
+    await checkAuth();
+    return res.json();
+  };
+
   const logout = async () => {
     localStorage.removeItem('tutorai_token');
     setUser(null);
@@ -136,7 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, userData, loading, register, login, logout, updateUserData, refreshUserData: checkAuth }}>
+    <AuthContext.Provider value={{ user, userData, loading, register, login, logout, updateUserData, refreshUserData: checkAuth, joinInstitution }}>
       {!loading && children}
     </AuthContext.Provider>
   );

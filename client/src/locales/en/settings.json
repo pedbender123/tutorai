@@ -1,0 +1,16 @@
+{
+  "title": "Settings",
+  "subtitle": "Manage your account and system preferences.",
+  "tabUsage": "Usage",
+  "tabAppearance": "Appearance",
+  "tabAdmin": "Admin",
+  "tabSecurity": "Security",
+  "personalizationTitle": "Personalization",
+  "personalizationSubtitle": "Adjust the visual and language of your study environment.",
+  "systemTheme": "System Theme",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "accentColor": "Accent Color",
+  "language": "Language",
+  "languageHint": "Changes the entire interface and the language of the AI agent responses."
+}

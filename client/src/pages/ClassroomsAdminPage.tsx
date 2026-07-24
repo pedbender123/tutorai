@@ -173,7 +173,7 @@ export default function ClassroomsAdminPage() {
 
   if (!userData?.isAdmin) {
     return (
-      <div className="h-full flex items-center justify-center p-8 bg-white dark:bg-slate-950">
+      <div className="h-full flex items-center justify-center p-8">
         <div className="text-center max-w-sm">
           <Shield className="w-16 h-16 text-rose-500 mx-auto mb-4" />
           <h2 className="text-xl font-black text-slate-800 dark:text-white mb-2">Acesso Negado</h2>
@@ -186,12 +186,12 @@ export default function ClassroomsAdminPage() {
   }
 
   return (
-    <div className="min-h-full p-6 bg-white dark:bg-slate-950 flex flex-col gap-6">
+    <div className="min-h-full p-6 flex flex-col gap-6">
       
       {/* Top Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-800 dark:text-white flex items-center gap-2">
+          <h1 className="text-2xl font-black text-slate-800 dark:text-white flex items-center gap-2 font-display">
             <School className="text-primary" />
             Mural Administrativo de Turmas
           </h1>
@@ -204,7 +204,7 @@ export default function ClassroomsAdminPage() {
       {/* Selectors and New Classroom form */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Seletor */}
-        <div className="lg:col-span-2 p-6 rounded-3xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row gap-6 items-center">
+        <div className="lg:col-span-2 p-6 rounded-3xl glasscard flex flex-col md:flex-row gap-6 items-center">
           <div className="w-full md:w-1/2 space-y-2">
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
               <Building size={14} className="text-slate-400" />
@@ -213,7 +213,7 @@ export default function ClassroomsAdminPage() {
             <select
               value={selectedInstId}
               onChange={handleInstChange}
-              className="w-full text-sm bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 focus:outline-none focus:border-primary text-slate-800 dark:text-slate-100"
+              className="w-full text-sm bg-white/50 dark:bg-white/5 border border-white/20 rounded-2xl px-4 py-3 focus:outline-none focus:border-primary text-slate-800 dark:text-slate-100"
             >
               {institutions.map(inst => (
                 <option key={inst.id} value={inst.id}>{inst.name}</option>
@@ -231,7 +231,7 @@ export default function ClassroomsAdminPage() {
               value={selectedClassroomId}
               onChange={handleClassChange}
               disabled={classrooms.length === 0}
-              className="w-full text-sm bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 focus:outline-none focus:border-primary text-slate-800 dark:text-slate-100 disabled:opacity-50"
+              className="w-full text-sm bg-white/50 dark:bg-white/5 border border-white/20 rounded-2xl px-4 py-3 focus:outline-none focus:border-primary text-slate-800 dark:text-slate-100 disabled:opacity-50"
             >
               {classrooms.map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>
@@ -242,7 +242,7 @@ export default function ClassroomsAdminPage() {
         </div>
 
         {/* Criar sala */}
-        <form onSubmit={handleCreateClassroom} className="p-6 rounded-3xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col gap-3 justify-center">
+        <form onSubmit={handleCreateClassroom} className="p-6 rounded-3xl glasscard flex flex-col gap-3 justify-center">
           <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Nova Sala de Aula</label>
           <div className="flex gap-2">
             <input 
@@ -250,14 +250,15 @@ export default function ClassroomsAdminPage() {
               placeholder="Nome da sala (ex: Alpha 2026)"
               value={newClassName}
               onChange={e => setNewClassName(e.target.value)}
-              className="flex-1 text-sm bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 focus:outline-none focus:border-primary text-slate-800 dark:text-slate-100"
+              className="flex-1 text-sm bg-white/50 dark:bg-white/5 border border-white/20 rounded-2xl px-4 py-3 focus:outline-none focus:border-primary text-slate-800 dark:text-slate-100"
               required
               disabled={!selectedInstId}
             />
             <button
               type="submit"
               disabled={creatingClass || !selectedInstId || !newClassName.trim()}
-              className="px-4 bg-primary hover:bg-primary/95 text-white font-bold rounded-2xl flex items-center justify-center transition-colors disabled:opacity-50"
+              style={{ backgroundImage: 'linear-gradient(120deg, var(--color-a1), var(--color-a2), var(--color-a3))' }}
+              className="px-4 text-white font-bold rounded-2xl flex items-center justify-center transition-colors disabled:opacity-50"
             >
               <Plus size={20} />
             </button>
@@ -276,13 +277,13 @@ export default function ClassroomsAdminPage() {
               placeholder="Buscar usuários por nome ou email..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl pl-12 pr-4 py-3 focus:outline-none focus:border-primary text-slate-800 dark:text-slate-100"
+              className="w-full text-sm bg-white/50 dark:bg-white/5 border border-white/20 rounded-2xl pl-12 pr-4 py-3 focus:outline-none focus:border-primary text-slate-800 dark:text-slate-100"
             />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1">
             {/* Coluna 1: Usuários na Sala */}
-            <div className="p-6 rounded-3xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col h-[500px]">
+            <div className="p-6 rounded-3xl glasscard flex flex-col h-[500px]">
               <h2 className="text-base font-black text-slate-800 dark:text-white flex items-center gap-2 mb-4">
                 <Users2 className="text-emerald-500" />
                 Matriculados nesta Turma ({usersInClass.length})
@@ -302,7 +303,7 @@ export default function ClassroomsAdminPage() {
                   filteredInClassUsers.map(user => (
                     <div 
                       key={user.id} 
-                      className="p-4 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-850 flex items-center justify-between hover:border-slate-200 dark:hover:border-slate-800 transition-all group"
+                      className="p-4 rounded-2xl bg-white/40 dark:bg-white/5 border border-white/10 flex items-center justify-between hover:border-primary/30 transition-all group"
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-500 font-bold">
@@ -337,7 +338,7 @@ export default function ClassroomsAdminPage() {
             </div>
 
             {/* Coluna 2: Adicionar à Sala */}
-            <div className="p-6 rounded-3xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col h-[500px]">
+            <div className="p-6 rounded-3xl glasscard flex flex-col h-[500px]">
               <h2 className="text-base font-black text-slate-800 dark:text-white flex items-center gap-2 mb-4">
                 <UserPlus className="text-primary" />
                 Vincular Usuários da Instituição ({filteredAvailableUsers.length})
@@ -357,7 +358,7 @@ export default function ClassroomsAdminPage() {
                   filteredAvailableUsers.map(user => (
                     <div 
                       key={user.id} 
-                      className="p-4 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-850 flex items-center justify-between hover:border-slate-200 dark:hover:border-slate-800 transition-all group"
+                      className="p-4 rounded-2xl bg-white/40 dark:bg-white/5 border border-white/10 flex items-center justify-between hover:border-primary/30 transition-all group"
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-500 font-bold">

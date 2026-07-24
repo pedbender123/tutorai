@@ -1,0 +1,17 @@
+{
+  "save": "Guardar",
+  "cancel": "Cancelar",
+  "close": "Cerrar",
+  "delete": "Eliminar",
+  "edit": "Editar",
+  "confirm": "Confirmar",
+  "loading": "Cargando...",
+  "error": "Ocurrió un error",
+  "tryAgain": "Intentar de nuevo",
+  "back": "Volver",
+  "copy": "Copiar",
+  "copied": "¡Copiado!",
+  "search": "Buscar",
+  "noResults": "Ningún resultado encontrado",
+  "required": "Obligatorio"
+}

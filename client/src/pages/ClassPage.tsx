@@ -183,7 +183,7 @@ export default function ClassPage() {
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center bg-white dark:bg-slate-950">
+      <div className="h-full flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-12 h-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
           <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold">Carregando painel de sala...</p>
@@ -193,11 +193,11 @@ export default function ClassPage() {
   }
 
   return (
-    <div className="min-h-full p-6 bg-white dark:bg-slate-950">
+    <div className="min-h-full p-6">
       
       {/* Header Admin Selector */}
       {userData?.isAdmin && (
-        <div className="mb-6 p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-wrap gap-4 items-center">
+        <div className="mb-6 p-4 rounded-2xl glasscard flex flex-wrap gap-4 items-center">
           <div className="flex items-center gap-2 text-sm font-bold text-slate-800 dark:text-slate-200">
             <School size={18} className="text-primary" />
             <span>Modo Admin: Visualizar Sala</span>
@@ -209,7 +209,7 @@ export default function ClassPage() {
               <select 
                 value={selectedInstId} 
                 onChange={handleInstChange}
-                className="text-xs bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5 focus:outline-none focus:border-primary text-slate-800 dark:text-slate-200"
+                className="text-xs bg-white/50 dark:bg-white/5 border border-white/20 rounded-xl px-3 py-1.5 focus:outline-none focus:border-primary text-slate-800 dark:text-slate-200"
               >
                 {institutions.map(inst => (
                   <option key={inst.id} value={inst.id}>{inst.name}</option>
@@ -223,7 +223,7 @@ export default function ClassPage() {
                 value={selectedClassroomId} 
                 onChange={handleClassChange}
                 disabled={classrooms.length === 0}
-                className="text-xs bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5 focus:outline-none focus:border-primary text-slate-800 dark:text-slate-200 disabled:opacity-50"
+                className="text-xs bg-white/50 dark:bg-white/5 border border-white/20 rounded-xl px-3 py-1.5 focus:outline-none focus:border-primary text-slate-800 dark:text-slate-200 disabled:opacity-50"
               >
                 {classrooms.map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
@@ -237,7 +237,7 @@ export default function ClassPage() {
 
       {/* Header Selector para Usuário com múltiplas salas */}
       {!userData?.isAdmin && myClasses.length > 1 && (
-        <div className="mb-6 p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-wrap gap-4 items-center">
+        <div className="mb-6 p-4 rounded-2xl glasscard flex flex-wrap gap-4 items-center">
           <div className="flex items-center gap-2 text-sm font-bold text-slate-800 dark:text-slate-200">
             <School size={18} className="text-primary" />
             <span>Selecionar Sala de Aula</span>
@@ -249,7 +249,7 @@ export default function ClassPage() {
               <select 
                 value={selectedClassroomId} 
                 onChange={handleStudentClassChange}
-                className="text-xs bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5 focus:outline-none focus:border-primary text-slate-800 dark:text-slate-200"
+                className="text-xs bg-white/50 dark:bg-white/5 border border-white/20 rounded-xl px-3 py-1.5 focus:outline-none focus:border-primary text-slate-800 dark:text-slate-200"
               >
                 {myClasses.map(c => (
                   <option key={c.id} value={c.id}>{c.name} ({c.institutionName})</option>
@@ -274,22 +274,25 @@ export default function ClassPage() {
       ) : (
         <div className="space-y-8 animate-fadeIn">
           {/* Top Hero Banner */}
-          <div className="relative p-8 rounded-3xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 overflow-hidden">
-            <div className="absolute -right-10 -bottom-10 w-44 h-44 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative p-8 rounded-3xl glass-panel overflow-hidden">
+            <div className="aurora-orb" style={{ width: 300, height: 300, top: '-30%', right: '-10%' }} />
             <div className="flex items-center gap-4 relative">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-xl shadow-primary/20 text-white">
+              <div
+                style={{ backgroundImage: 'linear-gradient(120deg, var(--color-a1), var(--color-a2), var(--color-a3))' }}
+                className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xl shadow-primary/20 text-white"
+              >
                 <GraduationCap size={32} />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] uppercase font-black bg-primary/20 text-primary border border-primary/20 px-2 py-0.5 rounded-full tracking-wider">
+                  <span className="text-[10px] uppercase font-black bg-primary/20 text-primary border border-primary/20 px-2 py-0.5 rounded-full tracking-wider font-mono">
                     Sala de Aula Ativa
                   </span>
-                  <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
                     ID: {classroom.id}
                   </span>
                 </div>
-                <h1 className="text-3xl font-black text-slate-900 dark:text-white mt-1">
+                <h1 className="text-3xl font-black text-slate-900 dark:text-white mt-1 font-display tracking-tight">
                   Mural Virtual — {classroom.name}
                 </h1>
               </div>
@@ -312,7 +315,7 @@ export default function ClassPage() {
               </div>
 
               {disciplinas.length === 0 ? (
-                <div className="p-8 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-center text-slate-400 dark:text-slate-500">
+                <div className="p-8 rounded-2xl glasscard text-center text-slate-400 dark:text-slate-500">
                   <BookOpen size={28} className="mx-auto mb-2 opacity-50" />
                   <p className="text-sm font-semibold">Nenhuma disciplina cadastrada para esta sala.</p>
                 </div>
@@ -322,7 +325,7 @@ export default function ClassPage() {
                     <div 
                       key={d.id}
                       onClick={() => setActiveDisciplina(d)}
-                      className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-850 border border-slate-200 dark:border-slate-800 hover:border-primary/30 hover:-translate-y-0.5 transition-all cursor-pointer flex flex-col justify-between group h-40"
+                      className="p-5 rounded-2xl glasscard hover:border-primary/30 hover:-translate-y-0.5 transition-all cursor-pointer flex flex-col justify-between group h-40"
                     >
                       <div className="space-y-1.5">
                         <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
@@ -356,7 +359,7 @@ export default function ClassPage() {
               </div>
 
               {activities.length === 0 ? (
-                <div className="p-8 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-center text-slate-400 dark:text-slate-500">
+                <div className="p-8 rounded-2xl glasscard text-center text-slate-400 dark:text-slate-500">
                   <Calendar size={28} className="mx-auto mb-2 opacity-50" />
                   <p className="text-sm font-semibold">Nenhuma atividade pendente para esta sala.</p>
                 </div>
@@ -366,7 +369,7 @@ export default function ClassPage() {
                     <div 
                       key={act.id}
                       onClick={() => setActiveActivity(act)}
-                      className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-850 hover:border-primary/30 hover:-translate-y-0.5 transition-all cursor-pointer flex flex-col gap-3 group relative overflow-hidden"
+                      className="p-5 rounded-2xl glasscard hover:border-primary/30 hover:-translate-y-0.5 transition-all cursor-pointer flex flex-col gap-3 group relative overflow-hidden"
                     >
                       <div className="flex justify-between items-start gap-2">
                         <h3 className="font-black text-slate-800 dark:text-slate-200 text-base leading-snug group-hover:text-primary transition-colors">
@@ -398,7 +401,7 @@ export default function ClassPage() {
       {/* Modal de Ementa de Disciplina */}
       {activeDisciplina && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fadeIn">
-          <div className="relative w-full max-w-xl max-h-[80vh] flex flex-col bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-slideUp">
+          <div className="relative w-full max-w-xl max-h-[80vh] flex flex-col glass-panel shadow-2xl overflow-hidden animate-slideUp">
             
             {/* Header */}
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
@@ -451,7 +454,7 @@ export default function ClassPage() {
       {/* Modal de Detalhes da Atividade */}
       {activeActivity && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fadeIn">
-          <div className="relative w-full max-w-xl max-h-[80vh] flex flex-col bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-slideUp">
+          <div className="relative w-full max-w-xl max-h-[80vh] flex flex-col glass-panel shadow-2xl overflow-hidden animate-slideUp">
             
             {/* Header */}
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">

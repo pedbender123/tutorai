@@ -39,6 +39,14 @@ export default function LabEditor() {
   const previewRef = useRef<HTMLDivElement>(null);
   const drawingCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const autoResizeTextarea = () => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  };
 
   const isDrawingRef = useRef(false);
   const lastPosRef = useRef({ x: 0, y: 0 });
@@ -213,6 +221,7 @@ export default function LabEditor() {
 
     const currentInput = input;
     setInput('');
+    requestAnimationFrame(autoResizeTextarea);
     setLoading(true);
     setLoadingStage('thinking');
 
@@ -329,21 +338,21 @@ export default function LabEditor() {
 
   if (initializing) {
     return (
-      <div className="h-full flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+      <div className="h-full flex items-center justify-center">
         <Loader2 className="animate-spin text-primary" size={32} />
       </div>
     );
   }
 
   return (
-    <div className="flex h-full bg-white dark:bg-slate-950 font-sans overflow-hidden">
+    <div className="flex h-full font-sans overflow-hidden">
       {/* ====== LEFT: Chat ====== */}
       <div className={cn(
-        'shrink-0 flex flex-col border-r border-slate-100 dark:border-slate-800 transition-all duration-300 overflow-hidden',
+        'shrink-0 flex flex-col border-r border-white/10 transition-all duration-300 overflow-hidden',
         chatHidden ? "w-0 overflow-hidden border-0" : "w-[450px] min-w-[450px]"
       )}>
         {/* Chat Header */}
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shrink-0">
+        <div className="flex items-center gap-3 h-[62px] px-5 border-b border-white/10 backdrop-blur-xl bg-white/60 dark:bg-white/[0.03] shrink-0">
           <button
             onClick={() => navigate('/lab')}
             className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
@@ -392,8 +401,8 @@ export default function LabEditor() {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 custom-scrollbar">
-          {messages.length === 0 && !loading && (
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
+          {messages.length === 0 && !loading ? (
             <div className="h-full flex flex-col items-center justify-center gap-4 text-center px-6">
               <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
                 <FlaskConical size={32} />
@@ -403,68 +412,53 @@ export default function LabEditor() {
                 <p className="text-sm text-slate-400 mt-1">Ex: "Crie um simulador de lançamento de projétil onde posso ajustar o ângulo e a velocidade inicial"</p>
               </div>
             </div>
-          )}
+          ) : (
+            <div className="px-4 py-6 space-y-4">
+              {messages.map(msg => (
+                <LabMessageBubble key={msg.id} msg={msg} />
+              ))}
 
-          {messages.map(msg => (
-            <LabMessageBubble key={msg.id} msg={msg} />
-          ))}
-
-          {loading && (
-            <div className="flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                <Bot size={16} />
-              </div>
-              <div className="bg-slate-100 dark:bg-slate-800/50 rounded-2xl rounded-tl-sm px-4 py-3 flex flex-col gap-2 min-w-[180px]">
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
+              {loading && (
+                <div className="flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    <Bot size={16} />
                   </div>
-                  <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
-                    {loadingStage === 'coding' ? 'Gerando código...' : 'Pensando...'}
-                  </span>
+                  <div className="glasscard rounded-2xl rounded-tl-sm px-4 py-3 flex flex-col gap-2 min-w-[180px]">
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
+                      </div>
+                      <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                        {loadingStage === 'coding' ? 'Gerando código...' : 'Pensando...'}
+                      </span>
+                    </div>
+                    <div className="aurora-progress">
+                      <span
+                        style={{
+                          width: loadingStage === 'coding' ? '80%' : '20%',
+                          backgroundImage: 'linear-gradient(120deg, var(--color-a1), var(--color-a2), var(--color-a3))',
+                          transition: 'width 1s ease-in-out',
+                        }}
+                      />
+                    </div>
+                    {queueWarning && (
+                      <p className="text-[11px] text-amber-500 text-center mt-1">
+                        O modelo está demorando para responder — aguarde, sua requisição já está sendo processada.
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div className="w-full h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                  <div className={cn("h-full bg-primary transition-all duration-1000 ease-in-out", loadingStage === 'coding' ? "w-[80%]" : "w-[20%]")} />
-                </div>
-                {queueWarning && (
-                  <p className="text-[11px] text-amber-500 text-center mt-1">
-                    O modelo está demorando para responder — aguarde, sua requisição já está sendo processada.
-                  </p>
-                )}
-              </div>
+              )}
+              <div ref={messagesEndRef} />
             </div>
           )}
-          <div ref={messagesEndRef} />
         </div>
 
         {/* Input Area: Premium Toolbar & Integrated Textarea */}
-        <div className="p-4 bg-slate-50 dark:bg-slate-950/50 border-t border-slate-100 dark:border-slate-800 shrink-0">
+        <div className="p-4 border-t border-white/10 backdrop-blur-xl bg-white/60 dark:bg-white/[0.03] shrink-0">
           <div className="max-w-3xl mx-auto space-y-3">
-            {/* Feedback buttons */}
-            {isOwner && (
-              <div className="flex justify-end px-1">
-                <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700">
-                  <button
-                    onClick={async () => { await api.lab.giveFeedback(projectId!, 'like'); alert('Feedback enviado! 👍'); }}
-                    className="p-1.5 rounded-md hover:bg-white dark:hover:bg-slate-700 text-slate-400 hover:text-green-600 transition-all cursor-pointer"
-                    title="Atingiu o original"
-                  >
-                    <ThumbsUp size={12} />
-                  </button>
-                  <div className="w-[1px] h-3 bg-slate-200 dark:bg-slate-700 mx-0.5" />
-                  <button
-                    onClick={async () => { await api.lab.giveFeedback(projectId!, 'dislike'); alert('Feedback enviado! 👎'); }}
-                    className="p-1.5 rounded-md hover:bg-white dark:hover:bg-slate-700 text-slate-400 hover:text-red-500 transition-all cursor-pointer"
-                    title="Não atingiu o original"
-                  >
-                    <ThumbsDown size={12} />
-                  </button>
-                </div>
-              </div>
-            )}
-
             {/* Aviso visual do desenho anexado pendente de envio */}
             {hasDrawing && (
               <div className="flex items-center justify-between bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/20 dark:border-amber-500/30 rounded-2xl p-3 mb-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -490,47 +484,72 @@ export default function LabEditor() {
               </div>
             )}
 
-            <form onSubmit={handleSend} className="relative flex items-end gap-2">
-              <div className="relative flex-1 group">
-                <textarea
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSend(e as any);
-                    }
-                  }}
-                  placeholder={isOwner ? 'Descreva o que quer criar ou modificar...' : 'Apenas o criador pode editar este projeto.'}
-                  disabled={loading || !isOwner}
-                  className="w-full max-h-40 min-h-[52px] bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5 pr-14 resize-none focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-slate-900 dark:text-slate-100 font-medium text-sm leading-relaxed disabled:opacity-50"
-                  rows={1}
-                />
-                <button
-                  type="submit"
-                  disabled={!input.trim() || loading || !isOwner}
-                  className="absolute right-2 bottom-2 w-9 h-9 bg-primary text-primary-foreground rounded-xl flex items-center justify-center hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-primary/20 disabled:opacity-40 cursor-pointer"
-                >
-                  <Send size={16} />
-                </button>
-              </div>
+            <form onSubmit={handleSend} className="flex items-end gap-2">
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={e => { setInput(e.target.value); autoResizeTextarea(); }}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend(e as any);
+                  }
+                }}
+                placeholder={isOwner ? 'Descreva o que quer criar ou modificar...' : 'Apenas o criador pode editar este projeto.'}
+                disabled={loading || !isOwner}
+                className="flex-1 min-w-0 max-h-40 min-h-[52px] bg-white/50 dark:bg-white/5 border border-white/20 rounded-2xl px-4 py-3.5 resize-none focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-slate-900 dark:text-slate-100 font-medium text-sm leading-relaxed disabled:opacity-50"
+                rows={1}
+              />
+              <button
+                type="submit"
+                disabled={!input.trim() || loading || !isOwner}
+                style={!(!input.trim() || loading || !isOwner) ? { backgroundImage: 'linear-gradient(120deg, var(--color-a1), var(--color-a2), var(--color-a3))' } : undefined}
+                className={cn(
+                  'shrink-0 w-11 h-11 text-white rounded-xl flex items-center justify-center active:scale-95 transition-all shadow-lg shadow-primary/20 disabled:opacity-40 cursor-pointer',
+                  (!input.trim() || loading || !isOwner) && 'bg-primary',
+                )}
+              >
+                <Send size={16} />
+              </button>
             </form>
-            
-            <div className="flex items-center justify-center gap-2 px-1">
-               <div className="h-[1px] flex-1 bg-slate-100 dark:bg-slate-800" />
-               <p className="text-[9px] font-black text-slate-300 dark:text-slate-655 uppercase tracking-[0.3em] whitespace-nowrap">
-                Lab · IA Generativa
-              </p>
-              <div className="h-[1px] flex-1 bg-slate-100 dark:bg-slate-800" />
+
+            <div className="flex items-center justify-between gap-2 px-1">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="h-[1px] flex-1 bg-slate-200/50 dark:bg-white/10" />
+                <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] whitespace-nowrap">
+                  Lab · IA Generativa
+                </p>
+                <div className="h-[1px] flex-1 bg-slate-200/50 dark:bg-white/10" />
+              </div>
+
+              {isOwner && (
+                <div className="flex items-center glasscard rounded-lg p-0.5 shrink-0">
+                  <button
+                    onClick={async () => { await api.lab.giveFeedback(projectId!, 'like'); alert('Feedback enviado! 👍'); }}
+                    className="p-1.5 rounded-md hover:bg-white/40 dark:hover:bg-white/10 text-slate-400 hover:text-green-600 transition-all cursor-pointer"
+                    title="Atingiu o original"
+                  >
+                    <ThumbsUp size={12} />
+                  </button>
+                  <div className="w-[1px] h-3 bg-white/10 mx-0.5" />
+                  <button
+                    onClick={async () => { await api.lab.giveFeedback(projectId!, 'dislike'); alert('Feedback enviado! 👎'); }}
+                    className="p-1.5 rounded-md hover:bg-white/40 dark:hover:bg-white/10 text-slate-400 hover:text-red-500 transition-all cursor-pointer"
+                    title="Não atingiu o original"
+                  >
+                    <ThumbsDown size={12} />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
       {/* ====== RIGHT: Preview ====== */}
-      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-slate-950">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Preview Header */}
-        <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 shrink-0">
+        <div className="flex items-center justify-between h-[62px] px-4 backdrop-blur-xl bg-white/60 dark:bg-white/[0.03] border-b border-white/10 shrink-0">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setChatHidden(h => !h)}
@@ -580,7 +599,7 @@ export default function LabEditor() {
         </div>
 
         {/* Preview Content Container: Fluid full-screen area */}
-        <div className="flex-1 bg-white dark:bg-slate-950 relative overflow-hidden flex flex-col">
+        <div className="flex-1 relative overflow-hidden flex flex-col">
           {htmlContent ? (
             <div
               ref={previewRef}
@@ -776,19 +795,24 @@ function LabMessageBubble({ msg }: { msg: LabMessage }) {
   const isUser = msg.role === 'user';
   return (
     <div className={cn('flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-400', isUser ? 'flex-row-reverse' : 'flex-row')}>
-      <div className={cn(
-        'w-8 h-8 rounded-xl flex items-center justify-center shrink-0',
-        isUser ? 'bg-primary text-primary-foreground' : 'bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-primary'
-      )}>
+      <div
+        style={isUser ? { backgroundImage: 'linear-gradient(120deg, var(--color-a1), var(--color-a2), var(--color-a3))' } : undefined}
+        className={cn(
+          'w-8 h-8 rounded-xl flex items-center justify-center shrink-0',
+          isUser ? 'text-white' : 'glasscard text-primary'
+        )}
+      >
         {isUser ? <UserIcon size={15} /> : <Bot size={16} />}
       </div>
-      <div className={cn(
-        'max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] dark:shadow-none',
-        isUser
-          ? 'bg-primary text-primary-foreground rounded-tr-sm'
-          : 'bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-tl-sm'
-      )}>
-        {!isUser && (msg.edit_scope || (msg.tokensUsed > 0)) && (
+      <div
+        style={isUser ? { backgroundImage: 'linear-gradient(120deg, var(--color-a1), var(--color-a2), var(--color-a3))' } : undefined}
+        className={cn(
+          'max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] dark:shadow-none',
+          isUser
+            ? 'text-white rounded-tr-sm'
+            : 'glasscard text-slate-900 dark:text-slate-100 rounded-tl-sm'
+        )}>
+        {!isUser && msg.edit_scope !== 'error' && (msg.edit_scope || msg.tokensUsed > 0) && (
           <div className="mb-2.5 flex flex-col gap-1.5 bg-slate-50 dark:bg-slate-950 p-2 rounded-xl border border-slate-100 dark:border-slate-805 font-mono text-[10px] leading-normal tracking-tight text-slate-500 dark:text-slate-400 shadow-inner">
             <div className="flex flex-wrap items-center gap-1.5">
               {msg.edit_scope === 'surgical' && (

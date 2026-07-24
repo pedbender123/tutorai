@@ -2,30 +2,32 @@ import crypto from 'crypto';
 import db from './db.js';
 
 // ── Tier definitions ─────────────────────────────────────────────────────────
+//
+// Single shared credit pool across Lab + Levy + normal chat (like Anthropic plan
+// limits) — there is no per-tool quota anymore. The weekly cap exists only as an
+// anti-burst brake (so nobody blows the whole month in one sitting); the monthly
+// cap is the real ceiling on real spend. Pro tier's numbers are placeholders kept
+// from the old Levy-only limit, pending a separate decision.
 
 type Tier = 'free_nonInst' | 'free_inst' | 'pro_nonInst';
 
 interface TierConfig {
-  labDailyLimit: number;
-  labWeeklyLimit: number;
-  petrusWeeklyCredits: number;
-  labTokenLimit: number; // max estimated tokens per Lab request
+  weeklyCredits: number;
+  monthlyCredits: number;
+  labTokenLimit: number; // max estimated tokens per Lab request (payload-size safety valve, unrelated to credits)
+  projectLimit: number;  // max simultaneous Lab projects — single source of truth, also used by ai.ts
 }
 
 const TIER_CONFIG: Record<Tier, TierConfig> = {
-  free_nonInst: { labDailyLimit: 5,  labWeeklyLimit: 20, petrusWeeklyCredits: 100_000, labTokenLimit: 40_000 },
-  free_inst:    { labDailyLimit: 10, labWeeklyLimit: 50, petrusWeeklyCredits: 100_000, labTokenLimit: 60_000 },
-  pro_nonInst:  { labDailyLimit: 15, labWeeklyLimit: 50, petrusWeeklyCredits: 1_000_000, labTokenLimit: 80_000 },
+  free_nonInst: { weeklyCredits: 500_000,   monthlyCredits: 2_000_000, labTokenLimit: 40_000, projectLimit: 5  },
+  free_inst:    { weeklyCredits: 500_000,   monthlyCredits: 2_000_000, labTokenLimit: 60_000, projectLimit: 10 },
+  pro_nonInst:  { weeklyCredits: 1_000_000, monthlyCredits: 4_000_000, labTokenLimit: 80_000, projectLimit: 10 },
 };
 
 export type { Tier, TierConfig };
 export { TIER_CONFIG };
 
 // ── Date helpers ─────────────────────────────────────────────────────────────
-
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-}
 
 function weekStartIso(): string {
   const d = new Date();
@@ -34,6 +36,10 @@ function weekStartIso(): string {
   const day = d.getUTCDay(); // 0=Sun … 6=Sat
   d.setUTCDate(d.getUTCDate() - ((day + 6) % 7));
   return d.toISOString().slice(0, 10);
+}
+
+function monthIso(): string {
+  return new Date().toISOString().slice(0, 7); // YYYY-MM
 }
 
 // ── Tier resolution ──────────────────────────────────────────────────────────
@@ -56,93 +62,60 @@ export interface QuotaResult {
   config: TierConfig;
 }
 
-// ── Lab quota (per-request daily + weekly) ───────────────────────────────────
+// ── Shared credit pool (Lab + Levy + chat normal) ──────────────────────────
 
-export function checkLabQuota(userId: string): QuotaResult {
+export function checkToolQuota(userId: string): QuotaResult {
   const tier = getUserTier(userId);
   const cfg = TIER_CONFIG[tier];
-  const today = todayIso();
   const week = weekStartIso();
+  const month = monthIso();
 
-  const user = db.prepare(
-    'SELECT lab_req_today, lab_req_today_reset, lab_req_week, lab_req_week_reset FROM users WHERE id = ?'
-  ).get(userId) as any;
+  const user = db.prepare(`
+    SELECT petrus_credits_week, petrus_credits_week_reset, credits_month, credits_month_reset
+    FROM users WHERE id = ?
+  `).get(userId) as any;
 
-  const reqToday = user?.lab_req_today_reset === today ? (user?.lab_req_today ?? 0) : 0;
-  const reqWeek  = user?.lab_req_week_reset  === week  ? (user?.lab_req_week  ?? 0) : 0;
+  const creditsWeek  = user?.petrus_credits_week_reset === week  ? (user?.petrus_credits_week ?? 0) : 0;
+  const creditsMonth = user?.credits_month_reset        === month ? (user?.credits_month        ?? 0) : 0;
 
-  if (reqToday >= cfg.labDailyLimit) {
+  if (creditsMonth >= cfg.monthlyCredits) {
     logQuotaEvent({ userId, surface: 'lab', event: 'limit_hit' });
-    return { allowed: false, reason: `Limite diário de ${cfg.labDailyLimit} requisições no Lab atingido. Tente amanhã.`, tier, config: cfg };
+    return { allowed: false, reason: `Limite mensal de ${cfg.monthlyCredits.toLocaleString()} créditos atingido.`, tier, config: cfg };
   }
-  if (reqWeek >= cfg.labWeeklyLimit) {
+  if (creditsWeek >= cfg.weeklyCredits) {
     logQuotaEvent({ userId, surface: 'lab', event: 'limit_hit' });
-    return { allowed: false, reason: `Limite semanal de ${cfg.labWeeklyLimit} requisições no Lab atingido.`, tier, config: cfg };
+    return { allowed: false, reason: `Limite semanal de ${cfg.weeklyCredits.toLocaleString()} créditos atingido. Renova na segunda-feira.`, tier, config: cfg };
   }
 
   return { allowed: true, tier, config: cfg };
 }
 
-export function recordLabRequest(userId: string): void {
-  const today = todayIso();
+export function recordToolCredits(userId: string, credits: number): void {
   const week = weekStartIso();
+  const month = monthIso();
 
-  const user = db.prepare(
-    'SELECT lab_req_today, lab_req_today_reset, lab_req_week, lab_req_week_reset FROM users WHERE id = ?'
-  ).get(userId) as any;
+  const user = db.prepare(`
+    SELECT petrus_credits_week, petrus_credits_week_reset, credits_month, credits_month_reset
+    FROM users WHERE id = ?
+  `).get(userId) as any;
 
-  const reqToday = user?.lab_req_today_reset === today ? (user?.lab_req_today ?? 0) : 0;
-  const reqWeek  = user?.lab_req_week_reset  === week  ? (user?.lab_req_week  ?? 0) : 0;
+  const creditsWeek  = user?.petrus_credits_week_reset === week  ? (user?.petrus_credits_week ?? 0) : 0;
+  const creditsMonth = user?.credits_month_reset        === month ? (user?.credits_month        ?? 0) : 0;
 
   db.prepare(`
     UPDATE users SET
-      lab_req_today       = ?,
-      lab_req_today_reset = ?,
-      lab_req_week        = ?,
-      lab_req_week_reset  = ?
+      petrus_credits_week        = ?,
+      petrus_credits_week_reset  = ?,
+      credits_month              = ?,
+      credits_month_reset        = ?
     WHERE id = ?
-  `).run(reqToday + 1, today, reqWeek + 1, week, userId);
-  // Full event (model, tokens, was_spill) is logged by the caller after a successful AI response
+  `).run(creditsWeek + credits, week, creditsMonth + credits, month, userId);
 }
 
-// ── Petrus quota (weekly credits) ────────────────────────────────────────────
-
-export function checkPetrusQuota(userId: string): QuotaResult {
-  const tier = getUserTier(userId);
-  const cfg = TIER_CONFIG[tier];
-  const week = weekStartIso();
-
-  const user = db.prepare(
-    'SELECT petrus_credits_week, petrus_credits_week_reset FROM users WHERE id = ?'
-  ).get(userId) as any;
-
-  const creditsWeek = user?.petrus_credits_week_reset === week
-    ? (user?.petrus_credits_week ?? 0)
-    : 0;
-
-  if (creditsWeek >= cfg.petrusWeeklyCredits) {
-    const label = cfg.petrusWeeklyCredits >= 1_000_000 ? '1M' : '100k';
-    logQuotaEvent({ userId, surface: 'petrus', event: 'limit_hit' });
-    return { allowed: false, reason: `Limite semanal de ${label} créditos do Petrus atingido.`, tier, config: cfg };
-  }
-
-  return { allowed: true, tier, config: cfg };
-}
-
-export function recordPetrusCredits(userId: string, credits: number): void {
-  const week = weekStartIso();
-  const user = db.prepare(
-    'SELECT petrus_credits_week, petrus_credits_week_reset FROM users WHERE id = ?'
-  ).get(userId) as any;
-
-  const creditsWeek = user?.petrus_credits_week_reset === week
-    ? (user?.petrus_credits_week ?? 0)
-    : 0;
-
-  db.prepare(`
-    UPDATE users SET petrus_credits_week = ?, petrus_credits_week_reset = ? WHERE id = ?
-  `).run(creditsWeek + credits, week, userId);
-}
+// Back-compat aliases: same shared pool, kept so call sites read naturally per-surface.
+export const checkLevyQuota = checkToolQuota;
+export const recordLevyCredits = recordToolCredits;
+export const checkLabQuota = checkToolQuota;
 
 // ── Instrumentation ──────────────────────────────────────────────────────────
 
@@ -151,7 +124,7 @@ export type QuotaEvent = 'request' | '429' | 'rpd_skip' | 'limit_hit';
 
 export function logQuotaEvent(params: {
   userId?: string;
-  surface: 'lab' | 'petrus';
+  surface: 'lab' | 'levy';
   event: QuotaEvent;
   model?: string;
   tokensIn?: number;
@@ -183,41 +156,32 @@ export function logQuotaEvent(params: {
 
 export interface QuotaSummary {
   tier: Tier;
-  lab: {
-    today: number;
-    dailyLimit: number;
+  credits: {
     week: number;
     weeklyLimit: number;
-  };
-  petrus: {
-    creditsWeek: number;
-    weeklyLimit: number;
+    month: number;
+    monthlyLimit: number;
   };
 }
 
 export function getQuotaSummary(userId: string): QuotaSummary {
   const tier = getUserTier(userId);
   const cfg = TIER_CONFIG[tier];
-  const today = todayIso();
   const week = weekStartIso();
+  const month = monthIso();
 
   const user = db.prepare(`
-    SELECT lab_req_today, lab_req_today_reset, lab_req_week, lab_req_week_reset,
-           petrus_credits_week, petrus_credits_week_reset
+    SELECT petrus_credits_week, petrus_credits_week_reset, credits_month, credits_month_reset
     FROM users WHERE id = ?
   `).get(userId) as any;
 
   return {
     tier,
-    lab: {
-      today:      user?.lab_req_today_reset === today ? (user?.lab_req_today ?? 0) : 0,
-      dailyLimit: cfg.labDailyLimit,
-      week:       user?.lab_req_week_reset  === week  ? (user?.lab_req_week  ?? 0) : 0,
-      weeklyLimit: cfg.labWeeklyLimit,
-    },
-    petrus: {
-      creditsWeek: user?.petrus_credits_week_reset === week ? (user?.petrus_credits_week ?? 0) : 0,
-      weeklyLimit: cfg.petrusWeeklyCredits,
+    credits: {
+      week:         user?.petrus_credits_week_reset === week  ? (user?.petrus_credits_week ?? 0) : 0,
+      weeklyLimit:  cfg.weeklyCredits,
+      month:        user?.credits_month_reset        === month ? (user?.credits_month        ?? 0) : 0,
+      monthlyLimit: cfg.monthlyCredits,
     },
   };
 }

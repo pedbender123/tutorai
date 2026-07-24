@@ -34,15 +34,15 @@ const T = {
     hm1:'agentes de IA', hm2:'interações registradas', hm3:'simuladores criados', hm4:'estudantes',
     agKicker:'Arquitetura dual', agTitle:'Conversar é diferente de construir.',
     agLead:'A plataforma separa, de propósito, duas naturezas comunicativas. Um agente medeia o pensamento; o outro executa o artefato. A passagem de um para o outro é onde a aprendizagem acontece.',
-    ptTag:'Tutor pedagógico', ptName:'Petrus', ptRole:'Mediação socrática · andaimamento cognitivo',
-    ptDesc:'Petrus não escreve código. Ele devolve perguntas, propõe decomposições e induz o estudante a nomear o mecanismo por trás do fenômeno antes de ir ao laboratório.',
+    ptTag:'Tutor pedagógico', ptName:'Levy', ptRole:'Mediação socrática · andaimamento cognitivo',
+    ptDesc:'Levy não escreve código. Ele devolve perguntas, propõe decomposições e induz o estudante a nomear o mecanismo por trás do fenômeno antes de ir ao laboratório.',
     ptB1:'Perguntas orientadoras em vez de respostas prontas', ptB2:'Devoluções reflexivas que expandem o perfil conceitual', ptB3:'Externalização do modelo mental do estudante',
     lbTag:'Agente de código', lbName:'Lab Agent', lbRole:'Geração de simuladores · execução',
     lbDesc:'O Lab Agent recebe instruções em linguagem natural e gera simuladores interativos em HTML/JS. A resposta é executiva — o simulador aparece na tela em segundos.',
     lbB1:'Do prompt ao artefato renderizável em segundos', lbB2:'Ciclo iterativo: pedir → gerar → testar → refinar', lbB3:'O prompt cru revela a zona conceitual ativa',
     modKicker:'Três espaços, um fluxo', modTitle:'Da sala de aula ao simulador funcionando.',
     modLead:'Cada módulo tem um papel no percurso do estudante. O professor acompanha em tempo real; a plataforma registra tudo.',
-    chatK:'Home · Chat', chatT:'Monitoria', chatD:'O estudante conversa com Petrus para planejar e refinar a ideia antes de construir.',
+    chatK:'Home · Chat', chatT:'Monitoria', chatD:'O estudante conversa com Levy para planejar e refinar a ideia antes de construir.',
     labK:'Lab · Simuladores', labT:'Laboratório', labD:'Galeria de simuladores interativos criados pela turma com o Lab Agent.',
     clsK:'Class · Mural', clsT:'Mural Virtual', clsD:'Sala de aula com disciplinas, atividades e cronograma compartilhado.',
     stKicker:'Corpus piloto', stTitle:'Dados do estudo piloto',
@@ -56,7 +56,7 @@ const T = {
     // Examples
     exKicker:'Demonstração', exTitle:'A plataforma em ação.',
     exLead:'Do diálogo socrático à simulação interativa — cada etapa do percurso de aprendizagem registrada e acessível ao professor em tempo real.',
-    ex1Title:'Chat com Petrus', ex1Lead:'O estudante descreve o que quer simular. Petrus não entrega o código — devolve perguntas que ampliam a compreensão conceitual antes de ir ao laboratório.',
+    ex1Title:'Chat com Levy', ex1Lead:'O estudante descreve o que quer simular. Levy não entrega o código — devolve perguntas que ampliam a compreensão conceitual antes de ir ao laboratório.',
     ex2Title:'Lab Agent em ação', ex2Lead:'Com o conceito mapeado, o estudante pede ao Lab Agent em linguagem natural. O agente gera código HTML/JS executável na hora, com prévia imediata.',
     ex3Title:'Mural da turma', ex3Lead:'Os simuladores ficam em galeria compartilhada. O professor acompanha a evolução de cada estudante e pode comentar diretamente no projeto.',
     exPrivacy:'Todos os registros são anonimizados. Os estudantes são identificados por códigos (E1–E19) e nenhum dado pessoal é armazenado além do necessário para a pesquisa.',
@@ -75,7 +75,7 @@ const T = {
     slKicker:'Instalação própria', slTitle:'Rode a SCAFFL na sua infraestrutura.',
     slLead:'A SCAFFL é open-source e pode ser instalada em qualquer servidor Linux. Você mantém o controle total dos dados dos seus estudantes.',
     slW1T:'Privacidade total', slW1D:'Todos os dados ficam no seu servidor. Nenhuma interação sai para terceiros além das APIs de IA.',
-    slW2T:'Customizável', slW2D:'Modifique o prompt do Petrus, ajuste as regras do Lab Agent, personalize o visual para sua instituição.',
+    slW2T:'Customizável', slW2D:'Modifique o prompt do Levy, ajuste as regras do Lab Agent, personalize o visual para sua instituição.',
     slW3T:'Sem mensalidade', slW3D:'Você paga apenas pelas chamadas de API (Anthropic + Gemini). A plataforma em si é gratuita.',
     slReq:'Requisitos', slDocker:'Via Docker (recomendado)', slManual:'Instalação manual', slEnv:'Variáveis de ambiente',
     slDlTitle:'Downloads', slGit:'GitHub — Código-fonte', slDockerHub:'Docker Hub', slVideo:'Tutorial em vídeo (em breve)',
@@ -83,7 +83,7 @@ const T = {
     dcKicker:'Documentação', dcTitle:'Referência da plataforma.',
     dcLead:'Tudo o que você precisa para entender, configurar e estender a SCAFFL.',
     dcOvTitle:'Visão geral', dcOvDesc:'A SCAFFL é uma aplicação Node.js + React. O servidor expõe uma API REST e gerencia sessões com PostgreSQL.',
-    dcPtTitle:'Agente Petrus', dcPtDesc:'Petrus é implementado como chamada streaming a um LLM configurável (padrão: Gemini 2.5 Flash). O system prompt define o papel socrático e as regras de mediação.',
+    dcPtTitle:'Agente Levy', dcPtDesc:'Levy é implementado como chamada streaming a um LLM configurável (padrão: Gemini 2.5 Flash). O system prompt define o papel socrático e as regras de mediação.',
     dcLbTitle:'Lab Agent', dcLbDesc:'O Lab Agent usa o modelo Gemini 2.5 Flash (Google) para geração de código. Cada turno recebe o histórico comprimido dos simuladores anteriores do estudante.',
     dcApiTitle:'API REST', dcApiDesc:'Todos os endpoints requerem autenticação Bearer JWT obtido via POST /api/auth/login.',
     dcCfgTitle:'Configuração', dcCfgDesc:'Todas as opções são definidas via variáveis de ambiente no arquivo .env do servidor.',
@@ -103,15 +103,15 @@ const T = {
     hm1:'AI agents', hm2:'interactions recorded', hm3:'simulations built', hm4:'students',
     agKicker:'Dual architecture', agTitle:'Talking is different from building.',
     agLead:'The platform intentionally separates two communicative natures. One agent mediates thought; the other executes the artifact. The transition between them is where learning happens.',
-    ptTag:'Pedagogical tutor', ptName:'Petrus', ptRole:'Socratic mediation · cognitive scaffolding',
-    ptDesc:'Petrus does not write code. It returns questions, proposes decompositions and pushes the student to name the mechanism behind the phenomenon before going to the lab.',
+    ptTag:'Pedagogical tutor', ptName:'Levy', ptRole:'Socratic mediation · cognitive scaffolding',
+    ptDesc:'Levy does not write code. It returns questions, proposes decompositions and pushes the student to name the mechanism behind the phenomenon before going to the lab.',
     ptB1:'Guiding questions instead of ready-made answers', ptB2:'Reflective responses that expand the conceptual profile', ptB3:'Externalization of the student\'s mental model',
     lbTag:'Code agent', lbName:'Lab Agent', lbRole:'Simulator generation · execution',
     lbDesc:'The Lab Agent receives instructions in natural language and generates interactive HTML/JS simulators. The response is executive — the simulator appears on screen in seconds.',
     lbB1:'From prompt to renderable artifact in seconds', lbB2:'Iterative cycle: request → generate → test → refine', lbB3:'The raw prompt reveals the active conceptual zone',
     modKicker:'Three spaces, one flow', modTitle:'From the classroom to a working simulator.',
     modLead:'Each module plays a role in the student\'s journey. The teacher monitors in real time; the platform records everything.',
-    chatK:'Home · Chat', chatT:'Tutoring', chatD:'The student talks with Petrus to plan and refine the idea before building.',
+    chatK:'Home · Chat', chatT:'Tutoring', chatD:'The student talks with Levy to plan and refine the idea before building.',
     labK:'Lab · Simulators', labT:'Laboratory', labD:'Gallery of interactive simulations created by the class using Lab Agent.',
     clsK:'Class · Board', clsT:'Virtual Board', clsD:'Classroom with disciplines, activities and shared schedule.',
     stKicker:'Pilot corpus', stTitle:'Pilot study data',
@@ -124,7 +124,7 @@ const T = {
     reTg1:'Conceptual Profiles · Mortimer', reTg2:'Epistemological Profiles · Bachelard', reTg3:'TMCR · sophotechnia', reTg4:'Discursive appropriation scale',
     exKicker:'Demo', exTitle:'The platform in action.',
     exLead:'From Socratic dialogue to interactive simulation — every step of the learning journey recorded and accessible to the teacher in real time.',
-    ex1Title:'Chat with Petrus', ex1Lead:'The student describes what they want to simulate. Petrus doesn\'t deliver code — it returns questions that broaden conceptual understanding before going to the lab.',
+    ex1Title:'Chat with Levy', ex1Lead:'The student describes what they want to simulate. Levy doesn\'t deliver code — it returns questions that broaden conceptual understanding before going to the lab.',
     ex2Title:'Lab Agent in action', ex2Lead:'With the concept mapped, the student asks Lab Agent in natural language. The agent generates executable HTML/JS code immediately, with instant preview.',
     ex3Title:'Class board', ex3Lead:'Simulators are displayed in a shared gallery. The teacher monitors each student\'s progress and can comment directly on their project.',
     exPrivacy:'All records are anonymized. Students are identified by codes (E1–E19) and no personal data is stored beyond what is necessary for research.',
@@ -141,14 +141,14 @@ const T = {
     slKicker:'Self-hosted', slTitle:'Run SCAFFL on your own infrastructure.',
     slLead:'SCAFFL is open-source and can be installed on any Linux server. You maintain full control of your students\' data.',
     slW1T:'Full privacy', slW1D:'All data stays on your server. No interactions are sent to third parties beyond the AI APIs.',
-    slW2T:'Customizable', slW2D:'Modify Petrus\' prompt, adjust Lab Agent rules, personalize the look for your institution.',
+    slW2T:'Customizable', slW2D:'Modify Levy\' prompt, adjust Lab Agent rules, personalize the look for your institution.',
     slW3T:'No monthly fee', slW3D:'You only pay for API calls (Anthropic + Gemini). The platform itself is free.',
     slReq:'Requirements', slDocker:'Via Docker (recommended)', slManual:'Manual installation', slEnv:'Environment variables',
     slDlTitle:'Downloads', slGit:'GitHub — Source code', slDockerHub:'Docker Hub', slVideo:'Video tutorial (coming soon)',
     dcKicker:'Documentation', dcTitle:'Platform reference.',
     dcLead:'Everything you need to understand, configure and extend SCAFFL.',
     dcOvTitle:'Overview', dcOvDesc:'SCAFFL is a Node.js + React application. The server exposes a REST API and manages sessions with PostgreSQL.',
-    dcPtTitle:'Petrus Agent', dcPtDesc:'Petrus is implemented as a streaming call to the Claude model (Anthropic). The system prompt defines the Socratic role and mediation rules.',
+    dcPtTitle:'Levy Agent', dcPtDesc:'Levy is implemented as a streaming call to the Claude model (Anthropic). The system prompt defines the Socratic role and mediation rules.',
     dcLbTitle:'Lab Agent', dcLbDesc:'Lab Agent uses the Gemini model (Google) for code generation. Each turn receives the compressed history of the student\'s previous simulators.',
     dcApiTitle:'REST API', dcApiDesc:'All endpoints require Bearer JWT authentication obtained via POST /api/auth/login.',
     dcCfgTitle:'Configuration', dcCfgDesc:'All options are defined via environment variables in the server\'s .env file.',
@@ -167,15 +167,15 @@ const T = {
     hm1:'agentes de IA', hm2:'interacciones registradas', hm3:'simuladores creados', hm4:'estudiantes',
     agKicker:'Arquitectura dual', agTitle:'Conversar es diferente de construir.',
     agLead:'La plataforma separa, a propósito, dos naturalezas comunicativas. Un agente media el pensamiento; el otro ejecuta el artefacto. La transición entre uno y otro es donde ocurre el aprendizaje.',
-    ptTag:'Tutor pedagógico', ptName:'Petrus', ptRole:'Mediación socrática · andamiaje cognitivo',
-    ptDesc:'Petrus no escribe código. Devuelve preguntas, propone descomposiciones e induce al estudiante a nombrar el mecanismo detrás del fenómeno antes de ir al laboratorio.',
+    ptTag:'Tutor pedagógico', ptName:'Levy', ptRole:'Mediación socrática · andamiaje cognitivo',
+    ptDesc:'Levy no escribe código. Devuelve preguntas, propone descomposiciones e induce al estudiante a nombrar el mecanismo detrás del fenómeno antes de ir al laboratorio.',
     ptB1:'Preguntas orientadoras en lugar de respuestas directas', ptB2:'Respuestas reflexivas que amplían el perfil conceptual', ptB3:'Externalización del modelo mental del estudiante',
     lbTag:'Agente de código', lbName:'Lab Agent', lbRole:'Generación de simuladores · ejecución',
     lbDesc:'El Lab Agent recibe instrucciones en lenguaje natural y genera simuladores interactivos en HTML/JS. La respuesta es ejecutiva — el simulador aparece en pantalla en segundos.',
     lbB1:'Del prompt al artefacto renderizable en segundos', lbB2:'Ciclo iterativo: pedir → generar → probar → refinar', lbB3:'El prompt crudo revela la zona conceptual activa',
     modKicker:'Tres espacios, un flujo', modTitle:'Del aula al simulador funcionando.',
     modLead:'Cada módulo tiene un papel en el recorrido del estudiante. El docente monitorea en tiempo real; la plataforma registra todo.',
-    chatK:'Home · Chat', chatT:'Tutoría', chatD:'El estudiante conversa con Petrus para planificar y refinar la idea antes de construir.',
+    chatK:'Home · Chat', chatT:'Tutoría', chatD:'El estudiante conversa con Levy para planificar y refinar la idea antes de construir.',
     labK:'Lab · Simuladores', labT:'Laboratorio', labD:'Galería de simuladores interactivos creados por la clase con el Lab Agent.',
     clsK:'Class · Mural', clsT:'Mural Virtual', clsD:'Aula con disciplinas, actividades y cronograma compartido.',
     stKicker:'Corpus piloto', stTitle:'Datos del estudio piloto',
@@ -188,7 +188,7 @@ const T = {
     reTg1:'Perfiles Conceptuales · Mortimer', reTg2:'Perfiles Epistemológicos · Bachelard', reTg3:'TMCR · sophotechnia', reTg4:'Escala de apropiación discursiva',
     exKicker:'Demostración', exTitle:'La plataforma en acción.',
     exLead:'Del diálogo socrático a la simulación interactiva — cada paso del recorrido de aprendizaje registrado y accesible para el docente en tiempo real.',
-    ex1Title:'Chat con Petrus', ex1Lead:'El estudiante describe lo que quiere simular. Petrus no entrega el código — devuelve preguntas que amplían la comprensión conceptual antes de ir al laboratorio.',
+    ex1Title:'Chat con Levy', ex1Lead:'El estudiante describe lo que quiere simular. Levy no entrega el código — devuelve preguntas que amplían la comprensión conceptual antes de ir al laboratorio.',
     ex2Title:'Lab Agent en acción', ex2Lead:'Con el concepto mapeado, el estudiante pide al Lab Agent en lenguaje natural. El agente genera código HTML/JS ejecutable de inmediato, con vista previa instantánea.',
     ex3Title:'Mural de la clase', ex3Lead:'Los simuladores se exhiben en una galería compartida. El docente monitorea la evolución de cada estudiante y puede comentar directamente en el proyecto.',
     exPrivacy:'Todos los registros están anonimizados. Los estudiantes se identifican mediante códigos (E1–E19) y no se almacenan datos personales más allá de lo necesario para la investigación.',
@@ -205,14 +205,14 @@ const T = {
     slKicker:'Instalación propia', slTitle:'Ejecuta SCAFFL en tu propia infraestructura.',
     slLead:'SCAFFL es open-source y puede instalarse en cualquier servidor Linux. Mantienes el control total de los datos de tus estudiantes.',
     slW1T:'Privacidad total', slW1D:'Todos los datos permanecen en tu servidor. Ninguna interacción se envía a terceros más allá de las APIs de IA.',
-    slW2T:'Personalizable', slW2D:'Modifica el prompt de Petrus, ajusta las reglas del Lab Agent, personaliza el aspecto visual para tu institución.',
+    slW2T:'Personalizable', slW2D:'Modifica el prompt de Levy, ajusta las reglas del Lab Agent, personaliza el aspecto visual para tu institución.',
     slW3T:'Sin mensualidad', slW3D:'Solo pagas por las llamadas a la API (Anthropic + Gemini). La plataforma en sí es gratuita.',
     slReq:'Requisitos', slDocker:'Con Docker (recomendado)', slManual:'Instalación manual', slEnv:'Variables de entorno',
     slDlTitle:'Descargas', slGit:'GitHub — Código fuente', slDockerHub:'Docker Hub', slVideo:'Tutorial en video (próximamente)',
     dcKicker:'Documentación', dcTitle:'Referencia de la plataforma.',
     dcLead:'Todo lo que necesitas para entender, configurar y extender SCAFFL.',
     dcOvTitle:'Visión general', dcOvDesc:'SCAFFL es una aplicación Node.js + React. El servidor expone una API REST y gestiona las sesiones con PostgreSQL.',
-    dcPtTitle:'Agente Petrus', dcPtDesc:'Petrus está implementado como una llamada en streaming a un LLM configurable (por defecto: Gemini 2.5 Flash). El system prompt define el rol socrático y las reglas de mediación.',
+    dcPtTitle:'Agente Levy', dcPtDesc:'Levy está implementado como una llamada en streaming a un LLM configurable (por defecto: Gemini 2.5 Flash). El system prompt define el rol socrático y las reglas de mediación.',
     dcLbTitle:'Lab Agent', dcLbDesc:'El Lab Agent usa el modelo Gemini 2.5 Flash (Google) para la generación de código. Cada turno recibe el historial comprimido de los simuladores anteriores del estudiante.',
     dcApiTitle:'API REST', dcApiDesc:'Todos los endpoints requieren autenticación Bearer JWT obtenido mediante POST /api/auth/login.',
     dcCfgTitle:'Configuración', dcCfgDesc:'Todas las opciones se definen mediante variables de entorno en el archivo .env del servidor.',
@@ -306,7 +306,7 @@ function ChatMockup({ dark, a2 }: { dark: boolean; a2: string }) {
           <MessageSquare size={14} color={a2} />
         </div>
         <div>
-          <div style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'0.82rem', color: txt }}>Petrus</div>
+          <div style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'0.82rem', color: txt }}>Levy</div>
           <div style={{ fontSize:'0.68rem', color: muted }}>Tutor · online</div>
         </div>
       </div>
@@ -705,7 +705,7 @@ export default function LandingPage() {
             </div>
           </div>
           <BrowserFrame title="chat" dark={dark}>
-            <img src="/screenshots/screenshot-chat-petrus.jpg" style={{ width:'100%', display:'block' }} alt="Chat com Petrus — SCAFFL" />
+            <img src="/screenshots/screenshot-chat-petrus.jpg" style={{ width:'100%', display:'block' }} alt="Chat com Levy — SCAFFL" />
           </BrowserFrame>
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'1.1fr 0.9fr', gap:40, alignItems:'center', marginBottom:72 }}>
@@ -953,7 +953,7 @@ export default function LandingPage() {
       ['GET',   '/api/auth/me',              'Dados do usuário autenticado'],
       ['GET',   '/api/chats',               'Listar sessões de chat'],
       ['POST',  '/api/chats',               'Criar nova sessão'],
-      ['POST',  '/api/chats/:id/message',   'Enviar mensagem ao Petrus (streaming)'],
+      ['POST',  '/api/chats/:id/message',   'Enviar mensagem ao Levy (streaming)'],
       ['GET',   '/api/lab/projects',        'Listar projetos do usuário'],
       ['POST',  '/api/lab/projects',        'Criar projeto no Lab'],
       ['POST',  '/api/lab/projects/:id/turn','Enviar prompt ao Lab Agent'],
@@ -1003,14 +1003,14 @@ export default function LandingPage() {
           <h3 style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'1.3rem', color: TX, marginBottom:16 }}>{t('dcCfgTitle')}</h3>
           <Term title=".env reference">
             <span style={{ color:'#64748B' }}># === Obrigatórias ==={'\n'}</span>
-            <span style={{ color: a2 }}>ANTHROPIC_API_KEY</span>     <span style={{ color:'#64748B' }}># Claude (Petrus){'\n'}</span>
+            <span style={{ color: a2 }}>ANTHROPIC_API_KEY</span>     <span style={{ color:'#64748B' }}># Claude (Levy){'\n'}</span>
             <span style={{ color: a2 }}>GEMINI_API_KEY</span>        <span style={{ color:'#64748B' }}># Gemini (Lab Agent){'\n'}</span>
             <span style={{ color: a2 }}>DATABASE_URL</span>          <span style={{ color:'#64748B' }}># PostgreSQL connection string{'\n'}</span>
             <span style={{ color: a2 }}>JWT_SECRET</span>            <span style={{ color:'#64748B' }}># ≥32 caracteres aleatórios{'\n\n'}</span>
             <span style={{ color:'#64748B' }}># === Opcionais ==={'\n'}</span>
             <span style={{ color: a2 }}>PORT</span>                  <span style={{ color:'#64748B' }}># default: 3001{'\n'}</span>
             <span style={{ color: a2 }}>NODE_ENV</span>              <span style={{ color:'#64748B' }}># production | development{'\n'}</span>
-            <span style={{ color: a2 }}>MAX_TOKENS_TUTOR</span>      <span style={{ color:'#64748B' }}># limite mensal por aluno (Petrus){'\n'}</span>
+            <span style={{ color: a2 }}>MAX_TOKENS_TUTOR</span>      <span style={{ color:'#64748B' }}># limite mensal por aluno (Levy){'\n'}</span>
             <span style={{ color: a2 }}>MAX_TOKENS_LAB</span>        <span style={{ color:'#64748B' }}># limite mensal por aluno (Lab){'\n'}</span>
             <span style={{ color: a2 }}>INVITE_ONLY</span>           <span style={{ color:'#64748B' }}># true = cadastro só por convite</span>
           </Term>
@@ -1031,7 +1031,7 @@ export default function LandingPage() {
               {([
                 [Shield, lang==='pt' ? 'Privacidade total' : lang==='en' ? 'Full privacy' : 'Privacidad total', lang==='pt' ? 'Dados dos alunos ficam no seu servidor. Zero vazamento para plataformas externas.' : lang==='en' ? 'Student data stays on your server. No leakage to external platforms.' : 'Los datos de los alumnos permanecen en tu servidor.'],
                 [DollarSign, lang==='pt' ? 'Sem mensalidade' : lang==='en' ? 'No monthly fee' : 'Sin mensualidad', lang==='pt' ? 'Você paga só pelas chamadas de API (Anthropic + Gemini). A plataforma é gratuita.' : lang==='en' ? 'You only pay for API calls (Anthropic + Gemini). The platform itself is free.' : 'Solo pagas las llamadas de API. La plataforma es gratuita.'],
-                [Sliders, lang==='pt' ? 'Customizável' : lang==='en' ? 'Customizable' : 'Personalizable', lang==='pt' ? 'Modifique o prompt do Petrus, ajuste o Lab Agent, personalize para sua instituição.' : lang==='en' ? 'Modify Petrus\'s prompt, adjust Lab Agent, personalize for your institution.' : 'Modifica el prompt de Petrus y personaliza para tu institución.'],
+                [Sliders, lang==='pt' ? 'Customizável' : lang==='en' ? 'Customizable' : 'Personalizable', lang==='pt' ? 'Modifique o prompt do Levy, ajuste o Lab Agent, personalize para sua instituição.' : lang==='en' ? 'Modify Levy\'s prompt, adjust Lab Agent, personalize for your institution.' : 'Modifica el prompt de Levy y personaliza para tu institución.'],
               ] as [React.ElementType, string, string][]).map(([Icon, title, desc]) => (
                 <div key={title} style={{ background: PANEL, border:`1px solid ${LINE}`, borderRadius:14, padding:22 }}>
                   <div style={{ width:36, height:36, borderRadius:9, background:`${a2}14`, display:'flex', alignItems:'center', justifyContent:'center', marginBottom:12 }}><Icon size={16} color={a2} /></div>
@@ -1124,10 +1124,10 @@ export default function LandingPage() {
               </div>
               <p style={{ color: TX2, fontSize:'0.9rem', lineHeight:1.72, marginBottom:14, paddingLeft:40 }}>
                 {lang==='pt'
-                  ? 'O arquivo .env guarda as chaves de API e as configurações do servidor. Você precisará criar uma chave na Anthropic (para o Petrus) e outra no Google AI Studio (para o Lab Agent). Ambos têm planos gratuitos para começar.'
+                  ? 'O arquivo .env guarda as chaves de API e as configurações do servidor. Você precisará criar uma chave na Anthropic (para o Levy) e outra no Google AI Studio (para o Lab Agent). Ambos têm planos gratuitos para começar.'
                   : lang==='en'
-                  ? 'The .env file holds API keys and server settings. You will need to create a key at Anthropic (for Petrus) and another at Google AI Studio (for Lab Agent). Both have free tiers to get started.'
-                  : 'El archivo .env contiene las claves de API y la configuración del servidor. Necesitarás crear una clave en Anthropic (para Petrus) y otra en Google AI Studio (para el Lab Agent).'}
+                  ? 'The .env file holds API keys and server settings. You will need to create a key at Anthropic (for Levy) and another at Google AI Studio (for Lab Agent). Both have free tiers to get started.'
+                  : 'El archivo .env contiene las claves de API y la configuración del servidor. Necesitarás crear una clave en Anthropic (para Levy) y otra en Google AI Studio (para el Lab Agent).'}
               </p>
               <Term title="bash — criar .env">
                 <span style={{ color: a2 }}>$</span> cp .env.example .env{'\n'}
@@ -1414,16 +1414,16 @@ export default function LandingPage() {
                   </P>
                 </div>
                 <P>{lang==='pt'
-                  ? 'O segundo problema que motivou a SCAFFL é a invisibilidade do pensamento do estudante para o professor. Em uma sala de aula tradicional, o professor vê o resultado (a nota, o exercício resolvido) mas não o processo. Com a SCAFFL, o professor acompanha em tempo real cada conversa com o Petrus, cada prompt enviado ao Lab Agent, cada iteração do simulador. A mediação inteira fica registrada e acessível.'
+                  ? 'O segundo problema que motivou a SCAFFL é a invisibilidade do pensamento do estudante para o professor. Em uma sala de aula tradicional, o professor vê o resultado (a nota, o exercício resolvido) mas não o processo. Com a SCAFFL, o professor acompanha em tempo real cada conversa com o Levy, cada prompt enviado ao Lab Agent, cada iteração do simulador. A mediação inteira fica registrada e acessível.'
                   : lang==='en'
-                  ? 'The second problem that motivated SCAFFL is the invisibility of student thinking to the teacher. In a traditional classroom, the teacher sees the result (the grade, the solved exercise) but not the process. With SCAFFL, the teacher monitors in real time each conversation with Petrus, each prompt sent to Lab Agent, each iteration of the simulator. The entire mediation is recorded and accessible.'
-                  : 'El segundo problema que motivó SCAFFL es la invisibilidad del pensamiento del estudiante para el docente. En un aula tradicional, el docente ve el resultado pero no el proceso. Con SCAFFL, el docente monitorea en tiempo real cada conversación con Petrus, cada prompt enviado al Lab Agent, cada iteración del simulador.'}
+                  ? 'The second problem that motivated SCAFFL is the invisibility of student thinking to the teacher. In a traditional classroom, the teacher sees the result (the grade, the solved exercise) but not the process. With SCAFFL, the teacher monitors in real time each conversation with Levy, each prompt sent to Lab Agent, each iteration of the simulator. The entire mediation is recorded and accessible.'
+                  : 'El segundo problema que motivó SCAFFL es la invisibilidad del pensamiento del estudiante para el docente. En un aula tradicional, el docente ve el resultado pero no el proceso. Con SCAFFL, el docente monitorea en tiempo real cada conversación con Levy, cada prompt enviado al Lab Agent, cada iteración del simulador.'}
                 </P>
                 <P>{lang==='pt'
-                  ? 'Por fim, por que uma IA que medeia em vez de uma IA que responde? A diferença é fundamental. Uma IA que entrega respostas prontas elimina o trabalho cognitivo — a zona de desenvolvimento proximal (Vygotsky) é cortocircuitada. O estudante obtém o artefato sem ter construído o entendimento que deveria precedê-lo. O Petrus existe exatamente para impedir isso: ele opera na ZDP, induz o estudante a avançar além do que conseguiria sozinho, mas nunca entrega o destino — só o andaime.'
+                  ? 'Por fim, por que uma IA que medeia em vez de uma IA que responde? A diferença é fundamental. Uma IA que entrega respostas prontas elimina o trabalho cognitivo — a zona de desenvolvimento proximal (Vygotsky) é cortocircuitada. O estudante obtém o artefato sem ter construído o entendimento que deveria precedê-lo. O Levy existe exatamente para impedir isso: ele opera na ZDP, induz o estudante a avançar além do que conseguiria sozinho, mas nunca entrega o destino — só o andaime.'
                   : lang==='en'
-                  ? 'Finally, why an AI that mediates instead of an AI that answers? The difference is fundamental. An AI that delivers ready-made answers eliminates cognitive work — the zone of proximal development (Vygotsky) is short-circuited. The student obtains the artifact without having built the understanding that should precede it. Petrus exists precisely to prevent this: it operates in the ZPD, pushes the student one step beyond what they could achieve alone, but never delivers the destination — only the scaffolding.'
-                  : 'Finalmente, ¿por qué una IA que media en lugar de una IA que responde? La diferencia es fundamental. Una IA que entrega respuestas listas elimina el trabajo cognitivo. Petrus existe precisamente para evitar esto: opera en la ZDP, induce al estudiante a avanzar más allá de lo que podría lograr solo, pero nunca entrega el destino — solo el andamio.'}
+                  ? 'Finally, why an AI that mediates instead of an AI that answers? The difference is fundamental. An AI that delivers ready-made answers eliminates cognitive work — the zone of proximal development (Vygotsky) is short-circuited. The student obtains the artifact without having built the understanding that should precede it. Levy exists precisely to prevent this: it operates in the ZPD, pushes the student one step beyond what they could achieve alone, but never delivers the destination — only the scaffolding.'
+                  : 'Finalmente, ¿por qué una IA que media en lugar de una IA que responde? La diferencia es fundamental. Una IA que entrega respuestas listas elimina el trabajo cognitivo. Levy existe precisamente para evitar esto: opera en la ZDP, induce al estudiante a avanzar más allá de lo que podría lograr solo, pero nunca entrega el destino — solo el andamio.'}
                 </P>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:14, marginTop:28 }}>
                   {(lang==='pt' ? [
@@ -1460,7 +1460,7 @@ export default function LandingPage() {
                   : 'SCAFFL opera con dos agentes de naturalezas comunicativas radicalmente distintas. Esta separación no es accidental — es la tesis central del diseño. Un agente media; el otro ejecuta.'}
                 </P>
 
-                {/* Petrus */}
+                {/* Levy */}
                 <div style={{ background:PANEL, border:`1px solid ${LINE}`, borderRadius:16, padding:28, marginBottom:22, position:'relative', overflow:'hidden' }}>
                   <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:GRAD }} />
                   <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:20 }}>
@@ -1471,7 +1471,7 @@ export default function LandingPage() {
                       <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.67rem', color:a2, textTransform:'uppercase', letterSpacing:'0.1em' }}>
                         {lang==='pt' ? 'Tutor socrático' : lang==='en' ? 'Socratic tutor' : 'Tutor socrático'}
                       </div>
-                      <div style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:800, fontSize:'1.4rem', color:TX }}>Petrus</div>
+                      <div style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:800, fontSize:'1.4rem', color:TX }}>Levy</div>
                     </div>
                   </div>
                   <h4 style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'1rem', color:TX, marginBottom:10 }}>
@@ -1484,15 +1484,15 @@ export default function LandingPage() {
                     : 'El método socrático no es un estilo de conversación — es una epistemología. Sócrates no transmitía conocimiento; actuaba como partera del conocimiento ajeno. La premisa es que el aprendiz ya porta, en estado latente, los elementos necesarios para construir el entendimiento.'}
                   </P>
                   <P>{lang==='pt'
-                    ? 'Petrus opera sobre esse princípio: cada turno de conversa é uma oportunidade de induzir o estudante a avançar além do que conseguiria sozinho — operar na Zona de Desenvolvimento Proximal de Vygotsky. Petrus nunca entrega a resposta, mesmo quando poderia. Ele devolve a pergunta ao estudante, sob um ângulo diferente, com mais precisão conceitual, até que o estudante nomeie o mecanismo por conta própria.'
+                    ? 'Levy opera sobre esse princípio: cada turno de conversa é uma oportunidade de induzir o estudante a avançar além do que conseguiria sozinho — operar na Zona de Desenvolvimento Proximal de Vygotsky. Levy nunca entrega a resposta, mesmo quando poderia. Ele devolve a pergunta ao estudante, sob um ângulo diferente, com mais precisão conceitual, até que o estudante nomeie o mecanismo por conta própria.'
                     : lang==='en'
-                    ? 'Petrus operates on this principle: each conversational turn is an opportunity to push the student one step beyond what they could achieve alone — to operate in Vygotsky\'s Zone of Proximal Development. Petrus never delivers the answer, even when it could. It returns the question to the student, from a different angle, with greater conceptual precision, until the student names the mechanism on their own.'
-                    : 'Petrus opera sobre este principio: cada turno de conversación es una oportunidad de inducir al estudiante a avanzar más allá de lo que podría lograr solo — operar en la Zona de Desarrollo Próximo de Vygotsky. Petrus nunca entrega la respuesta, incluso cuando podría.'}
+                    ? 'Levy operates on this principle: each conversational turn is an opportunity to push the student one step beyond what they could achieve alone — to operate in Vygotsky\'s Zone of Proximal Development. Levy never delivers the answer, even when it could. It returns the question to the student, from a different angle, with greater conceptual precision, until the student names the mechanism on their own.'
+                    : 'Levy opera sobre este principio: cada turno de conversación es una oportunidad de inducir al estudiante a avanzar más allá de lo que podría lograr solo — operar en la Zona de Desarrollo Próximo de Vygotsky. Levy nunca entrega la respuesta, incluso cuando podría.'}
                   </P>
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:18 }}>
                     <div style={{ background: dark ? '#080C18' : '#F1F5F9', borderRadius:10, padding:'14px 16px' }}>
                       <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.65rem', color:'#EF4444', marginBottom:8, textTransform:'uppercase', letterSpacing:'0.08em' }}>
-                        {lang==='pt' ? 'O que Petrus NÃO faz' : lang==='en' ? 'What Petrus does NOT do' : 'Lo que Petrus NO hace'}
+                        {lang==='pt' ? 'O que Levy NÃO faz' : lang==='en' ? 'What Levy does NOT do' : 'Lo que Levy NO hace'}
                       </div>
                       {(lang==='pt' ? ['Escrever código', 'Dar a resposta diretamente', 'Confirmar se o estudante está "certo"', 'Substituir o raciocínio do estudante'] : lang==='en' ? ['Write code', 'Give the answer directly', 'Confirm if the student is "right"', 'Replace student reasoning'] : ['Escribir código', 'Dar la respuesta directamente', 'Confirmar si el estudiante tiene "razón"', 'Reemplazar el razonamiento del estudiante']).map(item => (
                         <div key={item} style={{ fontSize:'0.83rem', color:TX2, padding:'5px 0', borderBottom:`1px solid ${LINE}`, display:'flex', alignItems:'center', gap:8 }}>
@@ -1502,7 +1502,7 @@ export default function LandingPage() {
                     </div>
                     <div style={{ background: dark ? '#080C18' : '#F1F5F9', borderRadius:10, padding:'14px 16px' }}>
                       <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.65rem', color:a2, marginBottom:8, textTransform:'uppercase', letterSpacing:'0.08em' }}>
-                        {lang==='pt' ? 'O que Petrus FAZ' : lang==='en' ? 'What Petrus DOES' : 'Lo que Petrus SÍ hace'}
+                        {lang==='pt' ? 'O que Levy FAZ' : lang==='en' ? 'What Levy DOES' : 'Lo que Levy SÍ hace'}
                       </div>
                       {(lang==='pt' ? ['Devolver a pergunta sob novo ângulo', 'Propor decomposições do problema', 'Nomear o obstáculo epistemológico', 'Induzir o estudante a externalizar o modelo mental', 'Registrar tudo para análise'] : lang==='en' ? ['Return the question from a new angle', 'Propose decompositions of the problem', 'Name the epistemological obstacle', 'Push the student to externalize their mental model', 'Record everything for analysis'] : ['Devolver la pregunta desde un nuevo ángulo', 'Proponer descomposiciones del problema', 'Nombrar el obstáculo epistemológico', 'Inducir al estudiante a externalizar el modelo mental', 'Registrar todo para análisis']).map(item => (
                         <div key={item} style={{ fontSize:'0.83rem', color:TX2, padding:'5px 0', borderBottom:`1px solid ${LINE}`, display:'flex', alignItems:'center', gap:8 }}>
@@ -1512,10 +1512,10 @@ export default function LandingPage() {
                     </div>
                   </div>
                   <Pull>{lang==='pt'
-                    ? 'Petrus é implementado via chamada streaming a um LLM configurável — por padrão, Gemini 2.5 Flash (Google). O system prompt define o contrato socrático: ele opera como mediador, nunca como oráculo. A instrução central é recusar a entrega direta de código ou soluções e substituí-las sempre por perguntas que expandem o perfil conceitual ativo.'
+                    ? 'Levy é implementado via chamada streaming a um LLM configurável — por padrão, Gemini 2.5 Flash (Google). O system prompt define o contrato socrático: ele opera como mediador, nunca como oráculo. A instrução central é recusar a entrega direta de código ou soluções e substituí-las sempre por perguntas que expandem o perfil conceitual ativo.'
                     : lang==='en'
-                    ? 'Petrus is implemented via streaming calls to a configurable LLM — by default, Gemini 2.5 Flash (Google). The system prompt defines the Socratic contract: it operates as a mediator, never as an oracle. The central instruction is to refuse the direct delivery of code or solutions and always replace them with questions that expand the active conceptual profile.'
-                    : 'Petrus está implementado mediante llamadas en streaming a un LLM configurable — por defecto, Gemini 2.5 Flash (Google). El system prompt define el contrato socrático: opera como mediador, nunca como oráculo.'}
+                    ? 'Levy is implemented via streaming calls to a configurable LLM — by default, Gemini 2.5 Flash (Google). The system prompt defines the Socratic contract: it operates as a mediator, never as an oracle. The central instruction is to refuse the direct delivery of code or solutions and always replace them with questions that expand the active conceptual profile.'
+                    : 'Levy está implementado mediante llamadas en streaming a un LLM configurable — por defecto, Gemini 2.5 Flash (Google). El system prompt define el contrato socrático: opera como mediador, nunca como oráculo.'}
                   </Pull>
                 </div>
 
@@ -1537,10 +1537,10 @@ export default function LandingPage() {
                     {lang==='pt' ? 'O que é ser um executor?' : lang==='en' ? 'What does it mean to be an executor?' : '¿Qué significa ser un ejecutor?'}
                   </h4>
                   <P>{lang==='pt'
-                    ? 'O Lab Agent é o oposto deliberado do Petrus. Onde Petrus recusa e devolve, o Lab Agent aceita e entrega. Sua natureza comunicativa é executiva: recebe uma descrição em linguagem natural e a traduz para um artefato funcional em HTML/JS, renderizável imediatamente no navegador. Não há mediação, não há andaimamento — há execução direta.'
+                    ? 'O Lab Agent é o oposto deliberado do Levy. Onde Levy recusa e devolve, o Lab Agent aceita e entrega. Sua natureza comunicativa é executiva: recebe uma descrição em linguagem natural e a traduz para um artefato funcional em HTML/JS, renderizável imediatamente no navegador. Não há mediação, não há andaimamento — há execução direta.'
                     : lang==='en'
-                    ? 'Lab Agent is the deliberate opposite of Petrus. Where Petrus refuses and returns, Lab Agent accepts and delivers. Its communicative nature is executive: it receives a description in natural language and translates it into a functional HTML/JS artifact, immediately renderable in the browser. There is no mediation, no scaffolding — there is direct execution.'
-                    : 'El Lab Agent es el opuesto deliberado de Petrus. Donde Petrus rechaza y devuelve, el Lab Agent acepta y entrega. Su naturaleza comunicativa es ejecutiva: recibe una descripción en lenguaje natural y la traduce en un artefacto funcional en HTML/JS, renderizable inmediatamente en el navegador.'}
+                    ? 'Lab Agent is the deliberate opposite of Levy. Where Levy refuses and returns, Lab Agent accepts and delivers. Its communicative nature is executive: it receives a description in natural language and translates it into a functional HTML/JS artifact, immediately renderable in the browser. There is no mediation, no scaffolding — there is direct execution.'
+                    : 'El Lab Agent es el opuesto deliberado de Levy. Donde Levy rechaza y devuelve, el Lab Agent acepta y entrega. Su naturaleza comunicativa es ejecutiva: recibe una descripción en lenguaje natural y la traduce en un artefacto funcional en HTML/JS, renderizable inmediatamente en el navegador.'}
                   </P>
                   <P>{lang==='pt'
                     ? 'Mas o Lab Agent não é apenas uma ferramenta de código — ele é também um instrumento de pesquisa. O prompt que o estudante envia a ele é o ponto de maior valor analítico de todo o sistema: é o momento em que o estudante traduz seu entendimento em linguagem natural sem filtros avaliativos. Esse prompt bruto é tratado como dado primário da investigação discursiva.'
@@ -1569,10 +1569,10 @@ export default function LandingPage() {
                     {lang==='pt' ? 'Por que dois agentes separados?' : lang==='en' ? 'Why two separate agents?' : '¿Por qué dos agentes separados?'}
                   </div>
                   <P>{lang==='pt'
-                    ? 'A separação é intencional e é a decisão de design mais importante da plataforma. Se um único agente fosse responsável por mediar E executar, o estudante usaria o caminho de menor resistência: "faça o simulador para mim". A barreira entre o Petrus e o Lab Agent é a que força o estudante a primeiro construir o entendimento (com o Petrus) e depois traduzi-lo em linguagem natural para o Lab Agent. A qualidade do prompt ao Lab Agent é o indicador direto da qualidade da mediação anterior com o Petrus.'
+                    ? 'A separação é intencional e é a decisão de design mais importante da plataforma. Se um único agente fosse responsável por mediar E executar, o estudante usaria o caminho de menor resistência: "faça o simulador para mim". A barreira entre o Levy e o Lab Agent é a que força o estudante a primeiro construir o entendimento (com o Levy) e depois traduzi-lo em linguagem natural para o Lab Agent. A qualidade do prompt ao Lab Agent é o indicador direto da qualidade da mediação anterior com o Levy.'
                     : lang==='en'
-                    ? 'The separation is intentional and is the most important design decision in the platform. If a single agent were responsible for mediating AND executing, the student would use the path of least resistance: "make the simulator for me." The barrier between Petrus and Lab Agent is what forces the student to first build understanding (with Petrus) and then translate it into natural language for Lab Agent. The quality of the Lab Agent prompt is the direct indicator of the quality of the prior Petrus mediation.'
-                    : 'La separación es intencional y es la decisión de diseño más importante de la plataforma. Si un único agente fuera responsable de mediar Y ejecutar, el estudiante usaría el camino de menor resistencia. La calidad del prompt al Lab Agent es el indicador directo de la calidad de la mediación previa con Petrus.'}
+                    ? 'The separation is intentional and is the most important design decision in the platform. If a single agent were responsible for mediating AND executing, the student would use the path of least resistance: "make the simulator for me." The barrier between Levy and Lab Agent is what forces the student to first build understanding (with Levy) and then translate it into natural language for Lab Agent. The quality of the Lab Agent prompt is the direct indicator of the quality of the prior Levy mediation.'
+                    : 'La separación es intencional y es la decisión de diseño más importante de la plataforma. Si un único agente fuera responsable de mediar Y ejecutar, el estudiante usaría el camino de menor resistencia. La calidad del prompt al Lab Agent es el indicador directo de la calidad de la mediación previa con Levy.'}
                   </P>
                 </div>
               </div>
@@ -1592,9 +1592,9 @@ export default function LandingPage() {
                     desc: lang==='pt' ? 'Frente teórica que busca formalizar o conceito de atomicidade cognitiva como critério de granularidade ótima dos nós em grafos de conhecimento manipuláveis por modelos de linguagem de pequeno porte (SLMs, < 7B parâmetros). A questão central é: qual é o tamanho ideal de um chunk de conhecimento para que um SLM possa raciocinar sobre ele sem perder coerência semântica? Resultado preliminar: um modelo de 7B com banco vetorial apresentou desempenho qualitativamente comparável a um de 32B em tarefas selecionadas.' : lang==='en' ? 'Theoretical strand formalizing "cognitive atomicity" as an optimal granularity criterion for knowledge graph nodes manipulable by small language models (SLMs, < 7B parameters). The central question is: what is the ideal size of a knowledge chunk for an SLM to reason about without losing semantic coherence? Preliminary result: a 7B model with vector retrieval showed qualitatively comparable performance to a 32B model on selected tasks.' : 'Frente teórica que busca formalizar la "atomicidad cognitiva" como criterio de granularidad óptima de nodos en grafos manipulables por modelos de lenguaje pequeños (SLMs < 7B parámetros).' },
                   { n:'4.3', Icon:Atom,
                     title: lang==='pt' ? 'Simuladores de Química mediados por IA — plataforma SCAFFL' : lang==='en' ? 'AI-mediated Chemistry simulations — SCAFFL platform' : 'Simuladores de Química mediados por IA — plataforma SCAFFL',
-                    desc: lang==='pt' ? 'Frente aplicada central. Estudantes constroem simuladores que articulam os três níveis de Johnstone (macroscópico, submicroscópico, simbólico) em sequência didática que parte da experimentação prática como organizador prévio ausubeliano. O processo é mediado pelo Petrus (fase conceitual) e executado pelo Lab Agent (fase de construção). Toda a cadeia é registrada para análise discursiva.' : lang==='en' ? 'Central applied strand. Students build simulations articulating Johnstone\'s three levels (macroscopic, submicroscopic, symbolic) in a didactic sequence starting from hands-on experimentation as an Ausbelian advance organizer. The process is mediated by Petrus (conceptual phase) and executed by Lab Agent (construction phase). The entire chain is recorded for discursive analysis.' : 'Frente aplicada central. Los estudiantes construyen simuladores que articulan los tres niveles de Johnstone en una secuencia didáctica que parte de la experimentación práctica. El proceso es mediado por Petrus y ejecutado por el Lab Agent.' },
+                    desc: lang==='pt' ? 'Frente aplicada central. Estudantes constroem simuladores que articulam os três níveis de Johnstone (macroscópico, submicroscópico, simbólico) em sequência didática que parte da experimentação prática como organizador prévio ausubeliano. O processo é mediado pelo Levy (fase conceitual) e executado pelo Lab Agent (fase de construção). Toda a cadeia é registrada para análise discursiva.' : lang==='en' ? 'Central applied strand. Students build simulations articulating Johnstone\'s three levels (macroscopic, submicroscopic, symbolic) in a didactic sequence starting from hands-on experimentation as an Ausbelian advance organizer. The process is mediated by Levy (conceptual phase) and executed by Lab Agent (construction phase). The entire chain is recorded for discursive analysis.' : 'Frente aplicada central. Los estudiantes construyen simuladores que articulan los tres niveles de Johnstone en una secuencia didáctica que parte de la experimentación práctica. El proceso es mediado por Levy y ejecutado por el Lab Agent.' },
                   { n:'4.4', Icon:Layers,
-                    title: lang==='pt' ? 'Projeto Petrus — orquestração multiagente e modelos compactos' : lang==='en' ? 'Project Petrus — multi-agent orchestration and compact models' : 'Proyecto Petrus — orquestación multiagente y modelos compactos',
+                    title: lang==='pt' ? 'Projeto Levy — orquestração multiagente e modelos compactos' : lang==='en' ? 'Project Levy — multi-agent orchestration and compact models' : 'Proyecto Levy — orquestación multiagente y modelos compactos',
                     desc: lang==='pt' ? 'Sistema de orquestração multiagente de inspiração biológica onde agentes especializados de pequeno porte colaboram para realizar tarefas que normalmente exigiriam modelos de grande escala. A arquitetura segue o princípio da "prova com consulta": assim como um estudante com notas de aula tem desempenho comparável a um sem notas em uma prova de alto nível, um SLM com banco vetorial estruturado supera modelos maiores em domínios bem definidos.' : lang==='en' ? 'Biologically inspired multi-agent orchestration system where specialized small agents collaborate to perform tasks that would normally require large-scale models. The architecture follows the "open-book exam" principle: just as a student with notes performs comparably to one without notes on a higher-level exam, an SLM with a structured vector bank outperforms larger models in well-defined domains.' : 'Sistema de orquestación multiagente de inspiración biológica donde agentes especializados pequeños colaboran para realizar tareas que normalmente requerirían modelos de gran escala.' },
                 ].map(({ n, Icon, title, desc }) => (
                   <div key={n} style={{ background:PANEL, border:`1px solid ${LINE}`, borderRadius:14, padding:26, marginBottom:16, position:'relative' }}>
@@ -1618,13 +1618,13 @@ export default function LandingPage() {
                 <P>{lang==='pt' ? 'A SCAFFL é sustentada por um conjunto de teorias da educação em ciências, da psicologia do desenvolvimento e da didática. Cada autor listado abaixo não é apenas uma referência bibliográfica — é um critério de design.' : lang==='en' ? 'SCAFFL is sustained by a set of theories from science education, developmental psychology and didactics. Each author listed below is not merely a bibliographic reference — they are a design criterion.' : 'SCAFFL se sustenta en un conjunto de teorías de la educación en ciencias, la psicología del desarrollo y la didáctica. Cada autor no es solo una referencia bibliográfica — es un criterio de diseño.'}</P>
                 {[
                   { Icon:GraduationCap, author:'Eduardo Mortimer', ref:'Perfis Conceituais, 2000', color:'#10B981',
-                    desc: lang==='pt' ? 'O perfil conceitual de um indivíduo é o conjunto de formas de pensar sobre um conceito que coexistem — não em conflito, mas em zonas de aplicabilidade diferentes. Um estudante pode operar simultaneamente com uma concepção cotidiana (a temperatura "queima") e uma científica (energia cinética média). O Petrus é projetado para identificar qual zona conceitual está ativa em cada turno e expandi-la.' : lang==='en' ? 'The conceptual profile of an individual is the set of ways of thinking about a concept that coexist — not in conflict, but in different zones of applicability. A student can simultaneously operate with an everyday conception (temperature "burns") and a scientific one (average kinetic energy). Petrus is designed to identify which conceptual zone is active in each turn and expand it.' : 'El perfil conceptual de un individuo es el conjunto de formas de pensar sobre un concepto que coexisten — no en conflicto, sino en zonas de aplicabilidad diferentes.' },
+                    desc: lang==='pt' ? 'O perfil conceitual de um indivíduo é o conjunto de formas de pensar sobre um conceito que coexistem — não em conflito, mas em zonas de aplicabilidade diferentes. Um estudante pode operar simultaneamente com uma concepção cotidiana (a temperatura "queima") e uma científica (energia cinética média). O Levy é projetado para identificar qual zona conceitual está ativa em cada turno e expandi-la.' : lang==='en' ? 'The conceptual profile of an individual is the set of ways of thinking about a concept that coexist — not in conflict, but in different zones of applicability. A student can simultaneously operate with an everyday conception (temperature "burns") and a scientific one (average kinetic energy). Levy is designed to identify which conceptual zone is active in each turn and expand it.' : 'El perfil conceptual de un individuo es el conjunto de formas de pensar sobre un concepto que coexisten — no en conflicto, sino en zonas de aplicabilidad diferentes.' },
                   { Icon:Atom, author:'Gaston Bachelard', ref:'La Formation de l\'Esprit Scientifique, 1938', color:'#8B5CF6',
-                    desc: lang==='pt' ? 'O obstáculo epistemológico não está no objeto a conhecer, mas no ato de conhecer. O pensamento cotidiano não é simplesmente incompleto — ele ativamente resiste ao conhecimento científico porque oferece explicações que "funcionam" no cotidiano. A animismo ("o calor quer escapar"), o substancialismo ("o frio entra pelo buraco"), o verbalismo — são formas de pensamento que o ensino precisa diagnosticar antes de tratar. O Petrus é instruído a identificar e nomear esses obstáculos.' : lang==='en' ? 'The epistemological obstacle does not lie in the object to be known, but in the act of knowing. Everyday thought is not simply incomplete — it actively resists scientific knowledge because it offers explanations that "work" in daily life. Animism ("heat wants to escape"), substantialism ("cold enters through the gap"), verbalism — these are forms of thought that teaching needs to diagnose before treating. Petrus is instructed to identify and name these obstacles.' : 'El obstáculo epistemológico no está en el objeto a conocer, sino en el acto de conocer. El pensamiento cotidiano no es simplemente incompleto — resiste activamente el conocimiento científico.' },
+                    desc: lang==='pt' ? 'O obstáculo epistemológico não está no objeto a conhecer, mas no ato de conhecer. O pensamento cotidiano não é simplesmente incompleto — ele ativamente resiste ao conhecimento científico porque oferece explicações que "funcionam" no cotidiano. A animismo ("o calor quer escapar"), o substancialismo ("o frio entra pelo buraco"), o verbalismo — são formas de pensamento que o ensino precisa diagnosticar antes de tratar. O Levy é instruído a identificar e nomear esses obstáculos.' : lang==='en' ? 'The epistemological obstacle does not lie in the object to be known, but in the act of knowing. Everyday thought is not simply incomplete — it actively resists scientific knowledge because it offers explanations that "work" in daily life. Animism ("heat wants to escape"), substantialism ("cold enters through the gap"), verbalism — these are forms of thought that teaching needs to diagnose before treating. Levy is instructed to identify and name these obstacles.' : 'El obstáculo epistemológico no está en el objeto a conocer, sino en el acto de conocer. El pensamiento cotidiano no es simplemente incompleto — resiste activamente el conocimiento científico.' },
                   { Icon:Layers, author:'L. S. Vygotsky', ref:'Mind in Society, 1978', color:'#60A5FA',
-                    desc: lang==='pt' ? 'A Zona de Desenvolvimento Proximal é a distância entre o que o aprendiz consegue fazer sozinho e o que consegue fazer com auxílio de um interlocutor mais capaz. O scaffolding — o andaimamento — é o processo de oferecer suporte temporário e decrescente exatamente nessa zona. O Petrus não resolve o problema do estudante: ele provê andaime. A SCAFFL (e seu nome) é uma homenagem direta a esse conceito.' : lang==='en' ? 'The Zone of Proximal Development is the distance between what the learner can do alone and what they can do with the help of a more capable interlocutor. Scaffolding is the process of providing temporary and decreasing support precisely in that zone. Petrus does not solve the student\'s problem: it provides scaffolding. SCAFFL (and its name) is a direct tribute to this concept.' : 'La Zona de Desarrollo Próximo es la distancia entre lo que el aprendiz puede hacer solo y lo que puede hacer con ayuda de un interlocutor más capaz. Petrus no resuelve el problema del estudiante: provee andamiaje. SCAFFL (y su nombre) es un homenaje directo a este concepto.' },
+                    desc: lang==='pt' ? 'A Zona de Desenvolvimento Proximal é a distância entre o que o aprendiz consegue fazer sozinho e o que consegue fazer com auxílio de um interlocutor mais capaz. O scaffolding — o andaimamento — é o processo de oferecer suporte temporário e decrescente exatamente nessa zona. O Levy não resolve o problema do estudante: ele provê andaime. A SCAFFL (e seu nome) é uma homenagem direta a esse conceito.' : lang==='en' ? 'The Zone of Proximal Development is the distance between what the learner can do alone and what they can do with the help of a more capable interlocutor. Scaffolding is the process of providing temporary and decreasing support precisely in that zone. Levy does not solve the student\'s problem: it provides scaffolding. SCAFFL (and its name) is a direct tribute to this concept.' : 'La Zona de Desarrollo Próximo es la distancia entre lo que el aprendiz puede hacer solo y lo que puede hacer con ayuda de un interlocutor más capaz. Levy no resuelve el problema del estudiante: provee andamiaje. SCAFFL (y su nombre) es un homenaje directo a este concepto.' },
                   { Icon:Network, author:'TMCR · Sophotechnia', ref:'Teoria da Mediação Cognitiva em Redes', color:'#F59E0B',
-                    desc: lang==='pt' ? 'Instrumental teórico desenvolvido por Agostinho Serrano de Andrade Neto para análise das redes de mediação que emergem quando humanos, tecnologias e instituições interagem em processos de construção de conhecimento. Na SCAFFL, permite mapear como a mediação do Petrus, a execução do Lab Agent e a supervisão do professor formam uma rede de agentes cognitivos com funções distintas e complementares.' : lang==='en' ? 'Theoretical framework developed by Agostinho Serrano de Andrade Neto for analyzing the mediation networks that emerge when humans, technologies and institutions interact in knowledge construction processes. In SCAFFL, it allows mapping how Petrus\' mediation, Lab Agent\'s execution and the teacher\'s supervision form a network of cognitive agents with distinct and complementary functions.' : 'Marco teórico para analizar las redes de mediación que emergen cuando humanos, tecnologías e instituciones interactúan en procesos de construcción de conocimiento.' },
+                    desc: lang==='pt' ? 'Instrumental teórico desenvolvido por Agostinho Serrano de Andrade Neto para análise das redes de mediação que emergem quando humanos, tecnologias e instituições interagem em processos de construção de conhecimento. Na SCAFFL, permite mapear como a mediação do Levy, a execução do Lab Agent e a supervisão do professor formam uma rede de agentes cognitivos com funções distintas e complementares.' : lang==='en' ? 'Theoretical framework developed by Agostinho Serrano de Andrade Neto for analyzing the mediation networks that emerge when humans, technologies and institutions interact in knowledge construction processes. In SCAFFL, it allows mapping how Levy\' mediation, Lab Agent\'s execution and the teacher\'s supervision form a network of cognitive agents with distinct and complementary functions.' : 'Marco teórico para analizar las redes de mediación que emergen cuando humanos, tecnologías e instituciones interactúan en procesos de construcción de conocimiento.' },
                   { Icon:Cpu, author:'Alex Johnstone', ref:'Why is science difficult to learn?, 1991', color:'#14B8A6',
                     desc: lang==='pt' ? 'Os três níveis de representação em Química — macroscópico (observável), submicroscópico (partículas) e simbólico (fórmulas e equações) — formam o "triângulo de Johnstone". A dificuldade do ensino de Química deriva em grande parte da exigência de transitar entre esses níveis simultaneamente. Os simuladores da SCAFFL são projetados explicitamente para articular os três níveis num único artefato interativo.' : lang==='en' ? 'The three levels of representation in Chemistry — macroscopic (observable), submicroscopic (particles) and symbolic (formulas and equations) — form the "Johnstone triangle". The difficulty of Chemistry teaching derives largely from the requirement to move between these levels simultaneously. SCAFFL simulations are explicitly designed to articulate all three levels in a single interactive artifact.' : 'Los tres niveles de representación en Química — macroscópico, submicroscópico y simbólico — forman el "triángulo de Johnstone". Los simuladores de SCAFFL están diseñados explícitamente para articular los tres niveles en un único artefacto interactivo.' },
                   { Icon:BookOpen, author:'David Ausubel', ref:'Educational Psychology, 1968', color:'#EC4899',
@@ -1655,7 +1655,7 @@ export default function LandingPage() {
                   {[
                     { n:'19', l: lang==='pt' ? 'estudantes · E1–E19' : lang==='en' ? 'students · E1–E19' : 'estudiantes · E1–E19' },
                     { n:'164', l: lang==='pt' ? 'turnos de interação' : lang==='en' ? 'interaction turns' : 'turnos de interacción' },
-                    { n:'89', l: lang==='pt' ? 'turnos com Petrus' : lang==='en' ? 'turns with Petrus' : 'turnos con Petrus' },
+                    { n:'89', l: lang==='pt' ? 'turnos com Levy' : lang==='en' ? 'turns with Levy' : 'turnos con Levy' },
                     { n:'75', l: lang==='pt' ? 'turnos com Lab Agent' : lang==='en' ? 'turns with Lab Agent' : 'turnos con Lab Agent' },
                     { n:'20', l: lang==='pt' ? 'simuladores produzidos' : lang==='en' ? 'simulations produced' : 'simuladores producidos' },
                     { n:'10', l: lang==='pt' ? 'dias de coleta' : lang==='en' ? 'collection days' : 'días de recolección' },
@@ -1666,7 +1666,7 @@ export default function LandingPage() {
                     </div>
                   ))}
                 </div>
-                <P>{lang==='pt' ? 'O corpus é composto por: (a) logs completos das interações Petrus–estudante (texto integral dos prompts e respostas); (b) logs completos das interações Lab Agent–estudante (prompt bruto + código gerado + versão do simulador); (c) registros de tela dos simuladores em cada iteração; (d) notas de campo do pesquisador; (e) entrevistas semiestruturadas pós-atividade com amostra de estudantes.' : lang==='en' ? 'The corpus consists of: (a) complete logs of Petrus–student interactions (full text of prompts and responses); (b) complete logs of Lab Agent–student interactions (raw prompt + generated code + simulator version); (c) screen recordings of simulators at each iteration; (d) researcher field notes; (e) semi-structured post-activity interviews with a sample of students.' : 'El corpus se compone de: (a) logs completos de interacciones Petrus–estudiante; (b) logs de Lab Agent–estudiante (prompt bruto + código generado + versión del simulador); (c) grabaciones de pantalla de los simuladores; (d) notas de campo; (e) entrevistas semiestructuradas.'}</P>
+                <P>{lang==='pt' ? 'O corpus é composto por: (a) logs completos das interações Levy–estudante (texto integral dos prompts e respostas); (b) logs completos das interações Lab Agent–estudante (prompt bruto + código gerado + versão do simulador); (c) registros de tela dos simuladores em cada iteração; (d) notas de campo do pesquisador; (e) entrevistas semiestruturadas pós-atividade com amostra de estudantes.' : lang==='en' ? 'The corpus consists of: (a) complete logs of Levy–student interactions (full text of prompts and responses); (b) complete logs of Lab Agent–student interactions (raw prompt + generated code + simulator version); (c) screen recordings of simulators at each iteration; (d) researcher field notes; (e) semi-structured post-activity interviews with a sample of students.' : 'El corpus se compone de: (a) logs completos de interacciones Levy–estudiante; (b) logs de Lab Agent–estudiante (prompt bruto + código generado + versión del simulador); (c) grabaciones de pantalla de los simuladores; (d) notas de campo; (e) entrevistas semiestructuradas.'}</P>
                 <div style={{ background:PANEL, border:`1px solid ${LINE}`, borderRadius:12, padding:'16px 20px' }}>
                   <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.67rem', color:a2, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:10 }}>
                     {lang==='pt' ? 'Temas dos simuladores produzidos (amostra)' : lang==='en' ? 'Themes of produced simulations (sample)' : 'Temas de los simuladores producidos (muestra)'}

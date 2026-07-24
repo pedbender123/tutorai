@@ -1,0 +1,16 @@
+{
+  "title": "Configuraciones",
+  "subtitle": "Gestione su cuenta y preferencias del sistema.",
+  "tabUsage": "Uso",
+  "tabAppearance": "Apariencia",
+  "tabAdmin": "Admin",
+  "tabSecurity": "Seguridad",
+  "personalizationTitle": "Personalización",
+  "personalizationSubtitle": "Ajuste el aspecto y el idioma de su entorno de estudio.",
+  "systemTheme": "Tema del Sistema",
+  "themeLight": "Claro",
+  "themeDark": "Oscuro",
+  "accentColor": "Color de Énfasis",
+  "language": "Idioma",
+  "languageHint": "Cambia toda la interfaz y el idioma de las respuestas de los agentes de IA."
+}

@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme, ACCENT_COLORS } from '../contexts/ThemeContext';
-import { Moon, Sun, Palette, Zap, Shield, Building2, Users, Plus, Mail, Globe, X, ShieldAlert, ChevronLeft, UserCheck, UserX, PanelRightOpen, PanelRightClose, Eye, EyeOff, ShieldCheck, Terminal, RefreshCw, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronRight, MoreVertical, QrCode, Edit3, Trash2, Copy, Check, Lock, FlaskConical, Sparkles } from 'lucide-react';
+import { useLanguage, useT } from '../contexts/LanguageContext';
+import { Moon, Sun, Palette, Zap, Shield, Building2, Users, Plus, Mail, Globe, X, ShieldAlert, ChevronLeft, UserCheck, UserX, PanelRightOpen, PanelRightClose, Eye, EyeOff, ShieldCheck, Terminal, RefreshCw, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronRight, MoreVertical, QrCode, Edit3, Trash2, Copy, Check, Lock, Sparkles } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { api, Institution, UserAdmin } from '../lib/api';
+import { api, Institution, UserAdmin, Classroom } from '../lib/api';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function Settings() {
   const { userData, refreshUserData } = useAuth();
   const { themeMode, accentColor, setThemeMode, setAccentColor } = useTheme();
+  const { locale, setLocale } = useLanguage();
+  const t = useT('settings');
   const [activeTab, setActiveTab] = useState<'usage' | 'appearance' | 'admin' | 'security'>('usage');
 
   // Security State
@@ -207,39 +210,35 @@ export default function Settings() {
   const usageMonthly = Math.min((creditsMonthly / limitMonthly) * 100, 100);
 
   const quota = userData.quota;
-  const labToday     = quota?.lab.today      ?? 0;
-  const labDayLimit  = quota?.lab.dailyLimit  ?? (hasInstitution ? 10 : 5);
-  const labWeek      = quota?.lab.week        ?? 0;
-  const labWeekLimit = quota?.lab.weeklyLimit ?? (hasInstitution ? 50 : 20);
-  const labDayPct    = Math.min((labToday / labDayLimit) * 100, 100);
-  const labWeekPct   = Math.min((labWeek  / labWeekLimit) * 100, 100);
-
-  const petrusWeek      = quota?.petrus.creditsWeek   ?? 0;
-  const petrusWeekLimit = quota?.petrus.weeklyLimit   ?? (hasInstitution ? 100_000 : 100_000);
-  const petrusPct       = Math.min((petrusWeek / petrusWeekLimit) * 100, 100);
+  const creditsWeek       = quota?.credits.week         ?? 0;
+  const creditsWeekLimit  = quota?.credits.weeklyLimit  ?? 500_000;
+  const creditsMonth      = quota?.credits.month        ?? 0;
+  const creditsMonthLimit = quota?.credits.monthlyLimit ?? 2_000_000;
+  const creditsWeekPct    = Math.min((creditsWeek  / creditsWeekLimit)  * 100, 100);
+  const creditsMonthPct   = Math.min((creditsMonth / creditsMonthLimit) * 100, 100);
 
   return (
     <div className="p-5 max-w-5xl mx-auto space-y-5">
       <div>
-        <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Configurações</h1>
+        <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white font-display">Configurações</h1>
         <p className="text-slate-500 dark:text-slate-400 mt-0.5 text-sm">Gerencie sua conta e preferências do sistema.</p>
       </div>
 
       {/* Main tabs */}
-      <div className="flex items-center bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 w-fit">
-        <button onClick={() => setActiveTab('usage')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5", activeTab === 'usage' ? "bg-white dark:bg-slate-800 text-primary shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300")}>
+      <div className="flex items-center glasscard p-1 rounded-xl w-fit">
+        <button onClick={() => setActiveTab('usage')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5", activeTab === 'usage' ? "bg-white/70 dark:bg-white/10 text-primary shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300")}>
           <Zap size={14} /> Uso
         </button>
-        <button onClick={() => setActiveTab('appearance')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5", activeTab === 'appearance' ? "bg-white dark:bg-slate-800 text-primary shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300")}>
+        <button onClick={() => setActiveTab('appearance')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5", activeTab === 'appearance' ? "bg-white/70 dark:bg-white/10 text-primary shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300")}>
           <Palette size={14} /> Aparência
         </button>
         {!!userData.isAdmin && (
-          <button onClick={() => setActiveTab('admin')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5", activeTab === 'admin' ? "bg-white dark:bg-slate-800 text-primary shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300")}>
+          <button onClick={() => setActiveTab('admin')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5", activeTab === 'admin' ? "bg-white/70 dark:bg-white/10 text-primary shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300")}>
             <Shield size={14} /> Admin
           </button>
         )}
         {!!userData.isAdmin && (
-          <button onClick={() => setActiveTab('security')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5", activeTab === 'security' ? "bg-white dark:bg-slate-800 text-primary shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300")}>
+          <button onClick={() => setActiveTab('security')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5", activeTab === 'security' ? "bg-white/70 dark:bg-white/10 text-primary shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300")}>
             <ShieldCheck size={14} /> Segurança
           </button>
         )}
@@ -249,88 +248,71 @@ export default function Settings() {
         {/* ===== USO ===== */}
         {activeTab === 'usage' && (
           <>
-          {/* ── Lab quota card ── */}
+          {/* ── Shared AI credit pool (Lab + Levy + chat normal) ── */}
           {quota && (
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-5">
+            <div className="glasscard p-6 space-y-5">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary"><FlaskConical size={20} /></div>
+                <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary"><Sparkles size={20} /></div>
                 <div>
-                  <h2 className="text-base font-bold">Cota do Lab</h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Requisições de geração de simuladores (Gemma 31B).</p>
+                  <h2 className="text-base font-bold">Cota de IA</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Créditos compartilhados entre Lab, Levy e o chat — o limite semanal é só um freio contra gastar tudo de uma vez.</p>
                 </div>
               </div>
 
               <div className="space-y-4">
-                {/* Daily */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hoje</span>
-                    <span className={cn("text-xs font-bold tabular-nums", labToday >= labDayLimit ? "text-red-500" : labToday >= labDayLimit * 0.8 ? "text-amber-500" : "text-slate-600 dark:text-slate-300")}>
-                      {labToday} / {labDayLimit} req.
-                    </span>
-                  </div>
-                  <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${labDayPct}%` }}
-                      className={cn("h-full rounded-full transition-all duration-500",
-                        labDayPct >= 100 ? "bg-red-500" : labDayPct >= 80 ? "bg-amber-500" : "bg-primary"
-                      )}
-                    />
-                  </div>
-                  <p className="text-[10px] text-slate-400">Renova à meia-noite UTC.</p>
-                </div>
-
                 {/* Weekly */}
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center">
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Esta semana</span>
-                    <span className={cn("text-xs font-bold tabular-nums", labWeek >= labWeekLimit ? "text-red-500" : labWeek >= labWeekLimit * 0.8 ? "text-amber-500" : "text-slate-600 dark:text-slate-300")}>
-                      {labWeek} / {labWeekLimit} req.
+                    <span className={cn("text-xs font-bold tabular-nums", creditsWeekPct >= 100 ? "text-red-500" : creditsWeekPct >= 80 ? "text-amber-500" : "text-slate-600 dark:text-slate-300")}>
+                      {creditsWeek.toLocaleString()} / {creditsWeekLimit.toLocaleString()} cr.
                     </span>
                   </div>
                   <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
-                      animate={{ width: `${labWeekPct}%` }}
+                      animate={{ width: `${creditsWeekPct}%` }}
                       className={cn("h-full rounded-full transition-all duration-500",
-                        labWeekPct >= 100 ? "bg-red-500" : labWeekPct >= 80 ? "bg-amber-500" : "bg-primary"
+                        creditsWeekPct >= 100 ? "bg-red-500" : creditsWeekPct >= 80 ? "bg-amber-500" : "bg-primary"
                       )}
                     />
                   </div>
                   <p className="text-[10px] text-slate-400">Renova toda segunda-feira UTC.</p>
                 </div>
+
+                {/* Monthly */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Este mês</span>
+                    <span className={cn("text-xs font-bold tabular-nums", creditsMonthPct >= 100 ? "text-red-500" : creditsMonthPct >= 80 ? "text-amber-500" : "text-slate-600 dark:text-slate-300")}>
+                      {creditsMonth.toLocaleString()} / {creditsMonthLimit.toLocaleString()} cr.
+                    </span>
+                  </div>
+                  <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${creditsMonthPct}%` }}
+                      className={cn("h-full rounded-full transition-all duration-500",
+                        creditsMonthPct >= 100 ? "bg-red-500" : creditsMonthPct >= 80 ? "bg-amber-500" : "bg-primary"
+                      )}
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-400">Renova no dia 1 do mês (UTC).</p>
+                </div>
               </div>
             </div>
           )}
 
-          {/* ── Petrus support quota card ── */}
-          {quota && (
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-5">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary"><Sparkles size={20} /></div>
-                <div>
-                  <h2 className="text-base font-bold">Petrus — Assistente</h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Créditos do mini-chat de suporte (Gemini Flash).</p>
-                </div>
+          {!quota && (
+            <div className="glasscard p-8 flex flex-col items-center text-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                <Sparkles size={22} />
               </div>
-              <div className="space-y-1.5">
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Esta semana</span>
-                  <span className={cn("text-xs font-bold tabular-nums", petrusPct >= 100 ? "text-red-500" : petrusPct >= 80 ? "text-amber-500" : "text-slate-600 dark:text-slate-300")}>
-                    {petrusWeek.toLocaleString()} / {petrusWeekLimit.toLocaleString()} cr.
-                  </span>
-                </div>
-                <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${petrusPct}%` }}
-                    className={cn("h-full rounded-full transition-all duration-500",
-                      petrusPct >= 100 ? "bg-red-500" : petrusPct >= 80 ? "bg-amber-500" : "bg-primary"
-                    )}
-                  />
-                </div>
-                <p className="text-[10px] text-slate-400">Renova toda segunda-feira UTC.</p>
+              <div>
+                <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100">Sem cota de uso para exibir</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
+                  Esta instância roda em modo self-hosted (ou a cota ainda está carregando) — não há limite de créditos aplicado à sua conta aqui.
+                </p>
               </div>
             </div>
           )}
@@ -340,43 +322,62 @@ export default function Settings() {
 
         {/* ===== APARÊNCIA ===== */}
         {activeTab === 'appearance' && (
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-6">
+          <div className="glasscard p-6 space-y-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary"><Palette size={20} /></div>
               <div>
-                <h2 className="text-base font-bold">Personalização</h2>
-                <p className="text-xs text-slate-500">Ajuste o visual do seu ambiente de estudos.</p>
+                <h2 className="text-base font-bold">{t('personalizationTitle')}</h2>
+                <p className="text-xs text-slate-500">{t('personalizationSubtitle')}</p>
               </div>
             </div>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Sun size={14} /> Tema do Sistema</h3>
+                <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Sun size={14} /> {t('systemTheme')}</h3>
                 <div className="flex gap-3">
                   <button onClick={() => setThemeMode('light')} className={cn("flex-1 flex flex-col items-center justify-center gap-3 py-6 rounded-2xl border-2 transition-all", themeMode === 'light' ? "border-primary bg-primary/5 text-primary" : "border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 grayscale opacity-70")}>
-                    <Sun size={24} /><span className="font-bold text-sm">Claro</span>
+                    <Sun size={24} /><span className="font-bold text-sm">{t('themeLight')}</span>
                   </button>
                   <button onClick={() => setThemeMode('dark')} className={cn("flex-1 flex flex-col items-center justify-center gap-3 py-6 rounded-2xl border-2 transition-all", themeMode === 'dark' ? "border-primary bg-primary/5 text-primary" : "border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 grayscale opacity-70")}>
-                    <Moon size={24} /><span className="font-bold text-sm">Escuro</span>
+                    <Moon size={24} /><span className="font-bold text-sm">{t('themeDark')}</span>
                   </button>
                 </div>
               </div>
               <div className="space-y-4">
-                <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Palette size={14} /> Cor de Destaque</h3>
+                <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Palette size={14} /> {t('accentColor')}</h3>
                 <div className="grid grid-cols-4 gap-3">
-                  {Object.entries(ACCENT_COLORS).map(([name, hex]) => {
+                  {Object.entries(ACCENT_COLORS).map(([name, theme]) => {
                     const colorNames: Record<string, string> = {
-                      cyberSky: 'Cyber Sky (IA)',
-                      quantumGreen: 'Quantum Green (Ciência)',
-                      auraViolet: 'Aura Violet (Insight)',
-                      white: 'Branco Dinâmico',
+                      teal: 'Teal',
+                      lilac: 'Lilac',
+                      blue: 'Blue',
+                      neutral: 'Neutral',
                     };
+                    const gradient = `linear-gradient(135deg, ${theme.a1}, ${theme.a2}, ${theme.a3})`;
                     return (
-                      <button key={name} onClick={() => setAccentColor(name)} className={cn("group relative w-full aspect-square rounded-2xl flex items-center justify-center transition-all hover:scale-105 active:scale-95 border-2", accentColor === name ? "border-primary shadow-lg shadow-primary/20" : "border-transparent")} style={{ backgroundColor: hex }} title={colorNames[name] || name}>
-                        {accentColor === name ? <div className={cn("w-3 h-3 rounded-full shadow-sm", name === 'white' ? "bg-black" : "bg-white")} /> : <div className="w-0 h-0 group-hover:w-2 group-hover:h-2 rounded-full bg-white/30 transition-all" />}
+                      <button key={name} onClick={() => setAccentColor(name)} className={cn("group relative w-full aspect-square rounded-2xl flex items-center justify-center transition-all hover:scale-105 active:scale-95 border-2", accentColor === name ? "border-primary shadow-lg shadow-primary/20" : "border-transparent")} style={{ backgroundImage: gradient }} title={colorNames[name] || name}>
+                        {accentColor === name ? <div className={cn("w-3 h-3 rounded-full shadow-sm", name === 'neutral' ? "bg-black" : "bg-white")} /> : <div className="w-0 h-0 group-hover:w-2 group-hover:h-2 rounded-full bg-white/30 transition-all" />}
                       </button>
                     );
                   })}
                 </div>
+              </div>
+            </div>
+            <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 pt-4"><Globe size={14} /> {t('language')}</h3>
+              <p className="text-xs text-slate-500">{t('languageHint')}</p>
+              <div className="flex gap-2">
+                {(['pt', 'en', 'es'] as const).map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => setLocale(l)}
+                    className={cn(
+                      "px-4 py-2 rounded-xl border-2 font-bold text-sm uppercase tracking-wide transition-all",
+                      locale === l ? "border-primary bg-primary/5 text-primary" : "border-slate-100 dark:border-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                    )}
+                  >
+                    {l}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
@@ -386,11 +387,11 @@ export default function Settings() {
         {activeTab === 'admin' && !!userData.isAdmin && (
           <div className="space-y-4">
             {/* Admin sub-tabs */}
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 w-fit">
-              <button onClick={() => setAdminTab('institutions')} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all", adminTab === 'institutions' ? "bg-white dark:bg-slate-800 text-primary shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300")}>
+            <div className="flex items-center gap-1 glasscard p-1 rounded-xl w-fit">
+              <button onClick={() => setAdminTab('institutions')} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all", adminTab === 'institutions' ? "bg-white/70 dark:bg-white/10 text-primary shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300")}>
                 <Building2 size={14} /> Instituições
               </button>
-              <button onClick={() => setAdminTab('users')} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all", adminTab === 'users' ? "bg-white dark:bg-slate-800 text-primary shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300")}>
+              <button onClick={() => setAdminTab('users')} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all", adminTab === 'users' ? "bg-white/70 dark:bg-white/10 text-primary shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300")}>
                 <Users size={14} /> Usuários
               </button>
             </div>
@@ -403,7 +404,7 @@ export default function Settings() {
             {adminTab === 'institutions' && !loadingAdmin && (
               selectedInst ? (
                 /* Detalhe da Instituição */
-                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                <div className="glass-panel overflow-hidden">
                   {/* Header da instituição */}
                   <div className="flex items-center gap-3 px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50">
                     <button onClick={() => setSelectedInst(null)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
@@ -430,20 +431,20 @@ export default function Settings() {
                     {/* Info + Classrooms */}
                     <div className="flex-1 p-6 flex flex-col gap-6 overflow-hidden">
                       <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-slate-50 dark:bg-slate-950 rounded-2xl p-4 border border-slate-100 dark:border-slate-800/60">
+                        <div className="bg-white/40 dark:bg-white/5 rounded-2xl p-4 border border-white/10">
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Membros</p>
                           <p className="text-2xl font-black text-primary">
                             {users.filter(u => u.institutions.includes(selectedInst.id)).length}
                           </p>
                         </div>
-                        <div className="bg-slate-50 dark:bg-slate-950 rounded-2xl p-4 border border-slate-100 dark:border-slate-800/60">
+                        <div className="bg-white/40 dark:bg-white/5 rounded-2xl p-4 border border-white/10">
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Domínio</p>
                           <p className="text-sm font-black text-slate-600 dark:text-slate-400 truncate">{selectedInst.domain || '—'}</p>
                         </div>
                       </div>
 
                       {/* Classrooms Section */}
-                      <div className="flex-1 flex flex-col min-h-[250px] bg-slate-50 dark:bg-slate-950/30 border border-slate-100 dark:border-slate-800 rounded-3xl p-5 overflow-hidden">
+                      <div className="flex-1 flex flex-col min-h-[250px] bg-white/30 dark:bg-white/[0.03] border border-white/10 rounded-3xl p-5 overflow-hidden">
                         <div className="flex justify-between items-center mb-4 shrink-0">
                           <div>
                             <h3 className="text-sm font-black text-slate-850 dark:text-slate-200 uppercase tracking-wider">Salas de Aula</h3>
@@ -466,13 +467,13 @@ export default function Settings() {
                               animate={{ height: 'auto', opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }}
                               onSubmit={handleCreateClassroom}
-                              className="mb-4 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl flex gap-2 items-center"
+                              className="mb-4 shrink-0 glasscard p-3 rounded-2xl flex gap-2 items-center"
                             >
                               <input
                                 required
                                 type="text"
                                 placeholder="Nome da sala (ex: 2º Ano A)"
-                                className="flex-1 px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs outline-none focus:ring-2 focus:ring-primary text-slate-800 dark:text-slate-100"
+                                className="flex-1 px-3 py-1.5 bg-white/50 dark:bg-white/5 border border-white/20 rounded-xl text-xs outline-none focus:ring-2 focus:ring-primary text-slate-800 dark:text-slate-100"
                                 value={newClassroomName}
                                 onChange={e => setNewClassroomName(e.target.value)}
                               />
@@ -506,14 +507,14 @@ export default function Settings() {
                               return (
                                 <div
                                   key={c.id}
-                                  className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 p-3 rounded-2xl flex items-center justify-between gap-3 hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
+                                  className="group glasscard p-3 rounded-2xl flex items-center justify-between gap-3 hover:border-primary/30 transition-colors"
                                 >
                                   {isEditing ? (
                                     <div className="flex-1 flex gap-2 items-center">
                                       <input
                                         required
                                         type="text"
-                                        className="flex-1 px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs outline-none focus:ring-2 focus:ring-primary text-slate-800 dark:text-slate-100"
+                                        className="flex-1 px-3 py-1.5 bg-white/50 dark:bg-white/5 border border-white/20 rounded-xl text-xs outline-none focus:ring-2 focus:ring-primary text-slate-800 dark:text-slate-100"
                                         value={editingClassroomName}
                                         onChange={e => setEditingClassroomName(e.target.value)}
                                         autoFocus
@@ -556,7 +557,7 @@ export default function Settings() {
                                               className="fixed inset-0 z-10"
                                               onClick={() => setActiveActionsMenu(null)}
                                             />
-                                            <div className="absolute right-0 top-8 z-20 w-44 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl py-1.5 animate-in fade-in slide-in-from-top-2 duration-150">
+                                            <div className="absolute right-0 top-8 z-20 w-44 glass-panel shadow-xl py-1.5 animate-in fade-in slide-in-from-top-2 duration-150">
                                               <button
                                                 onClick={() => {
                                                   setInviteClassroom(c);
@@ -939,7 +940,7 @@ export default function Settings() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl space-y-6"
+              className="w-full max-w-sm glass-panel p-6 shadow-2xl space-y-6"
             >
               <div className="flex justify-between items-start">
                 <div>
@@ -971,7 +972,7 @@ export default function Settings() {
                     readOnly
                     type="text"
                     value={`${window.location.origin}/login?invite=${inviteClassroom.id}`}
-                    className="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-mono select-all outline-none text-slate-700 dark:text-slate-300"
+                    className="flex-1 px-3 py-2 bg-white/50 dark:bg-white/5 border border-white/20 rounded-xl text-xs font-mono select-all outline-none text-slate-700 dark:text-slate-300"
                   />
                   <button
                     onClick={() => {

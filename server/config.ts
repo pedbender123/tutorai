@@ -24,6 +24,20 @@ export const config = {
   // Optional: professor WhatsApp contact tool (self-hosted operators set their own number)
   // Format: international number without +, e.g. 5511999999999
   get professorWhatsApp(): string { return process.env.PROFESSOR_WHATSAPP ?? ''; },
+
+  // Reforma pública: cadastro individual + notificações por e-mail.
+  // 'none' (padrão) = mailer roda em modo no-op (loga no console, não envia de verdade).
+  get mailProvider(): 'none' | 'resend' | 'ses' | 'smtp' {
+    return (process.env.MAIL_PROVIDER ?? 'none') as any;
+  },
+  get mailFrom(): string { return process.env.MAIL_FROM ?? 'naoresponda@scaffl.com.br'; },
+  // Só passa a bloquear uso de IA por e-mail não verificado quando isso for true
+  // E houver um mailProvider real configurado — ver emailVerification.ts.
+  get requireEmailVerification(): boolean {
+    return (process.env.REQUIRE_EMAIL_VERIFICATION ?? 'false') === 'true';
+  },
+  // Base URL used to build links inside emails (verification, activity reminders, etc.)
+  get publicUrl(): string { return process.env.PUBLIC_URL ?? 'http://localhost:3001'; },
 };
 
 /**
