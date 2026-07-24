@@ -166,9 +166,10 @@ export function startAetherLink(): void {
     return;
   }
 
-  // Porta e endereço do Aether Link
-  // Nota: A porta padrão e endpoint do WebSocket podem ser confirmados pelo usuário
-  const url = process.env.AETHER_LINK_URL || 'ws://127.0.0.1:8001/ws/projects';
+  // Porta e endereço confirmados direto no backend do AetherOS (uvicorn escuta em
+  // :8000 — 8001 é a porta do ChromaDB, não da API). Vale só quando Scaffl roda na
+  // mesma VPS que o AetherOS, com o container em network_mode: host.
+  const url = process.env.AETHER_LINK_URL || 'ws://127.0.0.1:8000/ws/projects';
 
   function connect() {
     console.log(`[aether-link] Conectando a ${url}...`);
