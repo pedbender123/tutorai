@@ -250,10 +250,10 @@ export default function LevyChat() {
                     ) : (
                       <p className="whitespace-pre-wrap font-medium">{msg.content}</p>
                     )}
-                    {msg.role === 'model' && msg.creditsUsed > 0 && (
+                    {msg.role === 'model' && (msg.quota_credits ?? msg.creditsUsed) > 0 && (
                       <div className="flex justify-end mt-2">
                         <span className="text-[9px] font-semibold text-slate-400/85 dark:text-slate-500/80 tracking-wide">
-                          Custo: {msg.creditsUsed.toLocaleString('pt-BR')} créditos
+                          Custo: {(msg.quota_credits ?? msg.creditsUsed).toLocaleString('pt-BR')} créditos
                         </span>
                       </div>
                     )}

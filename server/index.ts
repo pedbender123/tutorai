@@ -689,8 +689,8 @@ app.post('/api/levy/chats/:chatId/messages', auth.authenticate, limiter, async (
 
     const modelMsgId = crypto.randomUUID();
     db.prepare(`
-      INSERT INTO levy_messages (id, chatId, role, content, creditsUsed) VALUES (?, ?, 'model', ?, ?)
-    `).run(modelMsgId, chatId, result.text, result.creditsUsed);
+      INSERT INTO levy_messages (id, chatId, role, content, creditsUsed, quota_credits) VALUES (?, ?, 'model', ?, ?, ?)
+    `).run(modelMsgId, chatId, result.text, result.creditsUsed, result.quotaCredits);
 
     if (generatedTitle) {
       db.prepare('UPDATE levy_chats SET title = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run(generatedTitle, chatId);
@@ -928,8 +928,8 @@ app.post('/api/lab/projects/:id/messages', auth.authenticate, async (req: any, r
     // Salva resposta do assistente
     const assistantMsgId = crypto.randomUUID();
     db.prepare(`
-      INSERT INTO lab_messages (id, projectId, userId, role, content, tokensUsed, creditsUsed, edit_plan, edit_scope, patched_functions)
-      VALUES (?, ?, ?, 'assistant', ?, ?, ?, ?, ?, ?)
+      INSERT INTO lab_messages (id, projectId, userId, role, content, tokensUsed, creditsUsed, quota_credits, edit_plan, edit_scope, patched_functions)
+      VALUES (?, ?, ?, 'assistant', ?, ?, ?, ?, ?, ?, ?)
     `).run(
       assistantMsgId,
       projectId,
@@ -937,6 +937,7 @@ app.post('/api/lab/projects/:id/messages', auth.authenticate, async (req: any, r
       agentResult.explanation,
       agentResult.tokensUsed,
       agentResult.creditsUsed,
+      agentResult.quotaCredits,
       agentResult.editPlan ? JSON.stringify(agentResult.editPlan) : null,
       agentResult.editScope,
       JSON.stringify(agentResult.patchedFunctions),

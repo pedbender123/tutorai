@@ -98,6 +98,7 @@ export interface LevyMessage {
   role: 'user' | 'model';
   content: string;
   creditsUsed: number;
+  quota_credits?: number;
   createdAt: string;
 }
 
@@ -147,6 +148,7 @@ export interface LabMessage {
   content: string;
   tokensUsed: number;
   creditsUsed: number;
+  quota_credits?: number;
   createdAt: string;
   edit_scope?: 'full_rewrite' | 'surgical' | 'error' | null;
   patched_functions?: string | null;

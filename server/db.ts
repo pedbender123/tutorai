@@ -443,6 +443,16 @@ db.exec(`
   if (!cols.includes('used_free'))  db.exec("ALTER TABLE quota_metrics ADD COLUMN used_free INTEGER DEFAULT 0");
 })();
 
+// quota_credits = quanto a mensagem consumiu da cota pessoal do usuário (equivalente
+// pago), distinto de creditsUsed (custo real em R$, 0 quando a chave gratuita foi
+// usada) — mostrado por mensagem pra bater com o que realmente foi descontado da cota.
+(function migrateQuotaCreditsColumn() {
+  for (const table of ['lab_messages', 'levy_messages']) {
+    const cols = (db.prepare(`PRAGMA table_info(${table})`).all() as any[]).map((c: any) => c.name);
+    if (!cols.includes('quota_credits')) db.exec(`ALTER TABLE ${table} ADD COLUMN quota_credits INTEGER DEFAULT 0`);
+  }
+})();
+
 // Ensure system user exists
 db.prepare(`
   INSERT OR IGNORE INTO users (id, name, email, password, role, isAdmin)

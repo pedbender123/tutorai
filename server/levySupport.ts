@@ -151,7 +151,7 @@ export async function generateSupportResponse(
   history: SupportMessage[],
   newMessage: string,
   agenticMode: boolean,
-): Promise<{ text: string; creditsUsed: number }> {
+): Promise<{ text: string; creditsUsed: number; quotaCredits: number }> {
   if (config.isCloud) {
     const verifyCheck = checkEmailVerified(userId);
     if (!verifyCheck.allowed) throw new Error(verifyCheck.reason);
@@ -250,5 +250,5 @@ export async function generateSupportResponse(
     logQuotaEvent({ userId, surface: 'levy', event: 'request', model: LEVY_MODEL, tokensIn: outcome.tokensIn, tokensOut: outcome.tokensOut, credits: outcome.creditsUsed, usedFree: outcome.usedFree });
   }
 
-  return { text: outcome.text, creditsUsed: outcome.creditsUsed };
+  return { text: outcome.text, creditsUsed: outcome.creditsUsed, quotaCredits: outcome.quotaCredits };
 }

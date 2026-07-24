@@ -832,11 +832,7 @@ function LabMessageBubble({ msg }: { msg: LabMessage }) {
               <div className="ml-auto flex items-center gap-1.5 text-slate-400 dark:text-slate-500 font-bold">
                 <span>{msg.tokensUsed?.toLocaleString() || 0} tkn</span>
                 <span>•</span>
-                {msg.creditsUsed > 0 ? (
-                  <span className="text-emerald-500 dark:text-emerald-400">{msg.creditsUsed.toLocaleString()} crd</span>
-                ) : (
-                  <span className="text-sky-500 dark:text-sky-400" title="Respondido pela chave gratuita — custo real R$ 0">grátis</span>
-                )}
+                <span className="text-emerald-500 dark:text-emerald-400">{(msg.quota_credits ?? msg.creditsUsed)?.toLocaleString() || 0} crd</span>
               </div>
             </div>
 
