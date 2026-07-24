@@ -18,7 +18,7 @@ import { checkLabQuota, recordToolCredits, getQuotaSummary } from './quota.js';
 import { confirmVerificationToken, resendVerificationEmail, checkEmailVerified } from './emailVerification.js';
 import { getQueueDepth } from './limiter.js';
 import { encryptSecret } from './crypto/secrets.js';
-import { getActiveKey, invalidateKeyCache } from './providers/registry.js';
+import { getActiveKey, invalidateKeyCache, calcCredits } from './providers/registry.js';
 import { generateSupportResponse, LEVY_GREETING } from './levySupport.js';
 import { generateChatTitle } from './chatTitler.js';
 import { startAetherLink } from './aetherLink.js';
@@ -1307,6 +1307,44 @@ app.get('/api/admin/ia-usage', auth.authenticate, requireAdmin, (req: any, res) 
     const history7d = mergePeriods(chat7d, lab7d);
     const history30d = mergePeriods(chat30d, lab30d);
 
+    // 6. Economia da chave gratuita — quanto teria custado se essas requisições
+    // tivessem sido cobradas na tarifa paga do próprio modelo usado.
+    const freeRows = db.prepare(`
+      SELECT surface, model, tokens_in as tokensIn, tokens_out as tokensOut
+      FROM quota_metrics
+      WHERE used_free = 1 AND event = 'request'
+    `).all() as Array<{ surface: string; model: string | null; tokensIn: number; tokensOut: number }>;
+
+    let freeRequests = 0;
+    let freeTokensIn = 0;
+    let freeTokensOut = 0;
+    let freeEstimatedCredits = 0;
+    const freeBySurface: Record<string, { requests: number; tokensIn: number; tokensOut: number; estimatedCredits: number }> = {};
+
+    for (const row of freeRows) {
+      freeRequests++;
+      freeTokensIn += row.tokensIn;
+      freeTokensOut += row.tokensOut;
+      const estimate = row.model ? calcCredits(row.model, row.tokensIn, 0, row.tokensOut) : 0;
+      freeEstimatedCredits += estimate;
+
+      const bucket = freeBySurface[row.surface] ?? { requests: 0, tokensIn: 0, tokensOut: 0, estimatedCredits: 0 };
+      bucket.requests++;
+      bucket.tokensIn += row.tokensIn;
+      bucket.tokensOut += row.tokensOut;
+      bucket.estimatedCredits += estimate;
+      freeBySurface[row.surface] = bucket;
+    }
+
+    const freeTierSavings = {
+      requests: freeRequests,
+      tokensIn: freeTokensIn,
+      tokensOut: freeTokensOut,
+      estimatedCredits: freeEstimatedCredits,
+      estimatedReais: freeEstimatedCredits / 1_000_000,
+      bySurface: freeBySurface,
+    };
+
     res.json({
       summary: {
         creditsChat,
@@ -1326,7 +1364,8 @@ app.get('/api/admin/ia-usage', auth.authenticate, requireAdmin, (req: any, res) 
         h24: history24h,
         d7: history7d,
         d30: history30d,
-      }
+      },
+      freeTierSavings,
     });
 
   } catch (err: any) {

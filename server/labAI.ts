@@ -205,6 +205,7 @@ export async function runSimAgent(params: {
     tokensOut: result.tokensOut,
     credits:   result.creditsUsed,
     wasSpill:  startedWithFree && !result.usedFree,
+    usedFree:  result.usedFree,
   });
 
   return result;

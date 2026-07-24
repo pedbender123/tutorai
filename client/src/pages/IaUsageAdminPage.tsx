@@ -47,6 +47,14 @@ interface IaUsageResponse {
     d7: Array<{ period: string; chatCredits: number; labCredits: number; totalCredits: number; totalReais: number }>;
     d30: Array<{ period: string; chatCredits: number; labCredits: number; totalCredits: number; totalReais: number }>;
   };
+  freeTierSavings: {
+    requests: number;
+    tokensIn: number;
+    tokensOut: number;
+    estimatedCredits: number;
+    estimatedReais: number;
+    bySurface: Record<string, { requests: number; tokensIn: number; tokensOut: number; estimatedCredits: number }>;
+  };
 }
 
 export default function IaUsageAdminPage() {
@@ -98,7 +106,7 @@ export default function IaUsageAdminPage() {
     );
   }
 
-  const { summary, institutions, classrooms, topUsers, history } = data;
+  const { summary, institutions, classrooms, topUsers, history, freeTierSavings } = data;
   const currentHistory = history[timeRange] || [];
 
   // Configuração do gráfico SVG
@@ -261,6 +269,45 @@ export default function IaUsageAdminPage() {
                 style={{ width: `${spendPercent}%` }}
               />
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Economia com a chave gratuita */}
+      <div className="bg-gradient-to-br from-emerald-500/10 to-sky-500/10 border border-emerald-500/20 rounded-3xl p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-emerald-500/15 rounded-xl text-emerald-500">
+            <Sparkles size={18} />
+          </div>
+          <div>
+            <h3 className="text-sm font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+              Economia com a Chave Gratuita
+            </h3>
+            <p className="text-xs text-slate-450 mt-0.5">
+              Requisições respondidas pelo tier gratuito do Google AI Studio — custo real R$ 0, mostrado aqui como o quanto teria custado na tarifa paga.
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">R$ {freeTierSavings.estimatedReais.toFixed(2)}</p>
+            <p className="text-[10px] font-bold text-slate-450 uppercase tracking-wider mt-0.5">Economizado (estimado)</p>
+          </div>
+          <div>
+            <p className="text-2xl font-black text-slate-800 dark:text-slate-100">{freeTierSavings.requests.toLocaleString('pt-BR')}</p>
+            <p className="text-[10px] font-bold text-slate-450 uppercase tracking-wider mt-0.5">Requisições gratuitas</p>
+          </div>
+          <div>
+            <p className="text-2xl font-black text-slate-800 dark:text-slate-100">{((freeTierSavings.tokensIn + freeTierSavings.tokensOut) / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}k</p>
+            <p className="text-[10px] font-bold text-slate-450 uppercase tracking-wider mt-0.5">Tokens processados</p>
+          </div>
+          <div className="flex flex-col justify-center gap-1">
+            {Object.entries(freeTierSavings.bySurface).map(([surface, s]) => (
+              <div key={surface} className="flex justify-between text-xs font-bold text-slate-600 dark:text-slate-350">
+                <span className="capitalize">{surface === 'lab' ? 'Laboratório' : surface === 'levy' ? 'Levy' : surface}:</span>
+                <span>{s.requests} req · R$ {(s.estimatedCredits / 1_000_000).toFixed(2)}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>

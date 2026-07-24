@@ -243,7 +243,7 @@ export async function generateSupportResponse(
 
   if (config.isCloud) {
     recordLevyCredits(userId, outcome.creditsUsed);
-    logQuotaEvent({ userId, surface: 'levy', event: 'request', model: LEVY_MODEL, credits: outcome.creditsUsed });
+    logQuotaEvent({ userId, surface: 'levy', event: 'request', model: LEVY_MODEL, tokensIn: outcome.tokensIn, tokensOut: outcome.tokensOut, credits: outcome.creditsUsed, usedFree: outcome.usedFree });
   }
 
   return { text: outcome.text, creditsUsed: outcome.creditsUsed };

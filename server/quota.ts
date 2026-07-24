@@ -131,11 +131,12 @@ export function logQuotaEvent(params: {
   tokensOut?: number;
   credits?: number;
   wasSpill?: boolean;
+  usedFree?: boolean;
 }): void {
   try {
     db.prepare(`
-      INSERT INTO quota_metrics (id, surface, event, model, userId, tokens_in, tokens_out, credits, was_spill)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO quota_metrics (id, surface, event, model, userId, tokens_in, tokens_out, credits, was_spill, used_free)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       crypto.randomUUID(),
       params.surface,
@@ -146,6 +147,7 @@ export function logQuotaEvent(params: {
       params.tokensOut ?? 0,
       params.credits   ?? 0,
       params.wasSpill  ? 1 : 0,
+      params.usedFree  ? 1 : 0,
     );
   } catch {
     // Metrics are best-effort — never block a request over a logging failure

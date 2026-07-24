@@ -429,7 +429,8 @@ db.exec(`
     tokens_in INTEGER DEFAULT 0,
     tokens_out INTEGER DEFAULT 0,
     credits INTEGER DEFAULT 0,
-    was_spill INTEGER DEFAULT 0
+    was_spill INTEGER DEFAULT 0,
+    used_free INTEGER DEFAULT 0
   );
 `);
 
@@ -439,6 +440,7 @@ db.exec(`
   if (!cols.includes('tokens_in'))  db.exec("ALTER TABLE quota_metrics ADD COLUMN tokens_in INTEGER DEFAULT 0");
   if (!cols.includes('tokens_out')) db.exec("ALTER TABLE quota_metrics ADD COLUMN tokens_out INTEGER DEFAULT 0");
   if (!cols.includes('was_spill'))  db.exec("ALTER TABLE quota_metrics ADD COLUMN was_spill INTEGER DEFAULT 0");
+  if (!cols.includes('used_free'))  db.exec("ALTER TABLE quota_metrics ADD COLUMN used_free INTEGER DEFAULT 0");
 })();
 
 // Ensure system user exists
